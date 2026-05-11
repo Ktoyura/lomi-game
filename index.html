@@ -565,7 +565,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   <div class="shop-tabs" style="max-width:480px;width:100%">
     <button class="shop-tab active" id="tab-flags" onclick="switchShopFilter('flag')" style="font-size:0.55rem">🌍 Флаги</button>
     <button class="shop-tab" id="tab-colors" onclick="switchShopFilter('color')" style="font-size:0.55rem">🎨 Цвета</button>
-
+    <button class="shop-tab" id="tab-boards" onclick="switchShopFilter('board')" style="font-size:0.55rem">🏟️ Поле</button>
   </div>
   <div class="shop-grid" id="shop-grid"></div>
   <button class="btn btn-secondary" style="max-width:320px;width:100%;margin-top:0.5rem" onclick="showScreen('menu')">Назад</button>
@@ -715,15 +715,15 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   </div>
   <!-- Points breakdown (shown only vs bot) -->
   <div id="points-block" style="display:none;width:100%;max-width:320px;background:var(--surface2);border-radius:16px;padding:14px 18px;border:1px solid rgba(255,211,61,0.2)">
-    <div style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:#FFD93D;letter-spacing:0.08em;margin-bottom:10px">⭐ ОЧКИ ЗА ИГРУ</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:#FFD93D;letter-spacing:0.08em;margin-bottom:10px">🪙 МОНЕТЫ ЗА ИГРУ</div>
     <div id="points-rows" style="display:flex;flex-direction:column;gap:6px;font-size:0.8rem;color:var(--muted)"></div>
     <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center">
       <span style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:var(--text)">ИТОГО</span>
-      <span style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;color:#FFD93D" id="points-total">+0</span>
+      <span style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;color:#FFD93D" id="points-total">+0 🪙</span>
     </div>
     <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:0.72rem;color:var(--muted)">Всего очков</span>
-      <span style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text)" id="points-cumulative">0</span>
+      <span style="font-size:0.72rem;color:var(--muted)">Всего монет</span>
+      <span style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text)" id="points-cumulative">0 🪙</span>
     </div>
   </div>
   <div class="btn-group" style="max-width:280px">
@@ -844,6 +844,13 @@ const SHOP_ITEMS = [
   { id:'c_black',  name:'Чёрный',      type:'color', price:50,  borderColor:'#444444', color:'#222222' },
   { id:'c_white',  name:'Белый',       type:'color', price:50,  borderColor:'#aaaaaa', color:'#EEEEEE' },
 
+  // ── Темы поля ─────────────────────────────────────────────────────
+  { id:'b_ice',   name:'Лёд',   type:'board', price:500,  borderColor:'#7ECFFF',
+    bg:'#0D2137', cellBg:'rgba(126,207,255,0.08)', gridColor:'rgba(126,207,255,0.7)' },
+  { id:'b_sand',  name:'Песок', type:'board', price:750,  borderColor:'#E8C97A',
+    bg:'#1A1208', cellBg:'rgba(232,201,122,0.1)',  gridColor:'rgba(232,201,122,0.75)' },
+  { id:'b_grass', name:'Трава', type:'board', price:1000, borderColor:'#4DCC6A',
+    bg:'#071A0C', cellBg:'rgba(77,204,106,0.09)',  gridColor:'rgba(77,204,106,0.7)' },
 ];
 
 // Bot always uses this wall color (teal/cyan distinct from player)
@@ -859,6 +866,7 @@ let equippedPiece = 'default';
 let equippedWall  = 'default';
 let shopTab = 'piece';
 let shopFilter = 'flag';
+let equippedBoard = 'default';
 
 function loadShop() {
   try {
@@ -866,20 +874,36 @@ function loadShop() {
     if (o) ownedItems = new Set(JSON.parse(o));
     equippedPiece = localStorage.getItem('lomi_piece') || 'default';
     equippedWall  = localStorage.getItem('lomi_wall')  || 'default';
+    equippedBoard = localStorage.getItem('lomi_board') || 'default';
   } catch(e) {}
+  applyBoardTheme();
+}
+
+function applyBoardTheme() {
+  const item = SHOP_ITEMS.find(i => i.id === equippedBoard);
+  if (!item || item.type !== 'board') {
+    document.documentElement.style.setProperty('--board-bg', '#0F1923');
+    document.documentElement.style.setProperty('--cell-bg', 'rgba(255,255,255,0.02)');
+    document.documentElement.style.setProperty('--grid-color', 'rgba(255,255,255,0.18)');
+  } else {
+    document.documentElement.style.setProperty('--board-bg', item.bg);
+    document.documentElement.style.setProperty('--cell-bg', item.cellBg);
+    document.documentElement.style.setProperty('--grid-color', item.gridColor);
+  }
 }
 
 function saveShop() {
   localStorage.setItem('lomi_owned',  JSON.stringify([...ownedItems]));
   localStorage.setItem('lomi_piece',  equippedPiece);
   localStorage.setItem('lomi_wall',   equippedWall);
+  localStorage.setItem('lomi_board',  equippedBoard);
 }
 
 function switchShopFilter(filter) {
   shopFilter = filter;
   document.getElementById('tab-flags').classList.toggle('active', filter==='flag');
   document.getElementById('tab-colors').classList.toggle('active', filter==='color');
-
+  if(document.getElementById('tab-boards')) document.getElementById('tab-boards').classList.toggle('active', filter==='board');
   renderShop();
 }
 
@@ -887,6 +911,12 @@ function switchShopTab(tab) {
   shopTab = tab;
   document.getElementById('tab-piece').classList.toggle('active', tab==='piece');
   document.getElementById('tab-wall').classList.toggle('active', tab==='wall');
+  // Board only shows in piece tab
+  if (tab === 'wall' && shopFilter === 'board') {
+    shopFilter = 'flag';
+    document.getElementById('tab-flags').classList.add('active');
+    if(document.getElementById('tab-boards')) document.getElementById('tab-boards').classList.remove('active');
+  }
   renderShop();
 }
 
@@ -894,7 +924,7 @@ function renderShop() {
   const grid = document.getElementById('shop-grid');
   document.getElementById('shop-balance').textContent = totalPoints.toLocaleString();
   grid.innerHTML = '';
-  const equipped = shopTab==='piece' ? equippedPiece : equippedWall;
+  const equipped = shopFilter==='board' ? equippedBoard : (shopTab==='piece' ? equippedPiece : equippedWall);
   const filtered = SHOP_ITEMS.filter(i => i.type === shopFilter);
   const defCard = makeShopCard('default', 'По умолчанию', 0, 0, equipped, false, null);
   grid.appendChild(defCard);
@@ -926,9 +956,18 @@ function makeShopCard(id, name, tier, price, equipped, cantAfford, item) {
   // Build visual preview
   let previewHTML = '';
   const isColor = item && item.type === 'color';
-  if (shopTab === 'piece') {
+  const isBoard = item && item.type === 'board';
+  if (shopTab === 'piece' || shopFilter === 'board') {
     if (id === 'default') {
-      previewHTML = `<div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#FF3CAC,#784BFF);flex-shrink:0;box-shadow:0 0 16px rgba(255,60,172,0.4)"></div>`;
+      previewHTML = isBoard
+        ? `<div style="width:58px;height:58px;border-radius:10px;background:#0e0e1a;border:3px solid #555;flex-shrink:0;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:4px">${Array(9).fill('<div style="border-radius:3px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.12)"></div>').join('')}</div>`
+        : `<div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#FF3CAC,#784BFF);flex-shrink:0;box-shadow:0 0 16px rgba(255,60,172,0.4)"></div>`;
+    } else if (isBoard) {
+      previewHTML = `<div style="width:58px;height:58px;border-radius:10px;border:3px solid ${item.borderColor};
+        background:${item.bg};box-shadow:0 0 14px ${item.borderColor}55;flex-shrink:0;
+        display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;padding:4px">
+        ${Array(9).fill(`<div style="border-radius:3px;background:${item.cellBg};border:1px solid ${item.gridColor}"></div>`).join('')}
+      </div>`;
     } else if (isColor) {
       previewHTML = `<div style="width:58px;height:58px;border-radius:50%;background:${item.color};flex-shrink:0;border:3px solid ${item.borderColor};box-shadow:0 0 14px ${item.borderColor}55"></div>`;
     } else {
@@ -959,10 +998,12 @@ function makeShopCard(id, name, tier, price, equipped, cantAfford, item) {
 }
 
 function onShopCardClick(id, price, tier) {
+  const item = SHOP_ITEMS.find(i=>i.id===id);
   const isOwned = id==='default' || ownedItems.has(id);
   if (isOwned) {
     // Equip it
-    if (shopTab==='piece') equippedPiece = id;
+    if (shopFilter==='board') { equippedBoard = id; applyBoardTheme(); }
+    else if (shopTab==='piece') equippedPiece = id;
     else equippedWall = id;
     saveShop();
     renderShop();
@@ -971,18 +1012,20 @@ function onShopCardClick(id, price, tier) {
   }
   // Buy
   if (totalPoints < price) {
+    showToast('Недостаточно монет 😔', `Нужно ещё ${(price-totalPoints).toLocaleString()} 🪙`);
     playTone(200,'sawtooth',0.1,0.1);
     return;
   }
   totalPoints -= price;
   savePoints();
   ownedItems.add(id);
-  if (shopTab==='piece') equippedPiece = id;
+  if (shopFilter==='board') { equippedBoard = id; applyBoardTheme(); }
+  else if (shopTab==='piece') equippedPiece = id;
   else equippedWall = id;
   saveShop();
   updatePointsUI();
   renderShop();
-  // Purchase sound
+  showToast('Куплено! 🎉', item ? item.name : '');
   playTone(523,'sine',0.1,0.2); playTone(659,'sine',0.12,0.2,0.1); playTone(784,'sine',0.15,0.2,0.2);
 }
 
@@ -2669,8 +2712,8 @@ function showPointsBlock(won, difficulty, timeUsed, wallsUsed) {
     </div>`
   ).join('');
 
-  document.getElementById('points-total').textContent = `+${result.total}`;
-  document.getElementById('points-cumulative').textContent = totalPoints.toLocaleString();
+  document.getElementById('points-total').textContent = `+${result.total} 🪙`;
+  document.getElementById('points-cumulative').textContent = totalPoints.toLocaleString() + ' 🪙';
   block.style.display = 'block';
 
   updatePointsUI();
@@ -2748,6 +2791,14 @@ async function loginSuccess(username, userData) {
   // Load server data
   if (userData) {
     ratingPoints = userData.points || 0;
+    // New user bonus: 1000 coins + 100 rating if first time
+    const isNewUser = !userData.points && !userData.stats?.totalGames;
+    if (isNewUser) {
+      totalPoints += 1000;
+      ratingPoints += 100;
+      savePoints();
+      setTimeout(()=>showToast('🎁 Добро пожаловать!', '+1000 🪙 и +100 🏆 за первый вход!'), 1500);
+    }
     achStats = { ...achStats, ...userData.stats };
     unlockedAch = new Set(userData.unlockedAch || []);
     if (userData.equippedPiece) equippedPiece = userData.equippedPiece;
@@ -2766,11 +2817,7 @@ function playAsGuest() {
     setUser(saved);
     showScreen('menu');
   } else {
-    // Auto-generate guest name
-    const guestName = 'Гость' + Math.floor(1000 + Math.random() * 9000);
-    localStorage.setItem('lomi_guest_name', guestName);
-    setUser(guestName);
-    showScreen('menu');
+    showScreen('account'); // let guest pick their own name
   }
 }
 
@@ -2864,6 +2911,15 @@ function saveUsername() {
   isGuest = true;
   localStorage.setItem('lomi_guest_name', val);
   setUser(val);
+  // First time bonus
+  const isFirst = !localStorage.getItem('lomi_guest_bonus');
+  if (isFirst) {
+    totalPoints += 1000;
+    ratingPoints += 100;
+    savePoints();
+    localStorage.setItem('lomi_guest_bonus', '1');
+    setTimeout(()=>showToast('🎁 Добро пожаловать!', '+1000 🪙 и +100 🏆 за первый вход!'), 1500);
+  }
   showScreen('menu');
 }
 
@@ -2874,6 +2930,12 @@ function saveProfile() {
 
   // Check if name changed
   if (val === currentUser) { showScreen('profile'); return; }
+
+  // Guests cannot change nickname
+  if (isGuest) {
+    document.getElementById('profile-error').textContent = '❌ Гостям нельзя менять имя. Создай аккаунт!';
+    return;
+  }
 
   // Cost 20,000 coins to change name
   if (totalPoints < 20000) {
@@ -3305,7 +3367,12 @@ function getValidMoves(pi) {
 function draw() {
   ctx.clearRect(0,0,BOARD_PX,BOARD_PX);
 
-  ctx.fillStyle = '#0e0e1a';
+  // Board background from theme
+  const boardBg = getComputedStyle(document.documentElement).getPropertyValue('--board-bg').trim() || '#0e0e1a';
+  const cellBg  = getComputedStyle(document.documentElement).getPropertyValue('--cell-bg').trim()  || 'rgba(255,255,255,0.02)';
+  const gridCol = getComputedStyle(document.documentElement).getPropertyValue('--grid-color').trim() || 'rgba(255,255,255,0.18)';
+
+  ctx.fillStyle = boardBg;
   ctx.beginPath(); roundRect(ctx, 0, 0, BOARD_PX, BOARD_PX, 20); ctx.fill();
 
   const validMoves = winner ? [] : getValidMoves(turn).map(([r,c])=>r*N+c);
@@ -3331,10 +3398,10 @@ function draw() {
         ctx.lineWidth = 1.5;
         ctx.beginPath(); roundRect(ctx,x,y,CELL,CELL,6); ctx.stroke();
       } else {
-        ctx.fillStyle = '#151525';
+        ctx.fillStyle = cellBg;
         ctx.beginPath(); roundRect(ctx,x,y,CELL,CELL,6); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = gridCol;
+        ctx.lineWidth = 0.8;
         ctx.beginPath(); roundRect(ctx,x,y,CELL,CELL,6); ctx.stroke();
       }
     }
