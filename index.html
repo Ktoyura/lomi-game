@@ -2441,32 +2441,31 @@ function buildReel(reelEl, items) {
   });
 }
 
-function spinReel(reelEl, items, finalIdx, delay, onDone) {
+function spinReel(reelEl, items, finalIdx, extraCruise, onDone) {
   const itemH = 36;
-  const totalItems = items.length;
-  // Build long strip: repeat 10 times
+  const N = items.length;
+  // Repeat strip 12 times for smooth spin
   const allItems = [];
-  for (let i = 0; i < 10; i++) allItems.push(...items);
+  for (let i = 0; i < 12; i++) allItems.push(...items);
   buildReel(reelEl, allItems);
 
-  // Center target: land on round 7 + finalIdx
-  const targetItem = totalItems * 6 + finalIdx;
-  // Center Y: window 110px, center = 37px from top, item height 36px
-  const centerOffset = 37;
-  const finalY = -(targetItem * itemH - centerOffset);
+  // Target: land on item at round 7 + finalIdx, centered in 110px window
+  // center of window = 55px, so offset = 55 - 18 = 37px from top
+  const targetRow = N * 6 + finalIdx;
+  const finalY = -(targetRow * itemH - 37);
 
   let currentY = 0;
   let velocity = 0;
-  const maxVel = 45;
+  const maxVel = 40;
   let phase = 'accel';
   let cruiseFrames = 0;
-  const CRUISE = 80 + delay * 3;
+  const CRUISE = 100 + extraCruise;
 
-  let iv = setInterval(() => {
+  const iv = setInterval(() => {
     if (phase === 'accel') {
       velocity = Math.min(velocity + 3, maxVel);
       currentY -= velocity;
-      if (velocity >= maxVel) { phase = 'cruise'; cruiseFrames = 0; }
+      if (velocity >= maxVel) { phase = 'cruise'; }
     } else if (phase === 'cruise') {
       currentY -= velocity;
       cruiseFrames++;
@@ -2475,21 +2474,20 @@ function spinReel(reelEl, items, finalIdx, delay, onDone) {
       const diff = finalY - currentY;
       if (Math.abs(diff) < 0.5) {
         currentY = finalY;
-        clearInterval(iv);
         reelEl.style.transform = `translateY(${currentY}px)`;
-        playTone(600 + finalIdx * 100, 'sine', 0.08, 0.12);
-        if (onDone) onDone();
+        clearInterval(iv);
+        playTone(660, 'sine', 0.1, 0.15);
+        setTimeout(() => { if (onDone) onDone(); }, 100);
         return;
       }
-      currentY += diff * 0.08;
+      currentY += diff * 0.09;
     }
-    // Wrap
+    // Wrap during fast spin
     if (phase !== 'decel') {
-      if (currentY < -(totalItems * 4 * itemH)) currentY += totalItems * itemH;
+      if (currentY < -(N * 5 * itemH)) currentY += N * itemH;
     }
     reelEl.style.transform = `translateY(${currentY}px)`;
   }, 16);
-  return iv;
 }
 
 function openDailyReward() {
@@ -2499,14 +2497,15 @@ function openDailyReward() {
   document.getElementById('daily-claim-btn').style.display = 'none';
   document.getElementById('daily-popup').style.display = 'flex';
 
+  // Init static reels
+  for (let i = 0; i < 3; i++) {
+    const reel = document.getElementById(`reel${i}`);
+    if (reel) buildReel(reel, SLOT_ITEMS);
+  }
+
   if (!canClaimDaily()) {
     document.getElementById('daily-day-label').textContent = `Следующий бонус через ${getTimeUntilNextClaim()}`;
     document.getElementById('daily-close-btn').style.display = 'block';
-    // Show static reels
-    for (let i = 0; i < 3; i++) {
-      const reel = document.getElementById(`reel${i}`);
-      if (reel) buildReel(reel, SLOT_ITEMS);
-    }
     return;
   }
 
@@ -2517,32 +2516,57 @@ function openDailyReward() {
 }
 
 function startSlotSpin() {
-  // Pick winning item
+  // Pick winner
   const roll = Math.random();
   let winIdx;
   if (roll < 0.50) {
-    const coinIdxs = SLOT_ITEMS.map((it,i)=>it.type==='coins'?i:-1).filter(i=>i>=0);
-    winIdx = coinIdxs[Math.floor(Math.random()*coinIdxs.length)];
+    const coinIdxs = SLOT_ITEMS.map((it,i) => it.type==='coins' ? i : -1).filter(i => i >= 0);
+    winIdx = coinIdxs[Math.floor(Math.random() * coinIdxs.length)];
   } else if (roll < 0.80) {
-    const rIdxs = SLOT_ITEMS.map((it,i)=>it.type==='rating'?i:-1).filter(i=>i>=0);
-    winIdx = rIdxs[Math.floor(Math.random()*rIdxs.length)];
+    const rIdxs = SLOT_ITEMS.map((it,i) => it.type==='rating' ? i : -1).filter(i => i >= 0);
+    winIdx = rIdxs[Math.floor(Math.random() * rIdxs.length)];
   } else {
-    winIdx = SLOT_ITEMS.findIndex(i=>i.type==='skin');
+    winIdx = SLOT_ITEMS.findIndex(i => i.type === 'skin');
   }
   slotResult = SLOT_ITEMS[winIdx];
 
-  // Each reel stops with winning icon in center, with slight delay between them
-  let done = 0;
+  // ALL three reels land on the SAME winning icon
+  // Each reel stops with extra delay: reel0=0, reel1=40, reel2=80
+  let stoppedCount = 0;
   for (let i = 0; i < 3; i++) {
     const reel = document.getElementById(`reel${i}`);
     if (!reel) continue;
-    // Middle reel shows the prize, side reels show random
-    const reelWinIdx = i === 1 ? winIdx : Math.floor(Math.random() * SLOT_ITEMS.length);
-    spinReel(reel, SLOT_ITEMS, reelWinIdx, i * 25, () => {
-      done++;
-      if (done === 3) onSlotDone();
+    spinReel(reel, SLOT_ITEMS, winIdx, i * 40, () => {
+      stoppedCount++;
+      if (stoppedCount === 3) {
+        onSlotDone();
+      }
     });
   }
+}
+
+function onSlotDone() {
+  slotRunning = false;
+  if (!slotResult) return;
+
+  // Show result block
+  document.getElementById('daily-result').style.display = 'block';
+  document.getElementById('daily-result-icon').textContent = slotResult.icon;
+  document.getElementById('daily-result-amount').textContent =
+    slotResult.type === 'skin' ? '🎰 Скин!' : `+${slotResult.amount}`;
+  document.getElementById('daily-result-label').textContent =
+    slotResult.type === 'coins' ? 'монет' :
+    slotResult.type === 'rating' ? 'очков рейтинга' : 'случайный скин!';
+
+  document.getElementById('daily-day-label').textContent = '🎉 Совпадение! Забирай!';
+  document.getElementById('daily-claim-btn').style.display = 'block';
+  document.getElementById('daily-close-btn').style.display = 'block';
+
+  // Fanfare
+  playTone(523,'sine',0.12,0.15);
+  setTimeout(()=>playTone(659,'sine',0.14,0.15),150);
+  setTimeout(()=>playTone(784,'sine',0.16,0.2),300);
+  setTimeout(()=>playTone(1047,'sine',0.2,0.3),450);
 }
 
 function closeDailyPopup() {
