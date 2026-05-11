@@ -383,21 +383,45 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 </div>
 
 <!-- DAILY REWARD POPUP -->
-<div id="daily-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center">
-  <div style="background:var(--surface);border:2px solid rgba(255,211,61,0.4);border-radius:24px;padding:2rem;max-width:300px;width:90%;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 0 60px rgba(255,211,61,0.2)">
-    <div style="font-size:3rem">🎁</div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;text-align:center">Ежедневная награда</div>
-    <div style="font-size:0.78rem;color:var(--muted);text-align:center" id="daily-day-label">Открывай каждые 24 часа!</div>
-    <!-- Reward preview -->
-    <div id="daily-reward-preview" style="background:var(--surface2);border-radius:16px;padding:1.2rem 1.5rem;text-align:center;width:100%;border:1.5px solid rgba(255,211,61,0.25)">
-      <div style="font-size:2.5rem" id="daily-reward-icon">🪙</div>
-      <div style="font-family:'Unbounded',sans-serif;font-size:1.4rem;font-weight:900;color:#FFD93D;margin-top:4px" id="daily-reward-amount">+100</div>
-      <div style="font-size:0.72rem;color:var(--muted);margin-top:2px" id="daily-reward-label">монет</div>
+<div id="daily-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:2px solid rgba(255,211,61,0.5);border-radius:24px;padding:1.8rem 1.5rem;max-width:340px;width:92%;display:flex;flex-direction:column;align-items:center;gap:1.2rem;box-shadow:0 0 80px rgba(255,211,61,0.2)">
+
+    <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;text-align:center">🎰 Ежедневный слот</div>
+    <div style="font-size:0.75rem;color:var(--muted);text-align:center" id="daily-day-label">Крутится...</div>
+
+    <!-- 3 REELS CASINO STYLE -->
+    <div style="display:flex;gap:6px;width:100%;position:relative">
+      <!-- Reel 1 -->
+      <div style="flex:1;overflow:hidden;border-radius:12px;border:2px solid rgba(255,211,61,0.5);background:#0a0a0a;height:110px;position:relative">
+        <div id="reel0" style="display:flex;flex-direction:column;align-items:center;will-change:transform"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a0a0a 0%,transparent 30%,transparent 70%,#0a0a0a 100%);pointer-events:none"></div>
+      </div>
+      <!-- Reel 2 -->
+      <div style="flex:1;overflow:hidden;border-radius:12px;border:2px solid rgba(255,211,61,0.5);background:#0a0a0a;height:110px;position:relative">
+        <div id="reel1" style="display:flex;flex-direction:column;align-items:center;will-change:transform"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a0a0a 0%,transparent 30%,transparent 70%,#0a0a0a 100%);pointer-events:none"></div>
+      </div>
+      <!-- Reel 3 -->
+      <div style="flex:1;overflow:hidden;border-radius:12px;border:2px solid rgba(255,211,61,0.5);background:#0a0a0a;height:110px;position:relative">
+        <div id="reel2" style="display:flex;flex-direction:column;align-items:center;will-change:transform"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a0a0a 0%,transparent 30%,transparent 70%,#0a0a0a 100%);pointer-events:none"></div>
+      </div>
+      <!-- Center line highlight -->
+      <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:36px;border:2px solid #FFD93D;border-radius:4px;pointer-events:none;box-shadow:0 0 16px rgba(255,211,61,0.4)"></div>
     </div>
-    <button class="btn btn-primary" onclick="claimDailyReward()" id="daily-claim-btn" style="width:100%;background:linear-gradient(135deg,#FFD93D,#FF6B35);border:none;font-size:1rem">
+
+    <!-- Result -->
+    <div id="daily-result" style="display:none;text-align:center;background:var(--surface2);border-radius:14px;padding:12px 20px;width:100%;border:1.5px solid rgba(255,211,61,0.3)">
+      <div style="font-size:1.8rem" id="daily-result-icon">🪙</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;color:#FFD93D" id="daily-result-amount">+100</div>
+      <div style="font-size:0.72rem;color:var(--muted)" id="daily-result-label">монет</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="claimDailyReward()" id="daily-claim-btn"
+      style="width:100%;background:linear-gradient(135deg,#FFD93D,#FF6B35);border:none;font-size:1rem;display:none">
       🎁 Забрать!
     </button>
-    <button onclick="document.getElementById('daily-popup').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer">Закрыть</button>
+    <button onclick="closeDailyPopup()" style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer" id="daily-close-btn">Закрыть</button>
   </div>
 </div>
 
@@ -664,11 +688,11 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   <div class="shop-tabs">
     <button class="shop-tab active" id="tab-piece" onclick="switchShopTab('piece')">Фишки</button>
     <button class="shop-tab" id="tab-wall" onclick="switchShopTab('wall')">Стенки</button>
+    <button class="shop-tab" id="tab-board-main" onclick="switchShopTab('board')">🏟️ Поле</button>
   </div>
-  <div class="shop-tabs" style="max-width:480px;width:100%">
+  <div class="shop-tabs" id="shop-sub-tabs" style="max-width:480px;width:100%">
     <button class="shop-tab active" id="tab-flags" onclick="switchShopFilter('flag')" style="font-size:0.55rem">🌍 Флаги</button>
     <button class="shop-tab" id="tab-colors" onclick="switchShopFilter('color')" style="font-size:0.55rem">🎨 Цвета</button>
-    <button class="shop-tab" id="tab-boards" onclick="switchShopFilter('board')" style="font-size:0.55rem">🏟️ Поле</button>
   </div>
   <div class="shop-grid" id="shop-grid"></div>
   <button class="btn btn-secondary" style="max-width:320px;width:100%;margin-top:0.5rem" onclick="showScreen('menu')">Назад</button>
@@ -990,8 +1014,8 @@ const SHOP_ITEMS = [
     bg:'#071A0C', cellBg:'rgba(77,204,106,0.09)',  gridColor:'rgba(77,204,106,0.7)' },
 ];
 
-// Bot always uses this wall color (teal/cyan distinct from player)
-const BOT_WALL_COLOR = '#00F5C4';
+// Bot wall color — red
+const BOT_WALL_COLOR = '#FF3333';
 
 
 
@@ -1019,9 +1043,9 @@ function loadShop() {
 function applyBoardTheme() {
   const item = SHOP_ITEMS.find(i => i.id === equippedBoard);
   if (!item || item.type !== 'board') {
-    document.documentElement.style.setProperty('--board-bg', '#0F1923');
-    document.documentElement.style.setProperty('--cell-bg', 'rgba(255,255,255,0.02)');
-    document.documentElement.style.setProperty('--grid-color', 'rgba(255,255,255,0.18)');
+    document.documentElement.style.setProperty('--board-bg', '#1a1a1a');
+    document.documentElement.style.setProperty('--cell-bg', '#2a2a2a');
+    document.documentElement.style.setProperty('--grid-color', '#000000');
   } else {
     document.documentElement.style.setProperty('--board-bg', item.bg);
     document.documentElement.style.setProperty('--cell-bg', item.cellBg);
@@ -1048,10 +1072,20 @@ function switchShopTab(tab) {
   shopTab = tab;
   document.getElementById('tab-piece').classList.toggle('active', tab==='piece');
   document.getElementById('tab-wall').classList.toggle('active', tab==='wall');
-  // Board only shows in piece tab
-  if (tab === 'wall' && shopFilter === 'board') {
-    shopFilter = 'flag';
-    document.getElementById('tab-flags').classList.add('active');
+  if(document.getElementById('tab-board-main')) document.getElementById('tab-board-main').classList.toggle('active', tab==='board');
+
+  // Board tab uses board filter, others use flag by default
+  if (tab === 'board') {
+    shopFilter = 'board';
+    // Hide sub-filter tabs
+    const subTabs = document.getElementById('shop-sub-tabs');
+    if (subTabs) subTabs.style.display = 'none';
+  } else {
+    if (shopFilter === 'board') shopFilter = 'flag';
+    const subTabs = document.getElementById('shop-sub-tabs');
+    if (subTabs) subTabs.style.display = 'flex';
+    document.getElementById('tab-flags').classList.toggle('active', shopFilter==='flag');
+    document.getElementById('tab-colors').classList.toggle('active', shopFilter==='color');
     if(document.getElementById('tab-boards')) document.getElementById('tab-boards').classList.remove('active');
   }
   renderShop();
@@ -1061,7 +1095,7 @@ function renderShop() {
   const grid = document.getElementById('shop-grid');
   document.getElementById('shop-balance').textContent = totalPoints.toLocaleString();
   grid.innerHTML = '';
-  const equipped = shopFilter==='board' ? equippedBoard : (shopTab==='piece' ? equippedPiece : equippedWall);
+  const equipped = (shopFilter==='board' || shopTab==='board') ? equippedBoard : (shopTab==='piece' ? equippedPiece : equippedWall);
   const filtered = SHOP_ITEMS.filter(i => i.type === shopFilter);
   const defCard = makeShopCard('default', 'По умолчанию', 0, 0, equipped, false, null);
   grid.appendChild(defCard);
@@ -2336,9 +2370,22 @@ function clearChat() {
 }
 
 // ── DAILY REWARD SYSTEM ──────────────────────────────────────────
-// Каждые 24 часа — рандомная награда (монеты, кубки или скин)
+const SLOT_ITEMS = [
+  { type:'coins',  amount:50,   icon:'🪙', label:'+50 монет',    color:'#FFD93D' },
+  { type:'coins',  amount:100,  icon:'🪙', label:'+100 монет',   color:'#FFD93D' },
+  { type:'coins',  amount:150,  icon:'🪙', label:'+150 монет',   color:'#FFD93D' },
+  { type:'coins',  amount:200,  icon:'🪙', label:'+200 монет',   color:'#FFD93D' },
+  { type:'coins',  amount:300,  icon:'💰', label:'+300 монет',   color:'#FFD93D' },
+  { type:'rating', amount:10,   icon:'🏆', label:'+10 рейтинга', color:'#a78bfa' },
+  { type:'rating', amount:20,   icon:'🏆', label:'+20 рейтинга', color:'#a78bfa' },
+  { type:'rating', amount:30,   icon:'🏆', label:'+30 рейтинга', color:'#a78bfa' },
+  { type:'skin',   amount:1,    icon:'🎰', label:'Скин!',        color:'#FF3CAC' },
+];
 
 let dailyState = { lastClaim: 0 };
+let slotInterval = null;
+let slotResult = null;
+let slotRunning = false;
 
 function loadDailyState() {
   try {
@@ -2364,28 +2411,11 @@ function getTimeUntilNextClaim() {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-function getRandDailyReward() {
-  // Веса: монеты 50%, рейтинг 30%, скин 20%
-  const roll = Math.random();
-  if (roll < 0.50) {
-    const amounts = [50, 75, 100, 150, 200, 250, 300];
-    const amount = amounts[Math.floor(Math.random() * amounts.length)];
-    return { type:'coins', amount, icon:'🪙', label:`+${amount} монет` };
-  } else if (roll < 0.80) {
-    const amounts = [10, 15, 20, 25, 30];
-    const amount = amounts[Math.floor(Math.random() * amounts.length)];
-    return { type:'rating', amount, icon:'🏆', label:`+${amount} очков рейтинга` };
-  } else {
-    return { type:'skin', amount:1, icon:'🎰', label:'Случайный скин!' };
-  }
-}
-
 function updateDailyBox() {
-  const box = document.getElementById('daily-box');
   const timer = document.getElementById('daily-timer');
-  const icon = document.getElementById('daily-box-icon');
-  if (!box || !timer) return;
-
+  const icon  = document.getElementById('daily-box-icon');
+  const box   = document.getElementById('daily-box');
+  if (!timer || !icon || !box) return;
   if (canClaimDaily()) {
     box.style.borderColor = 'rgba(255,211,61,0.7)';
     box.style.boxShadow = '0 0 16px rgba(255,211,61,0.3)';
@@ -2393,88 +2423,134 @@ function updateDailyBox() {
     timer.textContent = 'ЗАБРАТЬ';
     timer.style.color = '#FFD93D';
   } else {
-    const t = getTimeUntilNextClaim();
     box.style.borderColor = 'rgba(255,255,255,0.08)';
     box.style.boxShadow = 'none';
     icon.textContent = '⏳';
-    timer.textContent = t || '00:00:00';
+    timer.textContent = getTimeUntilNextClaim() || '00:00:00';
     timer.style.color = 'var(--muted)';
   }
 }
 
-function openDailyReward() {
-  const popup = document.getElementById('daily-popup');
-  const canClaim = canClaimDaily();
-  const reward = getRandDailyReward();
-
-  // Update popup content
-  document.getElementById('daily-day-label').textContent = canClaim
-    ? 'Твоя ежедневная награда готова! 🎉'
-    : `Следующая награда через ${getTimeUntilNextClaim()}`;
-
-  document.getElementById('daily-reward-icon').textContent = reward.icon;
-  document.getElementById('daily-reward-amount').textContent =
-    reward.type === 'skin' ? '🎰' : `+${reward.amount}`;
-  document.getElementById('daily-reward-label').textContent = reward.label;
-
-  // Store pending reward
-  popup._pendingReward = reward;
-
-  const btn = document.getElementById('daily-claim-btn');
-  if (canClaim) {
-    btn.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = '🎁 Забрать!';
-  } else {
-    btn.style.display = 'none';
-  }
-
-  popup.style.display = 'flex';
+function buildReel(reelEl, items) {
+  reelEl.innerHTML = '';
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.style.cssText = `width:100%;height:36px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0`;
+    el.textContent = item.icon;
+    reelEl.appendChild(el);
+  });
 }
 
-function claimDailyReward() {
-  if (!canClaimDaily()) return;
-  const popup = document.getElementById('daily-popup');
-  const reward = popup._pendingReward || getRandDailyReward();
+function spinReel(reelEl, items, finalIdx, delay, onDone) {
+  const itemH = 36;
+  const totalItems = items.length;
+  // Build long strip: repeat 10 times
+  const allItems = [];
+  for (let i = 0; i < 10; i++) allItems.push(...items);
+  buildReel(reelEl, allItems);
 
-  if (reward.type === 'coins') {
-    totalPoints += reward.amount;
-    savePoints(); updatePointsUI();
-    showToast('🎁 Ежедневная награда!', `+${reward.amount} 🪙 монет!`);
-  } else if (reward.type === 'rating') {
-    ratingPoints += reward.amount;
-    savePoints(); updateRatingUI();
-    showToast('🎁 Ежедневная награда!', `+${reward.amount} 🏆 рейтинга!`);
-  } else if (reward.type === 'skin') {
-    const available = SHOP_ITEMS.filter(i =>
-      (i.type==='flag' || i.type==='color') && !ownedItems.has(i.id)
-    );
-    if (available.length > 0) {
-      const skin = available[Math.floor(Math.random() * available.length)];
-      ownedItems.add(skin.id);
-      saveShop();
-      showToast('🎰 Выпал скин!', `${skin.flag||''} ${skin.name} теперь твой!`);
+  // Center target: land on round 7 + finalIdx
+  const targetItem = totalItems * 6 + finalIdx;
+  // Center Y: window 110px, center = 37px from top, item height 36px
+  const centerOffset = 37;
+  const finalY = -(targetItem * itemH - centerOffset);
+
+  let currentY = 0;
+  let velocity = 0;
+  const maxVel = 45;
+  let phase = 'accel';
+  let cruiseFrames = 0;
+  const CRUISE = 80 + delay * 3;
+
+  let iv = setInterval(() => {
+    if (phase === 'accel') {
+      velocity = Math.min(velocity + 3, maxVel);
+      currentY -= velocity;
+      if (velocity >= maxVel) { phase = 'cruise'; cruiseFrames = 0; }
+    } else if (phase === 'cruise') {
+      currentY -= velocity;
+      cruiseFrames++;
+      if (cruiseFrames >= CRUISE) phase = 'decel';
     } else {
-      totalPoints += 500;
-      savePoints(); updatePointsUI();
-      showToast('🎁 Ежедневная награда!', '+500 🪙 (все скины уже есть!)');
+      const diff = finalY - currentY;
+      if (Math.abs(diff) < 0.5) {
+        currentY = finalY;
+        clearInterval(iv);
+        reelEl.style.transform = `translateY(${currentY}px)`;
+        playTone(600 + finalIdx * 100, 'sine', 0.08, 0.12);
+        if (onDone) onDone();
+        return;
+      }
+      currentY += diff * 0.08;
     }
-  }
-
-  dailyState.lastClaim = Date.now();
-  saveDailyState();
-  saveProgressToServer();
-
-  playTone(523,'sine',0.12,0.15);
-  setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
-  setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
-  setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
-
-  popup.style.display = 'none';
-  updateDailyBox();
+    // Wrap
+    if (phase !== 'decel') {
+      if (currentY < -(totalItems * 4 * itemH)) currentY += totalItems * itemH;
+    }
+    reelEl.style.transform = `translateY(${currentY}px)`;
+  }, 16);
+  return iv;
 }
 
-// Update timer every second
+function openDailyReward() {
+  slotResult = null;
+  slotRunning = false;
+  document.getElementById('daily-result').style.display = 'none';
+  document.getElementById('daily-claim-btn').style.display = 'none';
+  document.getElementById('daily-popup').style.display = 'flex';
+
+  if (!canClaimDaily()) {
+    document.getElementById('daily-day-label').textContent = `Следующий бонус через ${getTimeUntilNextClaim()}`;
+    document.getElementById('daily-close-btn').style.display = 'block';
+    // Show static reels
+    for (let i = 0; i < 3; i++) {
+      const reel = document.getElementById(`reel${i}`);
+      if (reel) buildReel(reel, SLOT_ITEMS);
+    }
+    return;
+  }
+
+  document.getElementById('daily-day-label').textContent = 'Крутится... 🎰';
+  document.getElementById('daily-close-btn').style.display = 'none';
+  slotRunning = true;
+  startSlotSpin();
+}
+
+function startSlotSpin() {
+  // Pick winning item
+  const roll = Math.random();
+  let winIdx;
+  if (roll < 0.50) {
+    const coinIdxs = SLOT_ITEMS.map((it,i)=>it.type==='coins'?i:-1).filter(i=>i>=0);
+    winIdx = coinIdxs[Math.floor(Math.random()*coinIdxs.length)];
+  } else if (roll < 0.80) {
+    const rIdxs = SLOT_ITEMS.map((it,i)=>it.type==='rating'?i:-1).filter(i=>i>=0);
+    winIdx = rIdxs[Math.floor(Math.random()*rIdxs.length)];
+  } else {
+    winIdx = SLOT_ITEMS.findIndex(i=>i.type==='skin');
+  }
+  slotResult = SLOT_ITEMS[winIdx];
+
+  // Each reel stops with winning icon in center, with slight delay between them
+  let done = 0;
+  for (let i = 0; i < 3; i++) {
+    const reel = document.getElementById(`reel${i}`);
+    if (!reel) continue;
+    // Middle reel shows the prize, side reels show random
+    const reelWinIdx = i === 1 ? winIdx : Math.floor(Math.random() * SLOT_ITEMS.length);
+    spinReel(reel, SLOT_ITEMS, reelWinIdx, i * 25, () => {
+      done++;
+      if (done === 3) onSlotDone();
+    });
+  }
+}
+
+function closeDailyPopup() {
+  document.getElementById('daily-popup').style.display = 'none';
+  if (slotInterval) { clearInterval(slotInterval); slotInterval = null; }
+  slotRunning = false; slotResult = null;
+}
+
 setInterval(updateDailyBox, 1000);
 
 // ── MATCH HISTORY ─────────────────────────────────────────────────
@@ -2819,6 +2895,52 @@ const ACHIEVEMENTS = [
     desc: '100 партий — ты легенда Lomi',
     check: (s) => s.totalGames >= 100
   },
+
+  // ── Сдался ──────────────────────────────────────────────────────
+  { id:'surr_1',  icon:'🏳️', name:'Честно проиграл',   desc:'Сдайся 1 раз',    check:(s)=>s.totalSurrenders>=1  },
+  { id:'surr_3',  icon:'😮', name:'Три капитуляции',   desc:'Сдайся 3 раза',   check:(s)=>s.totalSurrenders>=3  },
+  { id:'surr_5',  icon:'😤', name:'Пацифист',          desc:'Сдайся 5 раз',    check:(s)=>s.totalSurrenders>=5  },
+  { id:'surr_10', icon:'🕊️', name:'Белый флаг',        desc:'Сдайся 10 раз',   check:(s)=>s.totalSurrenders>=10 },
+  { id:'surr_15', icon:'🙈', name:'Стратегическое отступление', desc:'Сдайся 15 раз', check:(s)=>s.totalSurrenders>=15 },
+  { id:'surr_25', icon:'🌊', name:'Смиренный',         desc:'Сдайся 25 раз',   check:(s)=>s.totalSurrenders>=25 },
+
+  // ── Монеты за всё время ─────────────────────────────────────────
+  { id:'coins_2500',  icon:'🪙', name:'Копилка',        desc:'Заработай 2500 монет суммарно',   check:(s)=>s.totalCoinsEarned>=2500  },
+  { id:'coins_5000',  icon:'💰', name:'Кошелёк',        desc:'Заработай 5000 монет суммарно',   check:(s)=>s.totalCoinsEarned>=5000  },
+  { id:'coins_7500',  icon:'💳', name:'Банкир',         desc:'Заработай 7500 монет суммарно',   check:(s)=>s.totalCoinsEarned>=7500  },
+  { id:'coins_10000', icon:'🏦', name:'Миллионер',      desc:'Заработай 10000 монет суммарно',  check:(s)=>s.totalCoinsEarned>=10000 },
+  { id:'coins_25000', icon:'💎', name:'Магнат',         desc:'Заработай 25000 монет суммарно',  check:(s)=>s.totalCoinsEarned>=25000 },
+  { id:'coins_50000', icon:'👑', name:'Биток',          desc:'Заработай 50000 монет суммарно',  check:(s)=>s.totalCoinsEarned>=50000 },
+
+  // ── Победы над ботом ────────────────────────────────────────────
+  { id:'easy_10',   icon:'😊', name:'Новичок побит',    desc:'Победи новичка 10 раз',    check:(s)=>s.easyWins>=10  },
+  { id:'easy_25',   icon:'😎', name:'Мастер новичка',   desc:'Победи новичка 25 раз',    check:(s)=>s.easyWins>=25  },
+  { id:'easy_50',   icon:'🎯', name:'Доминация',        desc:'Победи новичка 50 раз',    check:(s)=>s.easyWins>=50  },
+  { id:'easy_75',   icon:'🔥', name:'Охотник',          desc:'Победи новичка 75 раз',    check:(s)=>s.easyWins>=75  },
+  { id:'easy_100',  icon:'💯', name:'Без пощади',       desc:'Победи новичка 100 раз',   check:(s)=>s.easyWins>=100 },
+  { id:'med_10',    icon:'🤔', name:'Средний разбит',   desc:'Победи среднего 10 раз',   check:(s)=>s.mediumWins>=10  },
+  { id:'med_25',    icon:'⚡', name:'Выше среднего',    desc:'Победи среднего 25 раз',   check:(s)=>s.mediumWins>=25  },
+  { id:'med_50',    icon:'🧠', name:'Тактик',           desc:'Победи среднего 50 раз',   check:(s)=>s.mediumWins>=50  },
+  { id:'med_75',    icon:'🎖️', name:'Стратег',         desc:'Победи среднего 75 раз',   check:(s)=>s.mediumWins>=75  },
+  { id:'med_100',   icon:'🏆', name:'Чемпион среднего', desc:'Победи среднего 100 раз',  check:(s)=>s.mediumWins>=100 },
+  { id:'hard_10',   icon:'😤', name:'Укротитель',       desc:'Победи тяжёлого 10 раз',   check:(s)=>s.hardBotWins>=10 },
+  { id:'hard_25',   icon:'🦁', name:'Бесстрашный',      desc:'Победи тяжёлого 25 раз',   check:(s)=>s.hardBotWins>=25 },
+  { id:'hard_50',   icon:'⚔️', name:'Непобедимый',     desc:'Победи тяжёлого 50 раз',   check:(s)=>s.hardBotWins>=50 },
+  { id:'hard_75',   icon:'🐉', name:'Убийца Драконов',  desc:'Победи тяжёлого 75 раз',   check:(s)=>s.hardBotWins>=75 },
+  { id:'hard_100',  icon:'🌟', name:'Бог игры',         desc:'Победи тяжёлого 100 раз',  check:(s)=>s.hardBotWins>=100},
+
+  // ── Рейтинговые очки ───────────────────────────────────────────
+  { id:'rat_150',  icon:'📈', name:'Старт',      desc:'Набери 150 очков рейтинга',  check:(s)=>s.totalRatingEarned>=150  },
+  { id:'rat_250',  icon:'📊', name:'Прогресс',   desc:'Набери 250 очков рейтинга',  check:(s)=>s.totalRatingEarned>=250  },
+  { id:'rat_350',  icon:'🎯', name:'Прицел',     desc:'Набери 350 очков рейтинга',  check:(s)=>s.totalRatingEarned>=350  },
+  { id:'rat_450',  icon:'🚀', name:'Взлёт',      desc:'Набери 450 очков рейтинга',  check:(s)=>s.totalRatingEarned>=450  },
+  { id:'rat_550',  icon:'⭐', name:'Звезда',     desc:'Набери 550 очков рейтинга',  check:(s)=>s.totalRatingEarned>=550  },
+  { id:'rat_750',  icon:'🌟', name:'Супер звезда',desc:'Набери 750 очков рейтинга', check:(s)=>s.totalRatingEarned>=750  },
+  { id:'rat_1000', icon:'👑', name:'Король',     desc:'Набери 1000 очков рейтинга', check:(s)=>s.totalRatingEarned>=1000 },
+
+  // ── Сыграл партий ──────────────────────────────────────────────
+  { id:'games_30',  icon:'🎮', name:'Заядлый игрок', desc:'Сыграй 30 партий',  check:(s)=>s.totalGames>=30  },
+  { id:'games_75',  icon:'🏅', name:'Ветеран',        desc:'Сыграй 75 партий',  check:(s)=>s.totalGames>=75  },
 ];
 
 let achStats = {
@@ -2829,6 +2951,11 @@ let achStats = {
   botWins: 0,
   hardBotWins: 0,
   totalGames: 0,
+  totalSurrenders: 0,
+  totalCoinsEarned: 0,
+  totalRatingEarned: 0,
+  easyWins: 0,
+  mediumWins: 0,
 };
 let unlockedAch = new Set();
 let toastQueue = [];
@@ -2929,6 +3056,10 @@ function showRatingChange(text, color) {
 
 function addRatingPoints(pts) {
   ratingPoints = Math.max(0, ratingPoints + pts);
+  if (pts > 0) {
+    achStats.totalRatingEarned = (achStats.totalRatingEarned||0) + pts;
+    saveAchievements();
+  }
   savePoints();
   updateRatingUI();
 }
@@ -2984,7 +3115,9 @@ function showPointsBlock(won, difficulty, timeUsed, wallsUsed) {
   if (!result) { block.style.display = 'none'; return; }
 
   totalPoints += result.total;
+  achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + result.total;
   savePoints();
+  saveAchievements();
 
   // Render rows
   const rowsEl = document.getElementById('points-rows');
@@ -3147,6 +3280,10 @@ async function loginSuccess(username, userData) {
   setUser(username);
   isGuest = false;
 
+  // Clear guest match history — don't mix with account data
+  matchHistory = [];
+  saveMatchHistory();
+
   // ВАЖНО: сбросить локальные данные и загрузить с сервера
   totalPoints  = 0;
   ratingPoints = 0;
@@ -3246,7 +3383,8 @@ function loadUser() {
       loadPoints();
       loadMatchHistory();
       updateUserUI();
-      showScreen('menu');
+      const lastScreen = localStorage.getItem('lomi_last_screen') || 'menu';
+      showScreen(lastScreen);
       // Sync from server in background — don't block UI
       apiCall('GET', '/profile').then(data => {
         if (data && !data.error) {
@@ -3665,6 +3803,7 @@ function doSurrender() {
 
   achStats.totalGames++;
   achStats.winStreak = 0;
+  if (aiDifficulty && turn === 0) achStats.totalSurrenders = (achStats.totalSurrenders||0) + 1;
   saveAchievements();
   winner = 1 - turn;
   score[winner]++;
@@ -3987,8 +4126,8 @@ function draw() {
 
     // Get skin for player 1; player 2 always default
     const skinItem = pi===0 ? SHOP_ITEMS.find(i=>i.id===equippedPiece) : null;
-    const pieceColor = skinItem ? skinItem.pieceColor : (pi===0 ? '#FF3CAC' : '#00F5C4');
-    const glowColor  = skinItem ? skinItem.borderColor+'44' : (pi===0 ? 'rgba(255,60,172,0.2)' : 'rgba(0,245,196,0.2)');
+    const pieceColor = skinItem ? skinItem.pieceColor : (pi===0 ? '#FF3CAC' : '#FF3333');
+    const glowColor  = skinItem ? skinItem.borderColor+'44' : (pi===0 ? 'rgba(255,60,172,0.2)' : 'rgba(255,51,51,0.2)');
 
     // Glow ring
     ctx.fillStyle = glowColor;
@@ -4006,7 +4145,7 @@ function draw() {
     } else {
       ctx.fillStyle = pieceColor;
       ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle = pi===0 ? '#fff' : '#0A0A12';
+      ctx.fillStyle = '#fff';
       ctx.font = `900 ${Math.floor(r*1.1)}px 'Unbounded', sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(pi+1, cx, cy+1);
@@ -4240,11 +4379,24 @@ function mediumMove(pi, myDist, oppDist) {
 }
 
 function hardMove(pi, myDist, oppDist) {
-  // Тяжёлый: игрок выигрывает ~5% → минимакс глубина 5, без ошибок
-  // Всегда выбирает оптимальный ход
-  const best = minimax(pi, 5, -Infinity, Infinity, true);
+  // НЕПОБЕДИМЫЙ: всегда оптимальный ход
+  // Сначала проверяем — если можем выиграть за 1 ход, делаем это
+  const myTarget = pi===1 ? 0 : N-1;
+  const step = bfsNextStep(players[pi].r, players[pi].c, myTarget);
+  if (step && step[0] === myTarget) {
+    doMove(pi, step[0], step[1]); return;
+  }
+
+  // Если игрок в 1 шаге от победы — ОБЯЗАТЕЛЬНО блокируем
+  const oppTarget = 1-pi===1 ? 0 : N-1;
+  if (oppDist <= 1 && wallsLeft[pi] > 0) {
+    const w = bestWallStrong(pi);
+    if (w) { placeWall(pi, w.r, w.c, w.dir); return; }
+  }
+
+  // Minimax глубина 6
+  const best = minimax(pi, 6, -Infinity, Infinity, true);
   if (!best.action) {
-    const step = bfsNextStep(players[pi].r, players[pi].c, 0);
     if (step) doMove(pi, step[0], step[1]);
     return;
   }
@@ -4255,90 +4407,114 @@ function hardMove(pi, myDist, oppDist) {
   }
 }
 
+// Сильный поиск блокирующей стены — для критических ситуаций
+function bestWallStrong(pi) {
+  const oppPi = 1-pi;
+  const oppTarget = oppPi===1 ? 0 : N-1;
+  const distBefore = bfsLen(players[oppPi].r, players[oppPi].c, oppTarget);
+  let best = null, bestGain = 0;
+  for (let r=0;r<N-1;r++) for (let c=0;c<N-1;c++) for (const dir of ['h','v']) {
+    if (!canPlaceWall(r,c,dir)) continue;
+    walls.push({r,c,dir});
+    const distAfter = bfsLen(players[oppPi].r, players[oppPi].c, oppTarget);
+    walls.pop();
+    if (distAfter === Infinity) continue; // не блокируем полностью
+    const gain = distAfter - distBefore;
+    if (gain > bestGain) { bestGain = gain; best = {r,c,dir}; }
+  }
+  return best;
+}
+
 // ── MINIMAX ───────────────────────────────────────────────────────
 function evaluate(pi) {
   const myTarget  = pi===1 ? 0 : N-1;
   const oppTarget = 1-pi===1 ? 0 : N-1;
   const myDist  = bfsLen(players[pi].r,   players[pi].c,   myTarget);
   const oppDist = bfsLen(players[1-pi].r, players[1-pi].c, oppTarget);
-  if (myDist  === 0) return 10000;
-  if (oppDist === 0) return -10000;
-  // Weighted: path advantage + wall advantage + positional bonus
-  const pathAdv = (oppDist - myDist) * 12;
-  const wallAdv = (wallsLeft[pi] - wallsLeft[1-pi]) * 3;
-  // Bonus for being close to finish
-  const closenessBonus = (N - myDist) * 2;
-  return pathAdv + wallAdv + closenessBonus;
+  if (myDist  === 0) return 100000;
+  if (oppDist === 0) return -100000;
+
+  // Основа: разница путей (чем больше — тем лучше для бота)
+  const pathAdv = (oppDist - myDist) * 15;
+  // Бонус за стены (запас стен = гибкость)
+  const wallAdv = (wallsLeft[pi] - wallsLeft[1-pi]) * 4;
+  // Бонус за близость к финишу
+  const closeness = (N - myDist) * 3;
+  // Штраф если игрок близко к финишу
+  const danger = oppDist <= 3 ? (4 - oppDist) * 20 : 0;
+
+  return pathAdv + wallAdv + closeness - danger;
 }
 
 function minimax(pi, depth, alpha, beta, maximizing) {
-  const myDist  = bfsLen(players[pi].r,   players[pi].c,   pi===1?0:N-1);
-  const oppDist = bfsLen(players[1-pi].r, players[1-pi].c, 1-pi===1?0:N-1);
-  if (myDist  === 0) return {score: 10000,  action: null};
-  if (oppDist === 0) return {score: -10000, action: null};
+  const myTarget  = pi===1 ? 0 : N-1;
+  const oppTarget = 1-pi===1 ? 0 : N-1;
+  const myDist  = bfsLen(players[pi].r,   players[pi].c,   myTarget);
+  const oppDist = bfsLen(players[1-pi].r, players[1-pi].c, oppTarget);
+  if (myDist  === 0) return {score: 100000 + depth*100, action: null};
+  if (oppDist === 0) return {score: -100000 - depth*100, action: null};
   if (depth   === 0) return {score: evaluate(pi), action: null};
 
   const curPi = maximizing ? pi : 1-pi;
+  const curTarget = curPi===1 ? 0 : N-1;
   let bestAction = null;
   const actions = [];
 
-  // Move actions
+  // Move actions — BFS step first (best ordering)
+  const bfsStep = bfsNextStep(players[curPi].r, players[curPi].c, curTarget);
+  if (bfsStep) actions.push({type:'move', r:bfsStep[0], c:bfsStep[1], priority:1});
   const moves = getValidMoves(curPi);
-  for (const [r,c] of moves) actions.push({type:'move', r, c});
+  for (const [r,c] of moves) {
+    if (!bfsStep || r!==bfsStep[0] || c!==bfsStep[1])
+      actions.push({type:'move', r, c, priority:0});
+  }
 
-  // Wall actions — top 8 candidates for hard (depth 5 needs pruning)
+  // Wall actions — top 10 best walls
   if (wallsLeft[curPi] > 0 && depth >= 2) {
     const wallCandidates = [];
     for (let r=0;r<N-1;r++) for (let c=0;c<N-1;c++) for (const dir of ['h','v']) {
       if (!canPlaceWall(r,c,dir)) continue;
       const s = scoreWall(r,c,dir,curPi);
-      if (s >= 1) wallCandidates.push({type:'wall',r,c,dir,score:s});
+      if (s >= 1) wallCandidates.push({type:'wall',r,c,dir,score:s,priority:s});
     }
     wallCandidates.sort((a,b)=>b.score-a.score);
-    // Hard uses top 8, medium uses top 6
-    const topN = aiDifficulty === 'hard' ? 8 : 6;
-    for (const w of wallCandidates.slice(0, topN)) actions.push(w);
+    for (const w of wallCandidates.slice(0, 10)) actions.push(w);
   }
+
+  // Sort actions by priority (BFS move first)
+  actions.sort((a,b) => (b.priority||0) - (a.priority||0));
 
   if (maximizing) {
     let best = {score:-Infinity, action:null};
     for (const action of actions) {
-      // Apply action
       const savedPos = {...players[curPi]};
-      let wallAdded = false;
       if (action.type==='move') {
         players[curPi] = {r:action.r, c:action.c};
       } else {
         walls.push({r:action.r,c:action.c,dir:action.dir});
         wallsLeft[curPi]--;
-        wallAdded = true;
       }
       const result = minimax(pi, depth-1, alpha, beta, false);
-      // Undo
       if (action.type==='move') players[curPi] = savedPos;
       else { walls.pop(); wallsLeft[curPi]++; }
-
       if (result.score > best.score) { best = {score:result.score, action}; }
       alpha = Math.max(alpha, result.score);
-      if (beta <= alpha) break; // prune
+      if (beta <= alpha) break;
     }
     return best;
   } else {
     let best = {score:Infinity, action:null};
     for (const action of actions) {
       const savedPos = {...players[curPi]};
-      let wallAdded = false;
       if (action.type==='move') {
         players[curPi] = {r:action.r, c:action.c};
       } else {
         walls.push({r:action.r,c:action.c,dir:action.dir});
         wallsLeft[curPi]--;
-        wallAdded = true;
       }
       const result = minimax(pi, depth-1, alpha, beta, true);
       if (action.type==='move') players[curPi] = savedPos;
       else { walls.pop(); wallsLeft[curPi]++; }
-
       if (result.score < best.score) { best = {score:result.score, action}; }
       beta = Math.min(beta, result.score);
       if (beta <= alpha) break;
@@ -4473,6 +4649,9 @@ function showWin() {
       else if (aiDifficulty === 'hard') pts = 50;
       addRatingPoints(pts);
       showRatingChange(`+${pts} 🏆`, '#00F5C4');
+      if (aiDifficulty === 'easy')   achStats.easyWins   = (achStats.easyWins||0)   + 1;
+      if (aiDifficulty === 'medium') achStats.mediumWins = (achStats.mediumWins||0) + 1;
+      // totalCoinsEarned and totalRatingEarned tracked separately on add
       addMatch('win', 'ktoyura', 'bot', aiDifficulty, pts);
     } else if (w === 1) {
       // Player lost to bot (not surrender — handled separately)
@@ -4531,6 +4710,21 @@ document.addEventListener('click', function startAudio() {
   startMenuMusic();
   document.removeEventListener('click', startAudio);
 }, {once: true});
+
+// Save screen on unload
+window.addEventListener('beforeunload', () => {
+  const active = document.querySelector('.screen.active');
+  if (active) {
+    const id = active.id;
+    // Only save safe screens (not mid-game states)
+    const safeScreens = ['menu','shop','achievements','leaderboard','profile','rules','online'];
+    if (safeScreens.includes(id)) {
+      localStorage.setItem('lomi_last_screen', id);
+    } else {
+      localStorage.removeItem('lomi_last_screen');
+    }
+  }
+});
 
 // Init — check if user exists
 loadAchievements();
