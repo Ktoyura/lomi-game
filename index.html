@@ -2575,6 +2575,42 @@ function closeDailyPopup() {
   slotRunning = false; slotResult = null;
 }
 
+function claimDailyReward() {
+  if (!slotResult) return;
+
+  if (slotResult.type === 'coins') {
+    totalPoints += slotResult.amount;
+    achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + slotResult.amount;
+    savePoints(); saveAchievements(); updatePointsUI();
+    showToast('🎁 Ежедневная награда!', `+${slotResult.amount} 🪙 монет!`);
+  } else if (slotResult.type === 'rating') {
+    addRatingPoints(slotResult.amount);
+    showToast('🎁 Ежедневная награда!', `+${slotResult.amount} 🏆 рейтинга!`);
+  } else {
+    const available = SHOP_ITEMS.filter(i => (i.type==='flag'||i.type==='color') && !ownedItems.has(i.id));
+    if (available.length > 0) {
+      const skin = available[Math.floor(Math.random()*available.length)];
+      ownedItems.add(skin.id); saveShop();
+      showToast('🎰 Выпал скин!', `${skin.flag||''} ${skin.name} теперь твой!`);
+    } else {
+      totalPoints += 500; savePoints(); updatePointsUI();
+      showToast('🎁 Ежедневная награда!', '+500 🪙 (все скины уже есть!)');
+    }
+  }
+
+  dailyState.lastClaim = Date.now();
+  saveDailyState();
+  saveProgressToServer();
+
+  playTone(523,'sine',0.12,0.15);
+  setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
+  setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
+  setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
+
+  closeDailyPopup();
+  updateDailyBox();
+}
+
 setInterval(updateDailyBox, 1000);
 
 // ── MATCH HISTORY ─────────────────────────────────────────────────
