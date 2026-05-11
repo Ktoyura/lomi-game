@@ -366,7 +366,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
     <div style="background:var(--surface2);border:1.5px solid rgba(120,75,255,0.3);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:14px">
       <div style="font-size:2rem">🏆</div>
       <div>
-        <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:#a78bfa">+100</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:#a78bfa">+10</div>
         <div style="font-size:0.72rem;color:var(--muted)">стартовых очков рейтинга</div>
       </div>
     </div>
@@ -384,6 +384,16 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
     <input class="account-input" id="reg-username" maxlength="16" placeholder="Юзернейм..." autocomplete="off" spellcheck="false"
       oninput="onRegInput()" onkeydown="if(event.key==='Enter')document.getElementById('reg-password').focus()">
     <input class="account-input" id="reg-password" type="password" maxlength="32" placeholder="Пароль (мин. 4 символа)"
+      onkeydown="if(event.key==='Enter')document.getElementById('reg-question').focus()">
+    <select class="account-input" id="reg-question" style="cursor:pointer">
+      <option value="">— Секретный вопрос —</option>
+      <option value="Кличка первого питомца?">Кличка первого питомца?</option>
+      <option value="Девичья фамилия мамы?">Девичья фамилия мамы?</option>
+      <option value="Любимый фильм?">Любимый фильм?</option>
+      <option value="Город где родился?">Город где родился?</option>
+      <option value="Любимая игра в детстве?">Любимая игра в детстве?</option>
+    </select>
+    <input class="account-input" id="reg-answer" maxlength="32" placeholder="Ответ на вопрос..."
       onkeydown="if(event.key==='Enter')doRegister()">
     <div class="account-error" id="reg-error"></div>
     <button class="btn btn-primary" onclick="doRegister()">Создать →</button>
@@ -402,7 +412,37 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       onkeydown="if(event.key==='Enter')doLogin()">
     <div class="account-error" id="login-error"></div>
     <button class="btn btn-primary" onclick="doLogin()">Войти →</button>
+    <button class="btn btn-secondary" onclick="showScreen('forgot')" style="font-size:0.72rem;opacity:0.7">Забыл пароль?</button>
     <button class="btn btn-secondary" onclick="showScreen('auth')">Назад</button>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD -->
+<div id="forgot" class="screen">
+  <div class="account-avatar" style="background:linear-gradient(135deg,#FF6B35,#FFD93D)">🔓</div>
+  <div class="account-form">
+    <div style="text-align:center;font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:700;">Забыл пароль?</div>
+
+    <!-- Step 1: enter username -->
+    <div id="forgot-step1">
+      <input class="account-input" id="forgot-username" maxlength="16" placeholder="Юзернейм..."
+        onkeydown="if(event.key==='Enter')getForgotQuestion()">
+      <div class="account-error" id="forgot-error1"></div>
+      <button class="btn btn-primary" onclick="getForgotQuestion()">Далее →</button>
+    </div>
+
+    <!-- Step 2: answer question -->
+    <div id="forgot-step2" style="display:none;flex-direction:column;gap:12px">
+      <div id="forgot-question-text" style="font-size:0.85rem;color:#FFD93D;text-align:center;padding:10px;background:var(--surface2);border-radius:10px"></div>
+      <input class="account-input" id="forgot-answer" maxlength="32" placeholder="Твой ответ..."
+        onkeydown="if(event.key==='Enter')document.getElementById('forgot-newpass').focus()">
+      <input class="account-input" id="forgot-newpass" type="password" maxlength="32" placeholder="Новый пароль..."
+        onkeydown="if(event.key==='Enter')doResetPassword()">
+      <div class="account-error" id="forgot-error2"></div>
+      <button class="btn btn-primary" onclick="doResetPassword()">Сменить пароль →</button>
+    </div>
+
+    <button class="btn btn-secondary" onclick="showScreen('login')">Назад</button>
   </div>
 </div>
 
@@ -471,7 +511,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       <div style="font-size:0.72rem;color:var(--muted);margin-top:2px" id="profile-account-type"></div>
       <div style="font-size:0.72rem;color:#FFD93D;margin-top:2px">🏆 <span id="profile-rating">0</span> · 🪙 <span id="profile-coins">0</span></div>
     </div>
-    <button onclick="showScreen('profile-edit')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--muted);font-size:0.75rem;padding:6px 12px;cursor:pointer">✏️ Изменить</button>
+    <button onclick="showScreen('profile-edit')" id="profile-edit-btn" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--muted);font-size:0.75rem;padding:6px 12px;cursor:pointer">✏️ Изменить</button>
   </div>
 
   <!-- Stats -->
@@ -743,7 +783,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
     </div>
     <div id="rating-change" style="width:100%;text-align:center;font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;display:none"></div>
   </div>
-  <!-- Points breakdown (shown only vs bot) -->
+  <!-- Points breakdown (shown only vs bot on win) -->
   <div id="points-block" style="display:none;width:100%;max-width:320px;background:var(--surface2);border-radius:16px;padding:14px 18px;border:1px solid rgba(255,211,61,0.2)">
     <div style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:#FFD93D;letter-spacing:0.08em;margin-bottom:10px">🪙 МОНЕТЫ ЗА ИГРУ</div>
     <div id="points-rows" style="display:flex;flex-direction:column;gap:6px;font-size:0.8rem;color:var(--muted)"></div>
@@ -754,6 +794,26 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
     <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
       <span style="font-size:0.72rem;color:var(--muted)">Всего монет</span>
       <span style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text)" id="points-cumulative">0 🪙</span>
+    </div>
+  </div>
+
+  <!-- Surrender penalty block -->
+  <div id="surrender-result" style="display:none;width:100%;max-width:320px;background:var(--surface2);border-radius:16px;padding:14px 18px;border:1px solid rgba(255,107,107,0.25)">
+    <div style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:#ff6b6b;letter-spacing:0.08em;margin-bottom:10px">🏳️ ШТРАФ ЗА СДАЧУ</div>
+    <div id="surrender-rows" style="display:flex;flex-direction:column;gap:6px;font-size:0.8rem;color:var(--muted)"></div>
+    <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:10px;padding-top:10px;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:0.7rem;color:var(--muted)">Монеты</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;color:#ff6b6b" id="surrender-coins-loss">-0 🪙</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:0.7rem;color:var(--muted)">Рейтинг</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;color:#ff6b6b" id="surrender-rating-loss">-0 🏆</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;margin-top:2px">
+        <span style="font-size:0.7rem;color:var(--muted)">Осталось монет</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text)" id="surrender-coins-left">0 🪙</span>
+      </div>
     </div>
   </div>
   <div class="btn-group" style="max-width:280px">
@@ -2273,6 +2333,10 @@ function renderProfile() {
   const at = document.getElementById('profile-account-type');
   if (at) at.textContent = isGuest ? '👤 Гость' : '✅ Аккаунт';
 
+  // Hide edit button for guests
+  const editBtn = document.getElementById('profile-edit-btn');
+  if (editBtn) editBtn.style.display = isGuest ? 'none' : 'block';
+
   // Rating + coins
   const pr = document.getElementById('profile-rating');
   if (pr) pr.textContent = ratingPoints.toLocaleString();
@@ -2763,7 +2827,7 @@ function showWelcomeBonus() {
 
 function claimWelcomeBonus() {
   totalPoints += 1000;
-  ratingPoints += 100;
+  ratingPoints += 10;
   savePoints();
   updatePointsUI();
   updateRatingUI();
@@ -2775,7 +2839,7 @@ function claimWelcomeBonus() {
   setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
   setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
   showScreen('menu');
-  setTimeout(()=>showToast('🎁 Бонус получен!', '+1000 🪙 и +100 🏆 на счету!'), 500);
+  setTimeout(()=>showToast('🎁 Бонус получен!', '+1000 🪙 и +10 🏆 на счету!'), 500);
 }
 
 // ── AUTH SYSTEM ───────────────────────────────────────────────────
@@ -2816,8 +2880,12 @@ function resetLocalState() {
 async function doRegister() {
   const username = document.getElementById('reg-username').value.trim();
   const password = document.getElementById('reg-password').value;
-  const errEl = document.getElementById('reg-error');
+  const question = document.getElementById('reg-question').value;
+  const answer   = document.getElementById('reg-answer').value.trim();
+  const errEl    = document.getElementById('reg-error');
   if (!username || !password) { errEl.textContent = 'Заполни все поля'; return; }
+  if (!question) { errEl.textContent = 'Выбери секретный вопрос'; return; }
+  if (!answer)   { errEl.textContent = 'Введи ответ на вопрос'; return; }
   errEl.textContent = 'Создаём аккаунт...';
   try {
     const data = await apiCall('POST', '/auth/register', { username, password });
@@ -2825,11 +2893,47 @@ async function doRegister() {
     authToken = data.token;
     localStorage.setItem('lomi_token', authToken);
     isGuest = false;
+    // Save secret question
+    await apiCall('POST', '/auth/set-secret', { question, answer });
     resetLocalState();
     await loginSuccess(data.username, data.user);
-  } catch (e) {
-    errEl.textContent = '❌ Сервер недоступен';
-  }
+  } catch(e) { errEl.textContent = '❌ Сервер недоступен'; }
+}
+
+// ── FORGOT PASSWORD ───────────────────────────────────────────────
+async function getForgotQuestion() {
+  const username = document.getElementById('forgot-username').value.trim();
+  const errEl = document.getElementById('forgot-error1');
+  if (!username) { errEl.textContent = 'Введи юзернейм'; return; }
+  errEl.textContent = 'Ищем...';
+  try {
+    const data = await apiCall('POST', '/auth/get-question', { username });
+    if (data.error) { errEl.textContent = '❌ ' + data.error; return; }
+    // Show step 2
+    document.getElementById('forgot-step1').style.display = 'none';
+    document.getElementById('forgot-step2').style.display = 'flex';
+    document.getElementById('forgot-question-text').textContent = data.question;
+    errEl.textContent = '';
+  } catch(e) { errEl.textContent = '❌ Сервер недоступен'; }
+}
+
+async function doResetPassword() {
+  const username   = document.getElementById('forgot-username').value.trim();
+  const answer     = document.getElementById('forgot-answer').value.trim();
+  const newPassword = document.getElementById('forgot-newpass').value;
+  const errEl      = document.getElementById('forgot-error2');
+  if (!answer || !newPassword) { errEl.textContent = 'Заполни все поля'; return; }
+  errEl.textContent = 'Проверяем...';
+  try {
+    const data = await apiCall('POST', '/auth/reset-password', { username, answer, newPassword });
+    if (data.error) { errEl.textContent = '❌ ' + data.error; return; }
+    errEl.textContent = '';
+    showScreen('login');
+    setTimeout(()=>showToast('✅ Пароль изменён!', 'Теперь войди с новым паролем'), 400);
+    // Reset form
+    document.getElementById('forgot-step1').style.display = 'block';
+    document.getElementById('forgot-step2').style.display = 'none';
+  } catch(e) { errEl.textContent = '❌ Сервер недоступен'; }
 }
 
 async function doLogin() {
@@ -2944,20 +3048,49 @@ function logout() {
 
 function loadUser() {
   loadAuthToken();
+
+  // Restore account session
   if (authToken) {
     const saved = localStorage.getItem('lomi_username');
     if (saved) {
       currentUser = saved;
       isGuest = false;
+      loadPoints();
+      loadMatchHistory();
       updateUserUI();
-      apiCall('GET', '/profile').then(data => {
-        if (data && !data.error) loginSuccess(data.username, data);
-      }).catch(() => {});
       showScreen('menu');
+      // Sync from server in background — don't block UI
+      apiCall('GET', '/profile').then(data => {
+        if (data && !data.error) {
+          // Silently update data without re-showing welcome or menu
+          ratingPoints = data.points || ratingPoints;
+          totalPoints  = data.coins  || totalPoints;
+          if (data.stats)       achStats    = { ...achStats, ...data.stats };
+          if (data.unlockedAch) unlockedAch = new Set(data.unlockedAch);
+          if (data.equippedPiece) equippedPiece = data.equippedPiece;
+          if (data.equippedWall)  equippedWall  = data.equippedWall;
+          if (data.ownedItems)    ownedItems    = new Set(data.ownedItems);
+          savePoints(); saveShop();
+          updatePointsUI(); updateRatingUI();
+        }
+      }).catch(() => {});
       return;
     }
   }
-  // Always show auth screen — no auto-guest
+
+  // Restore guest session
+  const guestName = localStorage.getItem('lomi_guest_name');
+  if (guestName) {
+    isGuest = true;
+    currentUser = guestName;
+    loadPoints();
+    loadMatchHistory();
+    updateUserUI();
+    showScreen('menu');
+    return;
+  }
+
+  // First time — show auth
   showScreen('auth');
 }
 
@@ -3222,7 +3355,22 @@ function timerTimeout(pi) {
   setTimeout(checkAchievements, 600);
   updateScoreUI();
   playLose();
-  const loserName = pi===0 ? (currentUser||'Игрок 1') : (aiDifficulty?'ktoyura':'Игрок 2');
+
+  // Record match in history
+  if (pi === 0 && aiDifficulty) {
+    // Player ran out of time vs bot
+    let penalty = 0;
+    if (aiDifficulty === 'easy') penalty = 5;
+    else if (aiDifficulty === 'medium') penalty = 10;
+    else if (aiDifficulty === 'hard') penalty = 12;
+    addRatingPoints(-penalty);
+    showRatingChange(`-${penalty} 😔`, '#ff6b6b');
+    addMatch('loss', 'ktoyura', 'bot', aiDifficulty, -penalty);
+  } else if (!onlineMode && !aiDifficulty) {
+    addMatch(pi===0 ? 'loss' : 'win', pi===0 ? 'Игрок 2' : (currentUser||'Игрок 1'), 'local', null, 0);
+  }
+
+  const loserName  = pi===0 ? (currentUser||'Игрок 1') : (aiDifficulty?'ktoyura':'Игрок 2');
   const winnerName = winner===0 ? (currentUser||'Игрок 1') : (aiDifficulty?'ktoyura':'Игрок 2');
   document.getElementById('win-emoji').textContent = '⏰';
   document.getElementById('win-title').textContent = `${winnerName} победил!`;
@@ -3230,6 +3378,8 @@ function timerTimeout(pi) {
   document.getElementById('win-title').style.webkitBackgroundClip = 'text';
   document.getElementById('win-title').style.webkitTextFillColor = 'transparent';
   document.getElementById('win-sub').textContent = `У ${loserName} вышло время ⏰`;
+  document.getElementById('points-block').style.display = 'none';
+  document.getElementById('surrender-result').style.display = 'none';
   setTimeout(()=>showScreen('win'), 400);
 }
 
@@ -3277,56 +3427,52 @@ function doSurrender() {
 
   // ── Умный штраф за сдачу ──────────────────────────────────────
   if (aiDifficulty && turn === 0) {
-    const timeElapsed = TIMER_START - (timeLeft[0] || 0); // секунд сыграно
+    const timeElapsed = TIMER_START - (timeLeft[0] || 0);
     const wallsPlaced = gameWallsUsed || 0;
-    const totalMoves  = achStats.totalGames || 0;
+    const timeFactor  = Math.min(timeElapsed / TIMER_START, 1);
+    const wallFactor  = Math.min(wallsPlaced / 5, 1);
+    const activity    = timeFactor * 0.6 + wallFactor * 0.4;
+    const multiplier  = 1 - activity * 0.8;
 
-    // Активность игры (0..1)
-    const timeFactor  = Math.min(timeElapsed / TIMER_START, 1); // сколько времени прошло
-    const wallFactor  = Math.min(wallsPlaced / 5, 1);           // ставил ли стены (max 5)
-
-    // Общая активность: чем больше играл — тем меньше штраф
-    const activity = (timeFactor * 0.6 + wallFactor * 0.4);     // 0 = сдался сразу, 1 = играл до конца
-
-    // Базовый штраф по уровню сложности
-    let baseCoinPenalty   = 0;
-    let baseRatingPenalty = 0;
-    if (aiDifficulty === 'easy')   { baseCoinPenalty = 30;  baseRatingPenalty = 5;  }
-    if (aiDifficulty === 'medium') { baseCoinPenalty = 60;  baseRatingPenalty = 10; }
-    if (aiDifficulty === 'hard')   { baseCoinPenalty = 100; baseRatingPenalty = 15; }
-
-    // Снижаем штраф если играл активно (activity=1 → штраф ×0.2, activity=0 → штраф ×1.0)
-    const multiplier = 1 - activity * 0.8;
+    let baseCoinPenalty = 0, baseRatingPenalty = 0;
+    if (aiDifficulty === 'easy')   { baseCoinPenalty = 90;  baseRatingPenalty = 15; }
+    if (aiDifficulty === 'medium') { baseCoinPenalty = 180; baseRatingPenalty = 30; }
+    if (aiDifficulty === 'hard')   { baseCoinPenalty = 300; baseRatingPenalty = 45; }
 
     const coinPenalty   = Math.round(baseCoinPenalty   * multiplier);
     const ratingPenalty = Math.round(baseRatingPenalty * multiplier);
 
-    // Применяем
-    if (coinPenalty > 0 || ratingPenalty > 0) {
-      totalPoints  = Math.max(0, totalPoints  - coinPenalty);
-      ratingPoints = Math.max(0, ratingPoints - ratingPenalty);
-      savePoints();
-      updatePointsUI();
-      updateRatingUI();
+    totalPoints  = Math.max(0, totalPoints  - coinPenalty);
+    ratingPoints = Math.max(0, ratingPoints - ratingPenalty);
+    savePoints(); updatePointsUI(); updateRatingUI();
 
-      // Показать что сняли
-      let msg = '';
-      if (timeElapsed < 30)
-        msg = 'Сдался слишком быстро! 😤';
-      else if (activity > 0.6)
-        msg = 'Хорошая попытка! Штраф минимальный 👍';
-      else
-        msg = 'В следующий раз держись дольше! 💪';
+    // Build reason rows
+    const minPlayed = Math.floor(timeElapsed/60);
+    const secPlayed = String(timeElapsed%60).padStart(2,'0');
+    let activityLabel = '';
+    if (activity < 0.2)      activityLabel = 'Сдался почти сразу 😤';
+    else if (activity < 0.5) activityLabel = 'Играл мало';
+    else if (activity < 0.8) activityLabel = 'Играл неплохо 👍';
+    else                     activityLabel = 'Активная игра — штраф минимальный! 💪';
 
-      setTimeout(()=>showToast(
-        `Штраф за сдачу: -${coinPenalty} 🪙 -${ratingPenalty} 🏆`,
-        msg
-      ), 600);
+    // Show on win screen
+    const srEl = document.getElementById('surrender-result');
+    if (srEl) {
+      srEl.style.display = 'block';
+      document.getElementById('surrender-rows').innerHTML = `
+        <div style="display:flex;justify-content:space-between"><span>⏱ Времени сыграно</span><span>${minPlayed}:${secPlayed}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>🧱 Стен поставлено</span><span>${wallsPlaced}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>📊 Активность</span><span>${activityLabel}</span></div>`;
+      document.getElementById('surrender-coins-loss').textContent  = `-${coinPenalty} 🪙`;
+      document.getElementById('surrender-rating-loss').textContent = `-${ratingPenalty} 🏆`;
+      document.getElementById('surrender-coins-left').textContent  = `${totalPoints.toLocaleString()} 🪙`;
     }
 
-    // Записать в историю
-    addMatch('loss', 'ktoyura', 'bot', aiDifficulty,
-      -(ratingPenalty || 0));
+    addMatch('loss', 'ktoyura', 'bot', aiDifficulty, -ratingPenalty);
+    setTimeout(()=>saveProgressToServer(), 800);
+  } else {
+    const srEl = document.getElementById('surrender-result');
+    if (srEl) srEl.style.display = 'none';
   }
 
   achStats.totalGames++;
@@ -3366,6 +3512,16 @@ function showScreen(id) {
     document.getElementById('reg-avatar').textContent='?';
     document.getElementById('reg-avatar').style.background='linear-gradient(135deg,var(--p1),#784BFF)';
     setTimeout(()=>document.getElementById('reg-username').focus(),100);
+    stopMenuMusic();
+  } else if (id === 'forgot') {
+    document.getElementById('forgot-username').value = '';
+    document.getElementById('forgot-answer').value = '';
+    document.getElementById('forgot-newpass').value = '';
+    document.getElementById('forgot-error1').textContent = '';
+    document.getElementById('forgot-error2').textContent = '';
+    document.getElementById('forgot-step1').style.display = 'block';
+    document.getElementById('forgot-step2').style.display = 'none';
+    setTimeout(()=>document.getElementById('forgot-username').focus(), 100);
     stopMenuMusic();
   } else if (id === 'login') {
     document.getElementById('login-error').textContent='';
@@ -3453,6 +3609,8 @@ function startGame(diff) {
   startTimer();
   const rc = document.getElementById('rating-change');
   if (rc) rc.style.display = 'none';
+  const sr = document.getElementById('surrender-result');
+  if (sr) sr.style.display = 'none';
   if (aiDifficulty) {
     setTimeout(()=>{
       const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
@@ -3803,11 +3961,17 @@ function aiMove() {
 }
 
 function easyMove(pi, myDist, oppDist) {
-  // Новичок — слабый: 40% идёт вперёд, 40% случайный ход, 20% случайная стена
+  // Новичок: игрок выигрывает ~55% → слабый но не тупой
+  // ВСЕГДА блокирует если игрок в 2х шагах от победы
+  if (wallsLeft[pi] > 0 && oppDist <= 2) {
+    const w = bestWall(pi, 1);
+    if (w) { placeWall(pi, w.r, w.c, w.dir); return; }
+  }
+
   const rand = Math.random();
 
-  if (rand < 0.20 && wallsLeft[pi] > 0) {
-    // Случайная стена (не лучшая — любая)
+  // 15% — случайная стена (не лучшая)
+  if (rand < 0.15 && wallsLeft[pi] > 0) {
     const candidates = [];
     for (let r=0;r<N-1;r++) for (let c=0;c<N-1;c++) for (const dir of ['h','v']) {
       if (canPlaceWall(r,c,dir)) candidates.push({r,c,dir});
@@ -3818,8 +3982,8 @@ function easyMove(pi, myDist, oppDist) {
     }
   }
 
-  if (rand < 0.40) {
-    // Случайный ход в любую сторону
+  // 40% — случайный ход (назад, в стороны)
+  if (rand < 0.55) {
     const moves = getValidMoves(pi);
     if (moves.length) {
       const m = moves[Math.floor(Math.random()*moves.length)];
@@ -3827,44 +3991,52 @@ function easyMove(pi, myDist, oppDist) {
     }
   }
 
-  // Идёт вперёд по BFS но иногда делает не лучший шаг
-  if (Math.random() < 0.3) {
-    // Ход не по оптимальному пути
+  // 20% — идёт назад специально
+  if (Math.random() < 0.25) {
     const moves = getValidMoves(pi);
-    const nonOptimal = moves.filter(([r]) => r > players[pi].r); // ходит назад
-    if (nonOptimal.length) { doMove(pi, nonOptimal[0][0], nonOptimal[0][1]); return; }
+    const backward = moves.filter(([r]) => r > players[pi].r);
+    if (backward.length) { doMove(pi, backward[0][0], backward[0][1]); return; }
   }
 
+  // Идёт вперёд по BFS
   const step = bfsNextStep(players[pi].r, players[pi].c, 0);
   if (step) doMove(pi, step[0], step[1]);
   else { const m=getValidMoves(pi)[0]; if(m) doMove(pi,m[0],m[1]); }
 }
 
 function mediumMove(pi, myDist, oppDist) {
-  // Средний = агрессивнее: активно блокирует, оценивает стены vs ход
-  const moveValue = 1;
+  // Средний: игрок выигрывает ~33% → бот играет разумно но с ошибками
+  // Идёт по BFS, ставит стены когда нужно, но иногда ошибается
+
+  // 15% — случайный ход (ошибка)
+  if (Math.random() < 0.15) {
+    const moves = getValidMoves(pi);
+    if (moves.length) { const m=moves[Math.floor(Math.random()*moves.length)]; doMove(pi,m[0],m[1]); return; }
+  }
 
   if (wallsLeft[pi] > 0) {
     const w = bestWall(pi, 1);
     if (w) {
-      // Всегда блокирует если ты близко к финишу
-      if (oppDist <= 4) { placeWall(pi, w.r, w.c, w.dir); return; }
-      // Блокирует если стена выгоднее хода
-      if (w.score >= moveValue + 1 && Math.random() < 0.75) { placeWall(pi, w.r, w.c, w.dir); return; }
-      // Блокирует если сильно отстаёт
-      if (oppDist < myDist - 1 && wallsLeft[pi] >= 3 && w.score >= 1 && Math.random() < 0.6) {
+      // Блокирует если ты близко к финишу (≤5 шагов)
+      if (oppDist <= 5 && Math.random() < 0.80) { placeWall(pi, w.r, w.c, w.dir); return; }
+      // Блокирует если стена сильно выгоднее хода
+      if (w.score >= 2 && Math.random() < 0.65) { placeWall(pi, w.r, w.c, w.dir); return; }
+      // Блокирует если отстаёт
+      if (oppDist < myDist - 2 && wallsLeft[pi] >= 4 && Math.random() < 0.55) {
         placeWall(pi, w.r, w.c, w.dir); return;
       }
     }
   }
+
   const step = bfsNextStep(players[pi].r, players[pi].c, 0);
   if (step) doMove(pi, step[0], step[1]);
   else { const m=getValidMoves(pi)[0]; if(m) doMove(pi,m[0],m[1]); }
 }
 
 function hardMove(pi, myDist, oppDist) {
-  // Full minimax with alpha-beta pruning, depth 3
-  const best = minimax(pi, 3, -Infinity, Infinity, true);
+  // Тяжёлый: игрок выигрывает ~5% → минимакс глубина 5, без ошибок
+  // Всегда выбирает оптимальный ход
+  const best = minimax(pi, 5, -Infinity, Infinity, true);
   if (!best.action) {
     const step = bfsNextStep(players[pi].r, players[pi].c, 0);
     if (step) doMove(pi, step[0], step[1]);
@@ -3879,47 +4051,47 @@ function hardMove(pi, myDist, oppDist) {
 
 // ── MINIMAX ───────────────────────────────────────────────────────
 function evaluate(pi) {
-  // Heuristic: bot path advantage + wall advantage
-  const myTarget = pi===1 ? 0 : N-1;
+  const myTarget  = pi===1 ? 0 : N-1;
   const oppTarget = 1-pi===1 ? 0 : N-1;
-  const myDist = bfsLen(players[pi].r, players[pi].c, myTarget);
+  const myDist  = bfsLen(players[pi].r,   players[pi].c,   myTarget);
   const oppDist = bfsLen(players[1-pi].r, players[1-pi].c, oppTarget);
-  if (myDist === 0) return 10000;
+  if (myDist  === 0) return 10000;
   if (oppDist === 0) return -10000;
-  // oppDist - myDist: positive means bot is ahead
-  return (oppDist - myDist) * 10 + (wallsLeft[pi] - wallsLeft[1-pi]) * 2;
+  // Weighted: path advantage + wall advantage + positional bonus
+  const pathAdv = (oppDist - myDist) * 12;
+  const wallAdv = (wallsLeft[pi] - wallsLeft[1-pi]) * 3;
+  // Bonus for being close to finish
+  const closenessBonus = (N - myDist) * 2;
+  return pathAdv + wallAdv + closenessBonus;
 }
 
 function minimax(pi, depth, alpha, beta, maximizing) {
-  const myDist = bfsLen(players[pi].r, players[pi].c, pi===1?0:N-1);
+  const myDist  = bfsLen(players[pi].r,   players[pi].c,   pi===1?0:N-1);
   const oppDist = bfsLen(players[1-pi].r, players[1-pi].c, 1-pi===1?0:N-1);
-  if (myDist === 0) return {score: 10000, action: null};
+  if (myDist  === 0) return {score: 10000,  action: null};
   if (oppDist === 0) return {score: -10000, action: null};
-  if (depth === 0) return {score: evaluate(pi), action: null};
+  if (depth   === 0) return {score: evaluate(pi), action: null};
 
   const curPi = maximizing ? pi : 1-pi;
-  const curTarget = curPi===1 ? 0 : N-1;
   let bestAction = null;
-
-  // Generate candidate actions
   const actions = [];
 
-  // Move actions — always include BFS step + all valid moves
+  // Move actions
   const moves = getValidMoves(curPi);
   for (const [r,c] of moves) actions.push({type:'move', r, c});
 
-  // Wall actions — only consider walls with score >= 1 to prune search space
+  // Wall actions — top 8 candidates for hard (depth 5 needs pruning)
   if (wallsLeft[curPi] > 0 && depth >= 2) {
-    // Collect top-N wall candidates by greedy score
     const wallCandidates = [];
     for (let r=0;r<N-1;r++) for (let c=0;c<N-1;c++) for (const dir of ['h','v']) {
       if (!canPlaceWall(r,c,dir)) continue;
       const s = scoreWall(r,c,dir,curPi);
       if (s >= 1) wallCandidates.push({type:'wall',r,c,dir,score:s});
     }
-    // Sort and keep top 6 walls to keep search fast
     wallCandidates.sort((a,b)=>b.score-a.score);
-    for (const w of wallCandidates.slice(0,6)) actions.push(w);
+    // Hard uses top 8, medium uses top 6
+    const topN = aiDifficulty === 'hard' ? 8 : 6;
+    for (const w of wallCandidates.slice(0, topN)) actions.push(w);
   }
 
   if (maximizing) {
@@ -4082,7 +4254,7 @@ function showWin() {
       showRatingChange(`+${pts} 🏆`, '#00F5C4');
       addMatch('win', 'ktoyura', 'bot', aiDifficulty, pts);
     } else if (w === 1) {
-      // Player lost to bot
+      // Player lost to bot (not surrender — handled separately)
       let penalty = 0;
       if (aiDifficulty === 'easy') penalty = 5;
       else if (aiDifficulty === 'medium') penalty = 10;
@@ -4091,6 +4263,11 @@ function showWin() {
       showRatingChange(`-${penalty} 😔`, '#ff6b6b');
       addMatch('loss', 'ktoyura', 'bot', aiDifficulty, -penalty);
     }
+  } else if (!onlineMode) {
+    // Local 2-player game
+    const winner2name = w === 0 ? (currentUser || 'Игрок 1') : 'Игрок 2';
+    const loser2name  = w === 0 ? 'Игрок 2' : (currentUser || 'Игрок 1');
+    addMatch(w === 0 ? 'win' : 'loss', loser2name, 'local', null, 0);
   }
 
   // Calculate shop coins (only vs bot, only for player win)
