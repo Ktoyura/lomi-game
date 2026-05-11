@@ -396,11 +396,11 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   <div class="logo">LOMI</div>
   <div class="tagline">Стратегическая игра стен</div>
   <div style="display:flex;align-items:center;gap:8px">
-    <div class="profile-badge" onclick="showScreen('profile')" title="Профиль" style="flex:1">
+    <div class="profile-badge" onclick="showScreen('profile')" title="Профиль" style="flex:1;cursor:pointer">
       <div class="profile-badge-avatar" id="menu-avatar">?</div>
       <div>
         <div class="profile-badge-name" id="menu-username">Игрок</div>
-        <div class="profile-badge-sub">⭐ <span id="menu-points">0</span> очков · <span id="menu-account-type" style="color:#a78bfa"></span></div>
+        <div class="profile-badge-sub">🪙 <span id="menu-points">0</span> · 🏆 <span id="menu-rating">0</span> · <span id="menu-account-type" style="color:#a78bfa"></span></div>
       </div>
     </div>
     <button onclick="logout()" title="Выйти" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--muted);font-size:0.75rem;padding:6px 10px;cursor:pointer;white-space:nowrap">Выйти</button>
@@ -433,14 +433,68 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 
 <!-- PROFILE EDIT -->
 <div id="profile" class="screen">
-  <div class="account-avatar" id="profile-avatar">?</div>
+  <!-- Avatar + name -->
+  <div style="display:flex;align-items:center;gap:16px;width:100%;max-width:480px">
+    <div class="account-avatar" id="profile-avatar" style="width:64px;height:64px;font-size:1.6rem;flex-shrink:0">?</div>
+    <div style="flex:1">
+      <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900" id="profile-name-display">Игрок</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:2px" id="profile-account-type"></div>
+      <div style="font-size:0.72rem;color:#FFD93D;margin-top:2px">🏆 <span id="profile-rating">0</span> · 🪙 <span id="profile-coins">0</span></div>
+    </div>
+    <button onclick="showScreen('profile-edit')" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--muted);font-size:0.75rem;padding:6px 12px;cursor:pointer">✏️ Изменить</button>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:480px">
+    <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:var(--p2)" id="profile-wins">0</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">Побед</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#ff6b6b" id="profile-losses">0</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">Поражений</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#FFD93D" id="profile-games">0</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">Всего игр</div>
+    </div>
+  </div>
+
+  <!-- Winrate bar -->
+  <div style="width:100%;max-width:480px">
+    <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);margin-bottom:4px">
+      <span>Винрейт</span>
+      <span id="profile-winrate">0%</span>
+    </div>
+    <div style="background:var(--surface2);border-radius:999px;height:6px;overflow:hidden">
+      <div id="profile-winbar" style="background:linear-gradient(90deg,var(--p2),#784BFF);height:100%;width:0%;border-radius:999px;transition:width 0.5s"></div>
+    </div>
+  </div>
+
+  <!-- Match history -->
+  <div style="width:100%;max-width:480px">
+    <div style="font-family:'Unbounded',sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:0.08em;margin-bottom:8px">ИСТОРИЯ МАТЧЕЙ</div>
+    <div id="match-history" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+    <div id="no-matches" style="font-size:0.82rem;color:var(--muted);text-align:center;padding:1rem 0;display:none">Ещё нет сыгранных матчей</div>
+  </div>
+
+  <button class="btn btn-secondary" style="max-width:480px;width:100%" onclick="showScreen('menu')">Назад</button>
+</div>
+
+<!-- PROFILE EDIT NAME -->
+<div id="profile-edit" class="screen">
+  <div class="account-avatar" id="profile-edit-avatar">?</div>
   <div class="account-form">
     <div style="text-align:center;font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:700;">Изменить юзернейм</div>
+    <div style="text-align:center;font-size:0.78rem;color:#FFD93D;background:rgba(255,211,61,0.08);border-radius:10px;padding:8px">
+      💰 Смена имени стоит <strong>20,000 🪙</strong><br>
+      <span style="color:var(--muted);font-size:0.7rem">У тебя: <span id="profile-edit-coins">0</span> 🪙</span>
+    </div>
     <input class="account-input" id="profile-input" maxlength="16" autocomplete="off" spellcheck="false"
       oninput="onProfileInput()" onkeydown="if(event.key==='Enter')saveProfile()">
     <div class="account-error" id="profile-error"></div>
-    <button class="btn btn-primary" onclick="saveProfile()">Сохранить</button>
-    <button class="btn btn-secondary" onclick="showScreen('menu')">Назад</button>
+    <button class="btn btn-primary" onclick="saveProfile()">Сохранить (−20,000 🪙)</button>
+    <button class="btn btn-secondary" onclick="showScreen('profile')">Назад</button>
   </div>
 </div>
 
@@ -657,6 +711,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       <div class="score-num" id="wscore1">0</div>
       <div class="score-label" id="wscore-p2-label">Игрок 2</div>
     </div>
+    <div id="rating-change" style="width:100%;text-align:center;font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;display:none"></div>
   </div>
   <!-- Points breakdown (shown only vs bot) -->
   <div id="points-block" style="display:none;width:100%;max-width:320px;background:var(--surface2);border-radius:16px;padding:14px 18px;border:1px solid rgba(255,211,61,0.2)">
@@ -1845,6 +1900,16 @@ function applyOpponentWall(oppIdx, r, c, dir) {
 }
 
 function showOnlineResult(subOverride, won) {
+  // Rating points for online
+  if (won) {
+    addRatingPoints(100);
+    showRatingChange('+100 🏆', '#00F5C4');
+    addMatch('win', opponentName, 'online', null, 100);
+  } else {
+    addRatingPoints(-20);
+    showRatingChange('-20 😔', '#ff6b6b');
+    addMatch('loss', opponentName, 'online', null, -20);
+  }
   const w = won ? myPlayerIndex : 1 - myPlayerIndex;
   winner = w;
   document.getElementById('win-emoji').textContent = won ? '🏆' : '😔';
@@ -2090,6 +2155,119 @@ function clearChat() {
   clearIngameChat();
 }
 
+// ── MATCH HISTORY ─────────────────────────────────────────────────
+let matchHistory = []; // [{date, opponent, mode, difficulty, result, ratingChange}]
+
+function loadMatchHistory() {
+  try {
+    const saved = localStorage.getItem('lomi_matches');
+    if (saved) matchHistory = JSON.parse(saved);
+  } catch(e) { matchHistory = []; }
+}
+
+function saveMatchHistory() {
+  // Keep only last 50 matches
+  if (matchHistory.length > 50) matchHistory = matchHistory.slice(-50);
+  localStorage.setItem('lomi_matches', JSON.stringify(matchHistory));
+}
+
+function addMatch(result, opponent, mode, difficulty, ratingChange) {
+  const match = {
+    date: Date.now(),
+    result, // 'win' | 'loss'
+    opponent,
+    mode,   // 'bot' | 'online' | 'local'
+    difficulty: difficulty || null,
+    ratingChange,
+  };
+  matchHistory.push(match);
+  saveMatchHistory();
+}
+
+function renderProfile() {
+  const name = currentUser || 'Игрок';
+  const letter = name[0].toUpperCase();
+  const color = getAvatarColor(name);
+
+  // Avatar
+  const av = document.getElementById('profile-avatar');
+  if (av) { av.textContent = letter; av.style.background = color; }
+
+  // Name + type
+  const nd = document.getElementById('profile-name-display');
+  if (nd) nd.textContent = name;
+  const at = document.getElementById('profile-account-type');
+  if (at) at.textContent = isGuest ? '👤 Гость' : '✅ Аккаунт';
+
+  // Rating + coins
+  const pr = document.getElementById('profile-rating');
+  if (pr) pr.textContent = ratingPoints.toLocaleString();
+  const pc = document.getElementById('profile-coins');
+  if (pc) pc.textContent = totalPoints.toLocaleString();
+
+  // Stats
+  const wins = achStats.totalWins || 0;
+  const games = achStats.totalGames || 0;
+  const losses = games - wins;
+  const winrate = games > 0 ? Math.round(wins/games*100) : 0;
+
+  const pw = document.getElementById('profile-wins'); if (pw) pw.textContent = wins;
+  const pl = document.getElementById('profile-losses'); if (pl) pl.textContent = Math.max(0, losses);
+  const pg = document.getElementById('profile-games'); if (pg) pg.textContent = games;
+  const pwr = document.getElementById('profile-winrate'); if (pwr) pwr.textContent = winrate + '%';
+  const pwb = document.getElementById('profile-winbar'); if (pwb) pwb.style.width = winrate + '%';
+
+  // Match history
+  const container = document.getElementById('match-history');
+  const noMatches = document.getElementById('no-matches');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const sorted = [...matchHistory].reverse(); // newest first
+
+  if (sorted.length === 0) {
+    if (noMatches) noMatches.style.display = 'block';
+    return;
+  }
+  if (noMatches) noMatches.style.display = 'none';
+
+  sorted.forEach(m => {
+    const won = m.result === 'win';
+    const date = new Date(m.date);
+    const timeStr = `${date.getDate()}.${date.getMonth()+1} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+
+    let modeLabel = '';
+    if (m.mode === 'bot') {
+      const diff = m.difficulty === 'easy' ? 'Новичок' : m.difficulty === 'medium' ? 'Средний' : 'Сложный';
+      modeLabel = `🤖 vs ktoyura (${diff})`;
+    } else if (m.mode === 'online') {
+      modeLabel = `🌐 Онлайн vs ${m.opponent || 'Соперник'}`;
+    } else {
+      modeLabel = `👥 Местная игра vs ${m.opponent || 'Игрок 2'}`;
+    }
+
+    const ratingStr = m.ratingChange > 0
+      ? `<span style="color:#00F5C4">+${m.ratingChange} 🏆</span>`
+      : `<span style="color:#ff6b6b">${m.ratingChange} 🏆</span>`;
+
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;
+      background:var(--surface2);border:1.5px solid ${won ? 'rgba(0,245,196,0.2)' : 'rgba(255,107,107,0.2)'};`;
+
+    row.innerHTML = `
+      <div style="font-size:1.2rem">${won ? '✅' : '❌'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.75rem;font-weight:600;color:${won ? 'var(--p2)' : '#ff6b6b'}">${won ? 'Победа' : 'Поражение'}</div>
+        <div style="font-size:0.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${modeLabel}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:0.7rem">${ratingStr}</div>
+        <div style="font-size:0.62rem;color:var(--muted)">${timeStr}</div>
+      </div>`;
+    container.appendChild(row);
+  });
+}
+
 // ── LEADERBOARD ───────────────────────────────────────────────────
 let lbInterval = null;
 
@@ -2100,7 +2278,7 @@ async function submitMyScore() {
     if (isGuest) {
       await apiCall('POST', '/guest-score', {
         username: currentUser || 'Гость',
-        points: totalPoints,
+        points: ratingPoints,
         wins: achStats.totalWins || 0,
         games: achStats.totalGames || 0,
       });
@@ -2400,14 +2578,38 @@ function renderAchievements() {
 }
 
 // ── POINTS SYSTEM ────────────────────────────────────────────────
-let totalPoints = 0;
+let totalPoints = 0;    // монеты для магазина
+let ratingPoints = 0;   // рейтинг для лидерборда
 
 function loadPoints() {
-  try { totalPoints = parseInt(localStorage.getItem('lomi_points') || '0'); } catch(e) {}
+  try {
+    totalPoints = parseInt(localStorage.getItem('lomi_points') || '0');
+    ratingPoints = parseInt(localStorage.getItem('lomi_rating') || '0');
+  } catch(e) {}
 }
 
 function savePoints() {
   localStorage.setItem('lomi_points', totalPoints);
+  localStorage.setItem('lomi_rating', ratingPoints);
+}
+
+function showRatingChange(text, color) {
+  const el = document.getElementById('rating-change');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = color || '#FFD93D';
+  el.textContent = `Рейтинг: ${text} → ${ratingPoints.toLocaleString()} 🏆`;
+}
+
+function addRatingPoints(pts) {
+  ratingPoints = Math.max(0, ratingPoints + pts);
+  savePoints();
+  updateRatingUI();
+}
+
+function updateRatingUI() {
+  const el = document.getElementById('menu-rating');
+  if (el) el.textContent = ratingPoints.toLocaleString();
 }
 
 function calcPoints(won, difficulty, timeUsed, wallsUsed) {
@@ -2472,6 +2674,7 @@ function showPointsBlock(won, difficulty, timeUsed, wallsUsed) {
   block.style.display = 'block';
 
   updatePointsUI();
+  updateRatingUI();
 }
 
 function updatePointsUI() {
@@ -2544,7 +2747,7 @@ async function loginSuccess(username, userData) {
   isGuest = false;
   // Load server data
   if (userData) {
-    totalPoints = userData.points || 0;
+    ratingPoints = userData.points || 0;
     achStats = { ...achStats, ...userData.stats };
     unlockedAch = new Set(userData.unlockedAch || []);
     if (userData.equippedPiece) equippedPiece = userData.equippedPiece;
@@ -2575,7 +2778,7 @@ async function saveProgressToServer() {
   if (isGuest || !authToken) return;
   try {
     await apiCall('POST', '/progress', {
-      points: totalPoints,
+      points: ratingPoints,
       stats: achStats,
       unlockedAch: [...unlockedAch],
       equippedPiece,
@@ -2668,8 +2871,24 @@ function saveProfile() {
   const val = document.getElementById('profile-input').value.trim();
   const err = validateUsername(val);
   if (err) { document.getElementById('profile-error').textContent = err; return; }
+
+  // Check if name changed
+  if (val === currentUser) { showScreen('profile'); return; }
+
+  // Cost 20,000 coins to change name
+  if (totalPoints < 20000) {
+    document.getElementById('profile-error').textContent = `❌ Нужно 20,000 🪙 (у тебя ${totalPoints.toLocaleString()})`;
+    return;
+  }
+
+  // Deduct coins
+  totalPoints -= 20000;
+  savePoints();
+  updatePointsUI();
+
   setUser(val);
-  showScreen('menu');
+  showScreen('profile');
+  playTone(523,'sine',0.1,0.2); playTone(659,'sine',0.12,0.2,0.1); playTone(784,'sine',0.15,0.2,0.2);
 }
 
 function setUser(name) {
@@ -2936,11 +3155,16 @@ function showScreen(id) {
     renderAchievements();
     stopMenuMusic();
   } else if (id === 'profile') {
+    renderProfile();
+    stopMenuMusic();
+  } else if (id === 'profile-edit') {
     const inp = document.getElementById('profile-input');
     inp.value = currentUser;
-    document.getElementById('profile-avatar').textContent = currentUser[0].toUpperCase();
-    document.getElementById('profile-avatar').style.background = getAvatarColor(currentUser);
+    const av = document.getElementById('profile-edit-avatar');
+    if (av) { av.textContent = currentUser[0].toUpperCase(); av.style.background = getAvatarColor(currentUser); }
     document.getElementById('profile-error').textContent = '';
+    const coinsEl = document.getElementById('profile-edit-coins');
+    if (coinsEl) coinsEl.textContent = totalPoints.toLocaleString();
     setTimeout(()=>inp.focus(), 100);
     stopMenuMusic();
   } else if (id === 'account') {
@@ -2975,6 +3199,8 @@ function startGame(diff) {
   draw();
   showScreen('game');
   startTimer();
+  const rc = document.getElementById('rating-change');
+  if (rc) rc.style.display = 'none';
   if (aiDifficulty) {
     setTimeout(()=>{
       const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
@@ -3320,10 +3546,11 @@ function aiMove() {
 }
 
 function easyMove(pi, myDist, oppDist) {
-  // 60% chance move forward along BFS path, 20% random move, 20% weak wall
+  // Новичок — слабый: 40% идёт вперёд, 40% случайный ход, 20% случайная стена
   const rand = Math.random();
+
   if (rand < 0.20 && wallsLeft[pi] > 0) {
-    // try a wall near opponent — but pick randomly from candidates
+    // Случайная стена (не лучшая — любая)
     const candidates = [];
     for (let r=0;r<N-1;r++) for (let c=0;c<N-1;c++) for (const dir of ['h','v']) {
       if (canPlaceWall(r,c,dir)) candidates.push({r,c,dir});
@@ -3333,30 +3560,46 @@ function easyMove(pi, myDist, oppDist) {
       placeWall(pi, w.r, w.c, w.dir); return;
     }
   }
-  if (rand < 0.15) {
-    // random valid move (even sideways)
+
+  if (rand < 0.40) {
+    // Случайный ход в любую сторону
     const moves = getValidMoves(pi);
-    if (moves.length) { const m=moves[Math.floor(Math.random()*moves.length)]; doMove(pi,m[0],m[1]); return; }
+    if (moves.length) {
+      const m = moves[Math.floor(Math.random()*moves.length)];
+      doMove(pi, m[0], m[1]); return;
+    }
   }
-  // move along BFS path
+
+  // Идёт вперёд по BFS но иногда делает не лучший шаг
+  if (Math.random() < 0.3) {
+    // Ход не по оптимальному пути
+    const moves = getValidMoves(pi);
+    const nonOptimal = moves.filter(([r]) => r > players[pi].r); // ходит назад
+    if (nonOptimal.length) { doMove(pi, nonOptimal[0][0], nonOptimal[0][1]); return; }
+  }
+
   const step = bfsNextStep(players[pi].r, players[pi].c, 0);
   if (step) doMove(pi, step[0], step[1]);
-  else { const m=getValidMoves(pi)[0]; doMove(pi,m[0],m[1]); }
+  else { const m=getValidMoves(pi)[0]; if(m) doMove(pi,m[0],m[1]); }
 }
 
 function mediumMove(pi, myDist, oppDist) {
-  // Always follow BFS path, but proactively place walls when opponent is close
-  const advantage = myDist - oppDist; // negative = bot is ahead
+  // Средний = агрессивнее: активно блокирует, оценивает стены vs ход
+  const moveValue = 1;
 
   if (wallsLeft[pi] > 0) {
-    // Place wall if opponent is close to winning OR racing ahead
-    const shouldBlock = oppDist <= 4 || (oppDist < myDist && Math.random() < 0.65) || (advantage > 2 && Math.random() < 0.5);
-    if (shouldBlock) {
-      const w = bestWall(pi, 2);
-      if (w) { placeWall(pi, w.r, w.c, w.dir); return; }
+    const w = bestWall(pi, 1);
+    if (w) {
+      // Всегда блокирует если ты близко к финишу
+      if (oppDist <= 4) { placeWall(pi, w.r, w.c, w.dir); return; }
+      // Блокирует если стена выгоднее хода
+      if (w.score >= moveValue + 1 && Math.random() < 0.75) { placeWall(pi, w.r, w.c, w.dir); return; }
+      // Блокирует если сильно отстаёт
+      if (oppDist < myDist - 1 && wallsLeft[pi] >= 3 && w.score >= 1 && Math.random() < 0.6) {
+        placeWall(pi, w.r, w.c, w.dir); return;
+      }
     }
   }
-  // Move along shortest path
   const step = bfsNextStep(players[pi].r, players[pi].c, 0);
   if (step) doMove(pi, step[0], step[1]);
   else { const m=getValidMoves(pi)[0]; if(m) doMove(pi,m[0],m[1]); }
@@ -3570,7 +3813,30 @@ function showWin() {
   setTimeout(saveProgressToServer, 1000);
   setTimeout(submitMyScore, 1500);
 
-  // Calculate points (only vs bot, only for player win)
+  // Rating points for bot games
+  if (aiDifficulty) {
+    if (w === 0) {
+      // Player won vs bot
+      let pts = 0;
+      if (aiDifficulty === 'easy') pts = 10;
+      else if (aiDifficulty === 'medium') pts = 30;
+      else if (aiDifficulty === 'hard') pts = 50;
+      addRatingPoints(pts);
+      showRatingChange(`+${pts} 🏆`, '#00F5C4');
+      addMatch('win', 'ktoyura', 'bot', aiDifficulty, pts);
+    } else if (w === 1) {
+      // Player lost to bot
+      let penalty = 0;
+      if (aiDifficulty === 'easy') penalty = 5;
+      else if (aiDifficulty === 'medium') penalty = 10;
+      else if (aiDifficulty === 'hard') penalty = 12;
+      addRatingPoints(-penalty);
+      showRatingChange(`-${penalty} 😔`, '#ff6b6b');
+      addMatch('loss', 'ktoyura', 'bot', aiDifficulty, -penalty);
+    }
+  }
+
+  // Calculate shop coins (only vs bot, only for player win)
   const timeUsed = TIMER_START - timeLeft[0];
   if (isPlayerVsBot) {
     showPointsBlock(true, aiDifficulty, timeUsed, gameWallsUsed);
@@ -3615,6 +3881,7 @@ document.addEventListener('click', function startAudio() {
 loadAchievements();
 loadPoints();
 loadShop();
+loadMatchHistory();
 loadAuthToken();
 loadUser();
 </script>
