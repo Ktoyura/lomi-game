@@ -130,6 +130,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
 .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes dp { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+@keyframes shakeloop { 0%,80%,100%{transform:rotate(0deg)} 83%{transform:rotate(-10deg)} 86%{transform:rotate(10deg)} 89%{transform:rotate(-6deg)} 92%{transform:rotate(6deg)} 95%{transform:rotate(0deg)} }
 
 /* SCORE COUNTER */
 .score-bar { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 999px; padding: 6px 20px; }
@@ -258,6 +259,11 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 .chat-row button { font-size:0.7rem; padding:5px 9px; border-radius:8px; border:none; background:#784BFF; color:#fff; cursor:pointer; }
 
 
+/* DAILY REWARD */
+.day-dot { flex:1; height:8px; border-radius:4px; background:var(--surface2); border:1px solid rgba(255,255,255,0.08); transition:all 0.3s; }
+.day-dot.done { background:linear-gradient(90deg,#FFD93D,#FF6B35); border-color:rgba(255,211,61,0.5); }
+.day-dot.current { background:rgba(255,211,61,0.3); border-color:#FFD93D; animation:pulse 1s ease-in-out infinite alternate; }
+
 /* LEADERBOARD */
 #leaderboard { gap:1.2rem; padding:2rem 1rem; justify-content:flex-start; }
 .lb-header { width:100%; max-width:480px; display:flex; align-items:center; justify-content:space-between; }
@@ -376,6 +382,25 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   </button>
 </div>
 
+<!-- DAILY REWARD POPUP -->
+<div id="daily-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:2px solid rgba(255,211,61,0.4);border-radius:24px;padding:2rem;max-width:300px;width:90%;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 0 60px rgba(255,211,61,0.2)">
+    <div style="font-size:3rem">🎁</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;text-align:center">Ежедневная награда</div>
+    <div style="font-size:0.78rem;color:var(--muted);text-align:center" id="daily-day-label">Открывай каждые 24 часа!</div>
+    <!-- Reward preview -->
+    <div id="daily-reward-preview" style="background:var(--surface2);border-radius:16px;padding:1.2rem 1.5rem;text-align:center;width:100%;border:1.5px solid rgba(255,211,61,0.25)">
+      <div style="font-size:2.5rem" id="daily-reward-icon">🪙</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.4rem;font-weight:900;color:#FFD93D;margin-top:4px" id="daily-reward-amount">+100</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:2px" id="daily-reward-label">монет</div>
+    </div>
+    <button class="btn btn-primary" onclick="claimDailyReward()" id="daily-claim-btn" style="width:100%;background:linear-gradient(135deg,#FFD93D,#FF6B35);border:none;font-size:1rem">
+      🎁 Забрать!
+    </button>
+    <button onclick="document.getElementById('daily-popup').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer">Закрыть</button>
+  </div>
+</div>
+
 <!-- REGISTER -->
 <div id="register" class="screen">
   <div class="account-avatar" id="reg-avatar">?</div>
@@ -466,6 +491,14 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   <div class="logo">LOMI</div>
   <div class="tagline">Стратегическая игра стен</div>
   <div style="display:flex;align-items:center;gap:8px">
+    <!-- Daily reward box -->
+    <div id="daily-box" onclick="openDailyReward()" title="Ежедневная награда" style="
+      background:var(--surface2);border:2px solid rgba(255,211,61,0.35);border-radius:14px;
+      padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
+      min-width:54px;flex-shrink:0;transition:all 0.2s;position:relative">
+      <div style="font-size:1.4rem;animation:shakeloop 3s ease-in-out infinite" id="daily-box-icon">🎁</div>
+      <div id="daily-timer" style="font-size:0.52rem;color:#FFD93D;font-family:'Unbounded',sans-serif;font-weight:700;text-align:center">ЗАБРАТЬ</div>
+    </div>
     <div class="profile-badge" onclick="showScreen('profile')" title="Профиль" style="flex:1;cursor:pointer">
       <div class="profile-badge-avatar" id="menu-avatar">?</div>
       <div>
@@ -696,7 +729,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   <div class="rule-item"><div class="rule-num">4</div><div class="rule-text"><strong>Нельзя</strong> полностью отрезать противника — путь должен оставаться.</div></div>
   <div class="rule-item"><div class="rule-num">5</div><div class="rule-text">Если соперник прямо перед тобой — можно <strong>перепрыгнуть</strong> его.</div></div>
   <div class="btn-group" style="max-width:320px">
-    <button class="btn btn-primary" onclick="startGame(false)">Начать игру</button>
+
     <button class="btn btn-secondary" onclick="showScreen('menu')">Назад</button>
   </div>
 </div>
@@ -734,7 +767,20 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   </div>
   <div class="thinking-bar" id="thinking-bar">
     <div class="dot-pulse"><span></span><span></span><span></span></div>
-    <span>Бот думает...</span>
+    <span>Бот думает... <span id="think-timer" style="font-family:'Unbounded',sans-serif;font-size:0.7rem;color:#a78bfa"></span></span>
+  </div>
+
+  <!-- Points display during game -->
+  <div id="game-points-bar" style="display:none;width:100%;max-width:580px;justify-content:space-between;align-items:center;font-size:0.7rem;color:var(--muted);padding:0 4px">
+    <div style="display:flex;gap:6px;align-items:center">
+      <span style="color:#FF3CAC;font-weight:700" id="gp-p1name">Игрок 1</span>
+      <span>🪙 <span id="gp-coins" style="color:#FFD93D;font-family:'Unbounded',sans-serif;font-size:0.65rem">0</span></span>
+      <span>🏆 <span id="gp-rating" style="color:#a78bfa;font-family:'Unbounded',sans-serif;font-size:0.65rem">0</span></span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span>🪙 <span id="gp-p2coins" style="color:#FFD93D;font-family:'Unbounded',sans-serif;font-size:0.65rem">—</span></span>
+      <span style="color:#00F5C4;font-weight:700" id="gp-p2name">Игрок 2</span>
+    </div>
   </div>
 
   <div class="mode-bar">
@@ -2289,6 +2335,148 @@ function clearChat() {
   clearIngameChat();
 }
 
+// ── DAILY REWARD SYSTEM ──────────────────────────────────────────
+// Каждые 24 часа — рандомная награда (монеты, кубки или скин)
+
+let dailyState = { lastClaim: 0 };
+
+function loadDailyState() {
+  try {
+    const s = localStorage.getItem('lomi_daily');
+    if (s) dailyState = { ...dailyState, ...JSON.parse(s) };
+  } catch(e) {}
+}
+
+function saveDailyState() {
+  localStorage.setItem('lomi_daily', JSON.stringify(dailyState));
+}
+
+function canClaimDaily() {
+  return (Date.now() - dailyState.lastClaim) >= 86400000;
+}
+
+function getTimeUntilNextClaim() {
+  const ms = (dailyState.lastClaim + 86400000) - Date.now();
+  if (ms <= 0) return null;
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function getRandDailyReward() {
+  // Веса: монеты 50%, рейтинг 30%, скин 20%
+  const roll = Math.random();
+  if (roll < 0.50) {
+    const amounts = [50, 75, 100, 150, 200, 250, 300];
+    const amount = amounts[Math.floor(Math.random() * amounts.length)];
+    return { type:'coins', amount, icon:'🪙', label:`+${amount} монет` };
+  } else if (roll < 0.80) {
+    const amounts = [10, 15, 20, 25, 30];
+    const amount = amounts[Math.floor(Math.random() * amounts.length)];
+    return { type:'rating', amount, icon:'🏆', label:`+${amount} очков рейтинга` };
+  } else {
+    return { type:'skin', amount:1, icon:'🎰', label:'Случайный скин!' };
+  }
+}
+
+function updateDailyBox() {
+  const box = document.getElementById('daily-box');
+  const timer = document.getElementById('daily-timer');
+  const icon = document.getElementById('daily-box-icon');
+  if (!box || !timer) return;
+
+  if (canClaimDaily()) {
+    box.style.borderColor = 'rgba(255,211,61,0.7)';
+    box.style.boxShadow = '0 0 16px rgba(255,211,61,0.3)';
+    icon.textContent = '🎁';
+    timer.textContent = 'ЗАБРАТЬ';
+    timer.style.color = '#FFD93D';
+  } else {
+    const t = getTimeUntilNextClaim();
+    box.style.borderColor = 'rgba(255,255,255,0.08)';
+    box.style.boxShadow = 'none';
+    icon.textContent = '⏳';
+    timer.textContent = t || '00:00:00';
+    timer.style.color = 'var(--muted)';
+  }
+}
+
+function openDailyReward() {
+  const popup = document.getElementById('daily-popup');
+  const canClaim = canClaimDaily();
+  const reward = getRandDailyReward();
+
+  // Update popup content
+  document.getElementById('daily-day-label').textContent = canClaim
+    ? 'Твоя ежедневная награда готова! 🎉'
+    : `Следующая награда через ${getTimeUntilNextClaim()}`;
+
+  document.getElementById('daily-reward-icon').textContent = reward.icon;
+  document.getElementById('daily-reward-amount').textContent =
+    reward.type === 'skin' ? '🎰' : `+${reward.amount}`;
+  document.getElementById('daily-reward-label').textContent = reward.label;
+
+  // Store pending reward
+  popup._pendingReward = reward;
+
+  const btn = document.getElementById('daily-claim-btn');
+  if (canClaim) {
+    btn.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '🎁 Забрать!';
+  } else {
+    btn.style.display = 'none';
+  }
+
+  popup.style.display = 'flex';
+}
+
+function claimDailyReward() {
+  if (!canClaimDaily()) return;
+  const popup = document.getElementById('daily-popup');
+  const reward = popup._pendingReward || getRandDailyReward();
+
+  if (reward.type === 'coins') {
+    totalPoints += reward.amount;
+    savePoints(); updatePointsUI();
+    showToast('🎁 Ежедневная награда!', `+${reward.amount} 🪙 монет!`);
+  } else if (reward.type === 'rating') {
+    ratingPoints += reward.amount;
+    savePoints(); updateRatingUI();
+    showToast('🎁 Ежедневная награда!', `+${reward.amount} 🏆 рейтинга!`);
+  } else if (reward.type === 'skin') {
+    const available = SHOP_ITEMS.filter(i =>
+      (i.type==='flag' || i.type==='color') && !ownedItems.has(i.id)
+    );
+    if (available.length > 0) {
+      const skin = available[Math.floor(Math.random() * available.length)];
+      ownedItems.add(skin.id);
+      saveShop();
+      showToast('🎰 Выпал скин!', `${skin.flag||''} ${skin.name} теперь твой!`);
+    } else {
+      totalPoints += 500;
+      savePoints(); updatePointsUI();
+      showToast('🎁 Ежедневная награда!', '+500 🪙 (все скины уже есть!)');
+    }
+  }
+
+  dailyState.lastClaim = Date.now();
+  saveDailyState();
+  saveProgressToServer();
+
+  playTone(523,'sine',0.12,0.15);
+  setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
+  setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
+  setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
+
+  popup.style.display = 'none';
+  updateDailyBox();
+}
+
+// Update timer every second
+setInterval(updateDailyBox, 1000);
+
 // ── MATCH HISTORY ─────────────────────────────────────────────────
 let matchHistory = []; // [{date, opponent, mode, difficulty, result, ratingChange}]
 
@@ -3535,6 +3723,7 @@ function showScreen(id) {
     clearIngameChat();
     updateUserUI();
     updateScoreUI();
+    updateDailyBox();
     setTimeout(startMenuMusic, 300);
   } else if (id === 'shop') {
     shopTab = 'piece';
@@ -3611,12 +3800,29 @@ function startGame(diff) {
   if (rc) rc.style.display = 'none';
   const sr = document.getElementById('surrender-result');
   if (sr) sr.style.display = 'none';
+  updateGamePointsBar();
   if (aiDifficulty) {
     setTimeout(()=>{
       const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
       addIngameMsg('ktoyura 🤖', greet, '#00F5C4');
     }, 900);
   }
+}
+
+function updateGamePointsBar() {
+  const bar = document.getElementById('game-points-bar');
+  if (!bar) return;
+  bar.style.display = aiDifficulty ? 'flex' : 'none'; // show only vs bot
+
+  const p1name = document.getElementById('gp-p1name');
+  const p2name = document.getElementById('gp-p2name');
+  const gpCoins = document.getElementById('gp-coins');
+  const gpRating = document.getElementById('gp-rating');
+
+  if (p1name) p1name.textContent = currentUser || 'Игрок';
+  if (p2name) p2name.textContent = aiDifficulty ? 'ktoyura 🤖' : 'Игрок 2';
+  if (gpCoins) gpCoins.textContent = totalPoints.toLocaleString();
+  if (gpRating) gpRating.textContent = ratingPoints.toLocaleString();
 }
 
 function setMode(m) {
@@ -4179,11 +4385,26 @@ function doMove(pi, r, c) {
 function scheduleAI() {
   if (!aiDifficulty || turn !== 1 || winner) return;
   document.getElementById('thinking-bar').classList.add('visible');
-  const delay = aiDifficulty==='easy' ? 350 : aiDifficulty==='medium' ? 550 : 1100;
+
+  // Always think 1-2 seconds (random)
+  const thinkTime = 1000 + Math.random() * 1000;
+  const timerEl = document.getElementById('think-timer');
+
+  // Countdown
+  let remaining = Math.ceil(thinkTime / 1000);
+  if (timerEl) timerEl.textContent = `${remaining}с`;
+  const countInterval = setInterval(() => {
+    remaining--;
+    if (timerEl) timerEl.textContent = remaining > 0 ? `${remaining}с` : '';
+    if (remaining <= 0) clearInterval(countInterval);
+  }, 1000);
+
   setTimeout(()=>{
+    clearInterval(countInterval);
     document.getElementById('thinking-bar').classList.remove('visible');
+    if (timerEl) timerEl.textContent = '';
     if (!winner) aiMove();
-  }, delay);
+  }, thinkTime);
 }
 
 function handleMove(mx,my) {
@@ -4316,6 +4537,7 @@ loadAchievements();
 loadPoints();
 loadShop();
 loadMatchHistory();
+loadDailyState();
 loadAuthToken();
 loadUser();
 </script>
