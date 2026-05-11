@@ -417,11 +417,11 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       <div style="font-size:0.72rem;color:var(--muted)" id="daily-result-label">монет</div>
     </div>
 
-    <button class="btn btn-primary" onclick="claimDailyReward()" id="daily-claim-btn"
+    <button class="btn btn-primary" onclick="window.claimDailyReward()" id="daily-claim-btn"
       style="width:100%;background:linear-gradient(135deg,#FFD93D,#FF6B35);border:none;font-size:1rem;display:none">
       🎁 Забрать!
     </button>
-    <button onclick="closeDailyPopup()" style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer" id="daily-close-btn">Закрыть</button>
+
   </div>
 </div>
 
@@ -516,7 +516,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   <div class="tagline">Стратегическая игра стен</div>
   <div style="display:flex;align-items:center;gap:8px">
     <!-- Daily reward box -->
-    <div id="daily-box" onclick="openDailyReward()" title="Ежедневная награда" style="
+    <div id="daily-box" onclick="window.openDailyReward()" title="Ежедневная награда" style="
       background:var(--surface2);border:2px solid rgba(255,211,61,0.35);border-radius:14px;
       padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
       min-width:54px;flex-shrink:0;transition:all 0.2s;position:relative">
@@ -2505,12 +2505,11 @@ function openDailyReward() {
 
   if (!canClaimDaily()) {
     document.getElementById('daily-day-label').textContent = `Следующий бонус через ${getTimeUntilNextClaim()}`;
-    document.getElementById('daily-close-btn').style.display = 'block';
     return;
   }
 
   document.getElementById('daily-day-label').textContent = 'Крутится... 🎰';
-  document.getElementById('daily-close-btn').style.display = 'none';
+
   slotRunning = true;
   startSlotSpin();
 }
@@ -2549,18 +2548,29 @@ function onSlotDone() {
   slotRunning = false;
   if (!slotResult) return;
 
+  // If skin — pick which one now so we can show it
+  let skinPreview = '';
+  if (slotResult.type === 'skin') {
+    const available = SHOP_ITEMS.filter(i => (i.type==='flag'||i.type==='color') && !ownedItems.has(i.id));
+    if (available.length > 0) {
+      slotResult._skin = available[Math.floor(Math.random() * available.length)];
+      skinPreview = `${slotResult._skin.flag || ''} ${slotResult._skin.name}`;
+    } else {
+      skinPreview = '+500 🪙 (все скины есть)';
+    }
+  }
+
   // Show result block
   document.getElementById('daily-result').style.display = 'block';
-  document.getElementById('daily-result-icon').textContent = slotResult.icon;
+  document.getElementById('daily-result-icon').textContent = slotResult.type === 'skin' ? '🎰' : slotResult.icon;
   document.getElementById('daily-result-amount').textContent =
-    slotResult.type === 'skin' ? '🎰 Скин!' : `+${slotResult.amount}`;
+    slotResult.type === 'skin' ? skinPreview : `+${slotResult.amount}`;
   document.getElementById('daily-result-label').textContent =
     slotResult.type === 'coins' ? 'монет' :
-    slotResult.type === 'rating' ? 'очков рейтинга' : 'случайный скин!';
+    slotResult.type === 'rating' ? 'очков рейтинга' : 'выпал скин!';
 
   document.getElementById('daily-day-label').textContent = '🎉 Совпадение! Забирай!';
   document.getElementById('daily-claim-btn').style.display = 'block';
-  document.getElementById('daily-close-btn').style.display = 'block';
 
   // Fanfare
   playTone(523,'sine',0.12,0.15);
@@ -2576,7 +2586,7 @@ function closeDailyPopup() {
 }
 
 function claimDailyReward() {
-  if (!slotResult) return;
+  if (!slotResult) { console.log('No slotResult!'); return; }
 
   if (slotResult.type === 'coins') {
     totalPoints += slotResult.amount;
@@ -2587,9 +2597,8 @@ function claimDailyReward() {
     addRatingPoints(slotResult.amount);
     showToast('🎁 Ежедневная награда!', `+${slotResult.amount} 🏆 рейтинга!`);
   } else {
-    const available = SHOP_ITEMS.filter(i => (i.type==='flag'||i.type==='color') && !ownedItems.has(i.id));
-    if (available.length > 0) {
-      const skin = available[Math.floor(Math.random()*available.length)];
+    if (slotResult._skin) {
+      const skin = slotResult._skin;
       ownedItems.add(skin.id); saveShop();
       showToast('🎰 Выпал скин!', `${skin.flag||''} ${skin.name} теперь твой!`);
     } else {
@@ -2610,6 +2619,9 @@ function claimDailyReward() {
   closeDailyPopup();
   updateDailyBox();
 }
+window.claimDailyReward = claimDailyReward;
+window.closeDailyPopup = closeDailyPopup;
+window.openDailyReward = openDailyReward;
 
 setInterval(updateDailyBox, 1000);
 
