@@ -346,6 +346,36 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   </div>
 </div>
 
+<!-- WELCOME BONUS -->
+<div id="welcome-bonus" class="screen">
+  <div style="font-size:4rem;animation:dp 1s ease-in-out infinite alternate">🎁</div>
+  <div style="font-family:'Unbounded',sans-serif;font-size:1.4rem;font-weight:900;text-align:center;background:linear-gradient(135deg,#FFD93D,#FF6B35);-webkit-background-clip:text;-webkit-text-fill-color:transparent">
+    Добро пожаловать!
+  </div>
+  <div style="font-size:0.85rem;color:var(--muted);text-align:center;max-width:280px">
+    Ты получаешь приветственный бонус за первый вход в игру
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:300px">
+    <div style="background:var(--surface2);border:1.5px solid rgba(255,211,61,0.3);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:14px">
+      <div style="font-size:2rem">🪙</div>
+      <div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:#FFD93D">+1 000</div>
+        <div style="font-size:0.72rem;color:var(--muted)">монет для магазина</div>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border:1.5px solid rgba(120,75,255,0.3);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:14px">
+      <div style="font-size:2rem">🏆</div>
+      <div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:#a78bfa">+100</div>
+        <div style="font-size:0.72rem;color:var(--muted)">стартовых очков рейтинга</div>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="claimWelcomeBonus()" style="max-width:300px;width:100%;font-size:1rem;background:linear-gradient(135deg,#FFD93D,#FF6B35);border:none">
+    🎁 Забрать бонус!
+  </button>
+</div>
+
 <!-- REGISTER -->
 <div id="register" class="screen">
   <div class="account-avatar" id="reg-avatar">?</div>
@@ -736,7 +766,8 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 <div id="surrender" class="screen">
   <div style="font-size:3rem">🏳️</div>
   <div style="font-family:'Unbounded',sans-serif;font-size:1.4rem;font-weight:900;text-align:center">Сдаться?</div>
-  <div style="font-size:0.9rem;color:var(--muted);text-align:center;max-width:260px">Текущая игра засчитается как поражение</div>
+  <div style="font-size:0.85rem;color:var(--muted);text-align:center;max-width:280px">Текущая игра засчитается как поражение</div>
+  <div id="surrender-penalty" style="background:var(--surface2);border:1.5px solid rgba(255,107,107,0.3);border-radius:14px;padding:12px 18px;text-align:center;max-width:280px;width:100%;font-size:0.8rem;color:#ff6b6b;display:none"></div>
   <div class="btn-group" style="max-width:260px">
     <button class="btn btn-primary" style="background:linear-gradient(135deg,#ff4444,#cc0000)" onclick="doSurrender()">Да, сдаюсь</button>
     <button class="btn btn-secondary" onclick="showScreen('game')">Продолжить игру</button>
@@ -2725,6 +2756,28 @@ function updatePointsUI() {
   if (el) el.textContent = totalPoints.toLocaleString();
 }
 
+// ── WELCOME BONUS ────────────────────────────────────────────────
+function showWelcomeBonus() {
+  showScreen('welcome-bonus');
+}
+
+function claimWelcomeBonus() {
+  totalPoints += 1000;
+  ratingPoints += 100;
+  savePoints();
+  updatePointsUI();
+  updateRatingUI();
+  // Save to server immediately so bonus is tied to this account
+  saveProgressToServer();
+  // Play reward sound
+  playTone(523,'sine',0.12,0.15);
+  setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
+  setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
+  setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
+  showScreen('menu');
+  setTimeout(()=>showToast('🎁 Бонус получен!', '+1000 🪙 и +100 🏆 на счету!'), 500);
+}
+
 // ── AUTH SYSTEM ───────────────────────────────────────────────────
 let authToken = null;
 let isGuest = false;
@@ -2788,16 +2841,28 @@ async function doLogin() {
 async function loginSuccess(username, userData) {
   setUser(username);
   isGuest = false;
-  // Load server data
+
+  // ВАЖНО: сбросить локальные данные и загрузить с сервера
+  totalPoints  = 0;
+  ratingPoints = 0;
+
   if (userData) {
+    // Загружаем данные С СЕРВЕРА (не из localStorage)
     ratingPoints = userData.points || 0;
-    // New user bonus: 1000 coins + 100 rating if first time
-    const isNewUser = !userData.points && !userData.stats?.totalGames;
+    totalPoints  = userData.coins  || 0; // если есть отдельное поле
+    if (userData.stats) achStats = { ...achStats, ...userData.stats };
+    if (userData.unlockedAch) unlockedAch = new Set(userData.unlockedAch);
+    if (userData.equippedPiece) equippedPiece = userData.equippedPiece;
+    if (userData.equippedWall)  equippedWall  = userData.equippedWall;
+    if (userData.ownedItems)    ownedItems    = new Set(userData.ownedItems);
+    savePoints(); saveAchievements(); saveShop();
+    updatePointsUI(); updateRatingUI();
+
+    // Новый пользователь — показать приветственный бонус
+    const isNewUser = !userData.points && !(userData.stats?.totalGames);
     if (isNewUser) {
-      totalPoints += 1000;
-      ratingPoints += 100;
-      savePoints();
-      setTimeout(()=>showToast('🎁 Добро пожаловать!', '+1000 🪙 и +100 🏆 за первый вход!'), 1500);
+      setTimeout(()=>showWelcomeBonus(), 300);
+      return;
     }
     achStats = { ...achStats, ...userData.stats };
     unlockedAch = new Set(userData.unlockedAch || []);
@@ -2825,7 +2890,8 @@ async function saveProgressToServer() {
   if (isGuest || !authToken) return;
   try {
     await apiCall('POST', '/progress', {
-      points: ratingPoints,
+      points: ratingPoints,  // рейтинговые очки
+      coins: totalPoints,    // монеты для магазина
       stats: achStats,
       unlockedAch: [...unlockedAch],
       equippedPiece,
@@ -2914,11 +2980,9 @@ function saveUsername() {
   // First time bonus
   const isFirst = !localStorage.getItem('lomi_guest_bonus');
   if (isFirst) {
-    totalPoints += 1000;
-    ratingPoints += 100;
-    savePoints();
     localStorage.setItem('lomi_guest_bonus', '1');
-    setTimeout(()=>showToast('🎁 Добро пожаловать!', '+1000 🪙 и +100 🏆 за первый вход!'), 1500);
+    setTimeout(()=>showWelcomeBonus(), 300);
+    return;
   }
   showScreen('menu');
 }
@@ -3141,19 +3205,111 @@ function timerTimeout(pi) {
 function confirmSurrender() {
   if (winner) return;
   showScreen('surrender');
+
+  // Show penalty preview for bot games
+  const penaltyEl = document.getElementById('surrender-penalty');
+  if (aiDifficulty && turn === 0 && penaltyEl) {
+    const timeElapsed = TIMER_START - (timeLeft[0] || 0);
+    const wallsPlaced = gameWallsUsed || 0;
+    const timeFactor  = Math.min(timeElapsed / TIMER_START, 1);
+    const wallFactor  = Math.min(wallsPlaced / 5, 1);
+    const activity    = timeFactor * 0.6 + wallFactor * 0.4;
+    const multiplier  = 1 - activity * 0.8;
+
+    let baseCoin = 0, baseRating = 0;
+    if (aiDifficulty === 'easy')   { baseCoin = 30;  baseRating = 5;  }
+    if (aiDifficulty === 'medium') { baseCoin = 60;  baseRating = 10; }
+    if (aiDifficulty === 'hard')   { baseCoin = 100; baseRating = 15; }
+
+    const coinPenalty   = Math.round(baseCoin   * multiplier);
+    const ratingPenalty = Math.round(baseRating * multiplier);
+
+    if (coinPenalty > 0 || ratingPenalty > 0) {
+      penaltyEl.style.display = 'block';
+      const minStr = Math.floor(timeElapsed/60);
+      const secStr = String(timeElapsed%60).padStart(2,'0');
+      penaltyEl.innerHTML = `⚠️ Штраф за сдачу:<br>
+        <strong>-${coinPenalty} 🪙</strong> монет · <strong>-${ratingPenalty} 🏆</strong> рейтинга<br>
+        <span style="font-size:0.7rem;opacity:0.7">Сыграно ${minStr}:${secStr} · стен: ${wallsPlaced}</span>`;
+    } else {
+      penaltyEl.style.display = 'none';
+    }
+  } else if (penaltyEl) {
+    penaltyEl.style.display = 'none';
+  }
 }
 
 function doSurrender() {
   stopTimer();
   if (onlineMode && socket) socket.emit('surrender');
+
+  // ── Умный штраф за сдачу ──────────────────────────────────────
+  if (aiDifficulty && turn === 0) {
+    const timeElapsed = TIMER_START - (timeLeft[0] || 0); // секунд сыграно
+    const wallsPlaced = gameWallsUsed || 0;
+    const totalMoves  = achStats.totalGames || 0;
+
+    // Активность игры (0..1)
+    const timeFactor  = Math.min(timeElapsed / TIMER_START, 1); // сколько времени прошло
+    const wallFactor  = Math.min(wallsPlaced / 5, 1);           // ставил ли стены (max 5)
+
+    // Общая активность: чем больше играл — тем меньше штраф
+    const activity = (timeFactor * 0.6 + wallFactor * 0.4);     // 0 = сдался сразу, 1 = играл до конца
+
+    // Базовый штраф по уровню сложности
+    let baseCoinPenalty   = 0;
+    let baseRatingPenalty = 0;
+    if (aiDifficulty === 'easy')   { baseCoinPenalty = 30;  baseRatingPenalty = 5;  }
+    if (aiDifficulty === 'medium') { baseCoinPenalty = 60;  baseRatingPenalty = 10; }
+    if (aiDifficulty === 'hard')   { baseCoinPenalty = 100; baseRatingPenalty = 15; }
+
+    // Снижаем штраф если играл активно (activity=1 → штраф ×0.2, activity=0 → штраф ×1.0)
+    const multiplier = 1 - activity * 0.8;
+
+    const coinPenalty   = Math.round(baseCoinPenalty   * multiplier);
+    const ratingPenalty = Math.round(baseRatingPenalty * multiplier);
+
+    // Применяем
+    if (coinPenalty > 0 || ratingPenalty > 0) {
+      totalPoints  = Math.max(0, totalPoints  - coinPenalty);
+      ratingPoints = Math.max(0, ratingPoints - ratingPenalty);
+      savePoints();
+      updatePointsUI();
+      updateRatingUI();
+
+      // Показать что сняли
+      let msg = '';
+      if (timeElapsed < 30)
+        msg = 'Сдался слишком быстро! 😤';
+      else if (activity > 0.6)
+        msg = 'Хорошая попытка! Штраф минимальный 👍';
+      else
+        msg = 'В следующий раз держись дольше! 💪';
+
+      setTimeout(()=>showToast(
+        `Штраф за сдачу: -${coinPenalty} 🪙 -${ratingPenalty} 🏆`,
+        msg
+      ), 600);
+    }
+
+    // Записать в историю
+    addMatch('loss', 'ktoyura', 'bot', aiDifficulty,
+      -(ratingPenalty || 0));
+  }
+
   achStats.totalGames++;
   achStats.winStreak = 0;
   saveAchievements();
   winner = 1 - turn;
   score[winner]++;
   updateScoreUI();
+
   const isBot = aiDifficulty && winner === 1;
   const surrenderName = turn === 0 ? (currentUser || 'Игрок 1') : (aiDifficulty ? 'ktoyura' : 'Игрок 2');
+
+  document.getElementById('rating-change').style.display = 'none';
+  document.getElementById('points-block').style.display  = 'none';
+
   if (isBot) { playLose(); } else { playWin(); }
   document.getElementById('win-emoji').textContent = isBot ? '🤖' : '🏳️';
   document.getElementById('win-title').textContent = isBot ? 'ktoyura победил!' : winner===0 ? `${currentUser || 'Игрок 1'} победил!` : 'Игрок 2 победил!';
@@ -3167,7 +3323,9 @@ function doSurrender() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if (id === 'auth') {
+  if (id === 'welcome-bonus') {
+    stopMenuMusic();
+  } else if (id === 'auth') {
     stopMenuMusic();
   } else if (id === 'register') {
     document.getElementById('reg-error').textContent='';
