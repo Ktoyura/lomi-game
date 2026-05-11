@@ -2802,6 +2802,17 @@ function onRegInput() {
   document.getElementById('reg-error').textContent = '';
 }
 
+function resetLocalState() {
+  totalPoints = 0;
+  ratingPoints = 0;
+  ownedItems = new Set(['default']);
+  equippedPiece = 'default';
+  equippedWall = 'default';
+  equippedBoard = 'default';
+  unlockedAch = new Set();
+  achStats = { totalGames:0, totalWins:0, winStreak:0, bestStreak:0, botWins:0, hardBotWins:0, totalWalls:0 };
+}
+
 async function doRegister() {
   const username = document.getElementById('reg-username').value.trim();
   const password = document.getElementById('reg-password').value;
@@ -2814,6 +2825,7 @@ async function doRegister() {
     authToken = data.token;
     localStorage.setItem('lomi_token', authToken);
     isGuest = false;
+    resetLocalState();
     await loginSuccess(data.username, data.user);
   } catch (e) {
     errEl.textContent = '❌ Сервер недоступен';
@@ -2832,6 +2844,7 @@ async function doLogin() {
     authToken = data.token;
     localStorage.setItem('lomi_token', authToken);
     isGuest = false;
+    resetLocalState();
     await loginSuccess(data.username, data.user);
   } catch (e) {
     errEl.textContent = '❌ Сервер недоступен';
@@ -2903,8 +2916,27 @@ async function saveProgressToServer() {
 
 function logout() {
   authToken = null;
+  // Clear ALL local game data
   localStorage.removeItem('lomi_token');
   localStorage.removeItem('lomi_username');
+  localStorage.removeItem('lomi_points');
+  localStorage.removeItem('lomi_rating');
+  localStorage.removeItem('lomi_owned');
+  localStorage.removeItem('lomi_piece');
+  localStorage.removeItem('lomi_wall');
+  localStorage.removeItem('lomi_board');
+  localStorage.removeItem('lomi_achievements');
+  localStorage.removeItem('lomi_guest_name');
+  localStorage.removeItem('lomi_guest_bonus');
+  // Reset in-memory state
+  totalPoints = 0;
+  ratingPoints = 0;
+  ownedItems = new Set(['default']);
+  equippedPiece = 'default';
+  equippedWall = 'default';
+  equippedBoard = 'default';
+  unlockedAch = new Set();
+  achStats = { totalGames:0, totalWins:0, winStreak:0, bestStreak:0, botWins:0, hardBotWins:0, totalWalls:0 };
   isGuest = false;
   currentUser = '';
   showScreen('auth');
