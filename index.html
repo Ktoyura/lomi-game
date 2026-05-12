@@ -2129,17 +2129,12 @@ function startBotSubstitute(botName) {
 
   showToast('✅ Соперник найден!', `Играешь против ${botName}`);
 
-  // Reset online mode, set as bot game
   onlineMode = false;
   if (socket) { socket.disconnect(); socket = null; }
-  aiDifficulty = difficulty;
 
-  // Start game after short delay
+  // Start game with correct difficulty string
   setTimeout(() => {
-    startGame(true);
-    // Override p2 name after game starts
-    const p2el = document.getElementById('p2name');
-    if (p2el) p2el.textContent = botName;
+    startGame(difficulty);
   }, 500);
 }
 
@@ -4011,57 +4006,67 @@ function confirmSurrender() {
   }
 }
 
+function showSurrenderBlock(timeElapsed, wallsPlaced, activity, coinPenalty, ratingPenalty) {
+  const srEl = document.getElementById('surrender-result');
+  if (!srEl) return;
+  const minPlayed = Math.floor(timeElapsed/60);
+  const secPlayed = String(timeElapsed%60).padStart(2,'0');
+  let activityLabel = '';
+  if (activity < 0.2)      activityLabel = 'Сдался почти сразу 😤';
+  else if (activity < 0.5) activityLabel = 'Играл мало';
+  else if (activity < 0.8) activityLabel = 'Играл неплохо 👍';
+  else                     activityLabel = 'Активная игра — штраф минимальный! 💪';
+
+  srEl.style.display = 'block';
+  document.getElementById('surrender-rows').innerHTML = `
+    <div style="display:flex;justify-content:space-between"><span>⏱ Времени сыграно</span><span>${minPlayed}:${secPlayed}</span></div>
+    <div style="display:flex;justify-content:space-between"><span>🧱 Стен поставлено</span><span>${wallsPlaced}</span></div>
+    <div style="display:flex;justify-content:space-between"><span>📊 Активность</span><span>${activityLabel}</span></div>`;
+  document.getElementById('surrender-coins-loss').textContent  = `-${coinPenalty} 🪙`;
+  document.getElementById('surrender-rating-loss').textContent = `-${ratingPenalty} 🏆`;
+  document.getElementById('surrender-coins-left').textContent  = `${totalPoints.toLocaleString()} 🪙`;
+}
+
 function doSurrender() {
   stopTimer();
   if (onlineMode && socket) socket.emit('surrender');
 
-  // ── Умный штраф за сдачу ──────────────────────────────────────
-  if (aiDifficulty && turn === 0) {
-    const timeElapsed = TIMER_START - (timeLeft[0] || 0);
-    const wallsPlaced = gameWallsUsed || 0;
-    const timeFactor  = Math.min(timeElapsed / TIMER_START, 1);
-    const wallFactor  = Math.min(wallsPlaced / 5, 1);
-    const activity    = timeFactor * 0.6 + wallFactor * 0.4;
-    const multiplier  = 1 - activity * 0.8;
+  const timeElapsed = TIMER_START - (timeLeft[0] || 0);
+  const wallsPlaced = gameWallsUsed || 0;
+  const timeFactor  = Math.min(timeElapsed / TIMER_START, 1);
+  const wallFactor  = Math.min(wallsPlaced / 5, 1);
+  const activity    = timeFactor * 0.6 + wallFactor * 0.4;
+  const multiplier  = Math.max(1 - activity * 0.8, 0.2);
 
+  // ── Штраф за сдачу боту ──────────────────────────────────────
+  if (aiDifficulty && turn === 0) {
     let baseCoinPenalty = 0, baseRatingPenalty = 0;
     if (aiDifficulty === 'easy')   { baseCoinPenalty = 90;  baseRatingPenalty = 15; }
     if (aiDifficulty === 'medium') { baseCoinPenalty = 180; baseRatingPenalty = 30; }
     if (aiDifficulty === 'hard')   { baseCoinPenalty = 300; baseRatingPenalty = 45; }
 
-    // Minimum 20% penalty always applied even if played actively
-    const minMultiplier = Math.max(multiplier, 0.2);
-    const coinPenalty   = Math.max(1, Math.round(baseCoinPenalty   * minMultiplier));
-    const ratingPenalty = Math.max(1, Math.round(baseRatingPenalty * minMultiplier));
+    const coinPenalty   = Math.max(1, Math.round(baseCoinPenalty   * multiplier));
+    const ratingPenalty = Math.max(1, Math.round(baseRatingPenalty * multiplier));
 
     totalPoints  = Math.max(0, totalPoints  - coinPenalty);
     ratingPoints = Math.max(0, ratingPoints - ratingPenalty);
     savePoints(); updatePointsUI(); updateRatingUI();
-
-    // Build reason rows
-    const minPlayed = Math.floor(timeElapsed/60);
-    const secPlayed = String(timeElapsed%60).padStart(2,'0');
-    let activityLabel = '';
-    if (activity < 0.2)      activityLabel = 'Сдался почти сразу 😤';
-    else if (activity < 0.5) activityLabel = 'Играл мало';
-    else if (activity < 0.8) activityLabel = 'Играл неплохо 👍';
-    else                     activityLabel = 'Активная игра — штраф минимальный! 💪';
-
-    // Show on win screen
-    const srEl = document.getElementById('surrender-result');
-    if (srEl) {
-      srEl.style.display = 'block';
-      document.getElementById('surrender-rows').innerHTML = `
-        <div style="display:flex;justify-content:space-between"><span>⏱ Времени сыграно</span><span>${minPlayed}:${secPlayed}</span></div>
-        <div style="display:flex;justify-content:space-between"><span>🧱 Стен поставлено</span><span>${wallsPlaced}</span></div>
-        <div style="display:flex;justify-content:space-between"><span>📊 Активность</span><span>${activityLabel}</span></div>`;
-      document.getElementById('surrender-coins-loss').textContent  = `-${coinPenalty} 🪙`;
-      document.getElementById('surrender-rating-loss').textContent = `-${ratingPenalty} 🏆`;
-      document.getElementById('surrender-coins-left').textContent  = `${totalPoints.toLocaleString()} 🪙`;
-    }
-
+    showSurrenderBlock(timeElapsed, wallsPlaced, activity, coinPenalty, ratingPenalty);
     addMatch('loss', 'ktoyura', 'bot', aiDifficulty, -ratingPenalty);
     setTimeout(()=>saveProgressToServer(), 800);
+
+  // ── Штраф за сдачу онлайн ────────────────────────────────────
+  } else if (onlineMode && turn === 0) {
+    const coinPenalty   = Math.max(1, Math.round(60  * multiplier));
+    const ratingPenalty = Math.max(1, Math.round(15  * multiplier));
+
+    totalPoints  = Math.max(0, totalPoints  - coinPenalty);
+    ratingPoints = Math.max(0, ratingPoints - ratingPenalty);
+    savePoints(); updatePointsUI(); updateRatingUI();
+    showSurrenderBlock(timeElapsed, wallsPlaced, activity, coinPenalty, ratingPenalty);
+    addMatch('loss', opponentName, 'online', null, -ratingPenalty);
+    setTimeout(()=>saveProgressToServer(), 800);
+
   } else {
     const srEl = document.getElementById('surrender-result');
     if (srEl) srEl.style.display = 'none';
@@ -4069,7 +4074,7 @@ function doSurrender() {
 
   achStats.totalGames++;
   achStats.winStreak = 0;
-  if (aiDifficulty && turn === 0) achStats.totalSurrenders = (achStats.totalSurrenders||0) + 1;
+  if (turn === 0) achStats.totalSurrenders = (achStats.totalSurrenders||0) + 1;
   saveAchievements();
   winner = 1 - turn;
   score[winner]++;
