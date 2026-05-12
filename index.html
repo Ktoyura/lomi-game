@@ -4188,6 +4188,11 @@ function initGame() {
   gameWallsUsed = 0; gameTimeUsed = 0;
 }
 function startGame(diff) {
+  // Save bot substitute info BEFORE clearing
+  const isBotSub = !!window._isBotSubstitute;
+  const botSubName = window._botSubstituteName || 'ktoyura';
+  const botSubStats = window._botCardStats;
+
   aiDifficulty = diff === undefined ? false : diff;
   calcSizes();
   canvas.width = BOARD_PX; canvas.height = BOARD_PX;
@@ -4195,10 +4200,7 @@ function startGame(diff) {
   setMode('move');
   const p1nameEl = document.querySelector('#card1 .p-name');
   if (p1nameEl) p1nameEl.textContent = currentUser || 'Игрок 1';
-  document.getElementById('p2name').textContent = aiDifficulty
-    ? (window._botSubstituteName || 'ktoyura')
-    : 'Игрок 2';
-  window._botSubstituteName = null; // clear after use
+  document.getElementById('p2name').textContent = aiDifficulty ? botSubName : 'Игрок 2';
   document.getElementById('thinking-bar').classList.remove('visible');
   clearIngameChat();
   resetTimers();
@@ -4211,18 +4213,23 @@ function startGame(diff) {
   if (rc) rc.style.display = 'none';
   const sr = document.getElementById('surrender-result');
   if (sr) sr.style.display = 'none';
-  updateGamePointsBar();
+  const pb = document.getElementById('points-block');
+  if (pb) pb.style.display = 'none';
+
+  // Restore bot substitute state for use during game
+  window._isBotSubstitute = isBotSub;
+  window._botSubstituteName = isBotSub ? botSubName : null;
+  window._botCardStats = botSubStats;
   window._botFakeRating = null;
-  window._isBotSubstitute = false;
-  window._botSubstituteName = null;
-  window._botCardStats = null;
-  if (aiDifficulty) {
-    if (!window._isBotSubstitute) {
-      setTimeout(()=>{
-        const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
-        addIngameMsg('ktoyura 🤖', greet, '#00F5C4');
-      }, 900);
-    }
+
+  updateGamePointsBar();
+
+  // Bot greeting — only for regular ktoyura, not substitute
+  if (aiDifficulty && !isBotSub) {
+    setTimeout(()=>{
+      const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
+      addIngameMsg('ktoyura 🤖', greet, '#00F5C4');
+    }, 900);
   }
 }
 
@@ -4686,8 +4693,8 @@ function hardMove(pi, myDist, oppDist) {
     if (w) { placeWall(pi, w.r, w.c, w.dir); return; }
   }
 
-  // Minimax глубина 6
-  const best = minimax(pi, 6, -Infinity, Infinity, true);
+  // Minimax глубина 4 (быстро, укладывается в 2 сек)
+  const best = minimax(pi, 4, -Infinity, Infinity, true);
   if (!best.action) {
     if (step) doMove(pi, step[0], step[1]);
     return;
@@ -4770,7 +4777,7 @@ function minimax(pi, depth, alpha, beta, maximizing) {
       if (s >= 1) wallCandidates.push({type:'wall',r,c,dir,score:s,priority:s});
     }
     wallCandidates.sort((a,b)=>b.score-a.score);
-    for (const w of wallCandidates.slice(0, 10)) actions.push(w);
+    for (const w of wallCandidates.slice(0, 6)) actions.push(w);
   }
 
   // Sort actions by priority (BFS move first)
@@ -4821,8 +4828,8 @@ function placeWall(pi, r, c, dir) {
   if (pi === 0) { achStats.totalWalls++; saveAchievements(); gameWallsUsed++; }
   playWall();
   turn=1-pi; updateUI(); draw();
-  // Bot occasionally taunts after placing wall
-  if (pi===1 && aiDifficulty && Math.random() < 0.22) {
+  // Bot occasionally taunts after placing wall — only for real ktoyura
+  if (pi===1 && aiDifficulty && !window._isBotSubstitute && Math.random() < 0.22) {
     setTimeout(()=>{
       const reply = BOT_REPLIES_MY_WALL[Math.floor(Math.random()*BOT_REPLIES_MY_WALL.length)];
       addIngameMsg('ktoyura 🤖', reply, '#00F5C4');
@@ -4836,8 +4843,8 @@ function doMove(pi, r, c) {
   playMove();
   if ((pi===1&&r===0)||(pi===0&&r===N-1)) { winner=pi; showWin(); updateUI(); draw(); return; }
   turn = 1-pi; updateUI(); draw();
-  // Bot occasionally comments after moving
-  if (pi===1 && aiDifficulty && Math.random() < 0.18) {
+  // Bot occasionally comments after moving — only for real ktoyura
+  if (pi===1 && aiDifficulty && !window._isBotSubstitute && Math.random() < 0.18) {
     const myDist = bfsLen(players[1].r, players[1].c, 0);
     const yourDist = bfsLen(players[0].r, players[0].c, N-1);
     let comment;
@@ -4852,6 +4859,7 @@ function doMove(pi, r, c) {
 // ── Trigger AI after player move ─────────────────────────────────
 function scheduleAI() {
   if (!aiDifficulty || turn !== 1 || winner) return;
+  // Don't show thinking bar for bot substitute
   if (!window._isBotSubstitute) {
     document.getElementById('thinking-bar').classList.add('visible');
   }
@@ -4862,12 +4870,26 @@ function scheduleAI() {
 
   // Countdown
   let remaining = Math.ceil(thinkTime / 1000);
-  if (timerEl) timerEl.textContent = `${remaining}с`;
+  if (timerEl && !window._isBotSubstitute) timerEl.textContent = `${remaining}с`;
   const countInterval = setInterval(() => {
     remaining--;
-    if (timerEl) timerEl.textContent = remaining > 0 ? `${remaining}с` : '';
+    if (timerEl && !window._isBotSubstitute) timerEl.textContent = remaining > 0 ? `${remaining}с` : '';
     if (remaining <= 0) clearInterval(countInterval);
   }, 1000);
+
+  // Run AI calculation immediately but show result after thinkTime
+  let aiResult = null;
+  const calcStart = Date.now();
+
+  // Calculate in background
+  setTimeout(() => {
+    try {
+      const myDist  = bfsLen(players[1].r, players[1].c, 0);
+      const oppDist = bfsLen(players[0].r, players[0].c, N-1);
+      // Store what the bot wants to do
+      window._pendingAiMove = { myDist, oppDist };
+    } catch(e) {}
+  }, 0);
 
   setTimeout(()=>{
     clearInterval(countInterval);
