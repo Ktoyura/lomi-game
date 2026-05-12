@@ -2110,7 +2110,7 @@ function showOpponentCard(name, stats, isBot) {
   const winrate = stats.games > 0 ? Math.round(stats.wins/stats.games*100) : 0;
   statusEl.innerHTML = `
     <div style="background:var(--surface2);border-radius:14px;padding:12px 16px;width:100%;border:1.5px solid rgba(0,245,196,0.3)">
-      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px">${isBot ? '🤖 Бот-подставка' : '✅ Соперник найден!'}</div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px">${isBot ? '✅ Соперник найден!' : '✅ Соперник найден!'}</div>
       <div style="font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;color:var(--p2)">${name}</div>
       <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">
         🏆 ${stats.points||0} очков · ${stats.wins||0} побед · ${winrate}% винрейт
@@ -2123,7 +2123,11 @@ function startBotSubstitute(botName) {
   const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
 
   opponentName = botName;
-  showToast('🤖 Соперник найден!', `Играешь против ${botName}`);
+  // Override bot display name in game
+  window._botSubstituteName = botName;
+  window._botSubstituteDiff = difficulty;
+
+  showToast('✅ Соперник найден!', `Играешь против ${botName}`);
 
   onlineMode = false;
   aiDifficulty = difficulty;
@@ -4016,8 +4020,10 @@ function doSurrender() {
     if (aiDifficulty === 'medium') { baseCoinPenalty = 180; baseRatingPenalty = 30; }
     if (aiDifficulty === 'hard')   { baseCoinPenalty = 300; baseRatingPenalty = 45; }
 
-    const coinPenalty   = Math.round(baseCoinPenalty   * multiplier);
-    const ratingPenalty = Math.round(baseRatingPenalty * multiplier);
+    // Minimum 20% penalty always applied even if played actively
+    const minMultiplier = Math.max(multiplier, 0.2);
+    const coinPenalty   = Math.max(1, Math.round(baseCoinPenalty   * minMultiplier));
+    const ratingPenalty = Math.max(1, Math.round(baseRatingPenalty * minMultiplier));
 
     totalPoints  = Math.max(0, totalPoints  - coinPenalty);
     ratingPoints = Math.max(0, ratingPoints - ratingPenalty);
@@ -4180,7 +4186,10 @@ function startGame(diff) {
   setMode('move');
   const p1nameEl = document.querySelector('#card1 .p-name');
   if (p1nameEl) p1nameEl.textContent = currentUser || 'Игрок 1';
-  document.getElementById('p2name').textContent = aiDifficulty ? 'ktoyura' : 'Игрок 2';
+  document.getElementById('p2name').textContent = aiDifficulty
+    ? (window._botSubstituteName || 'ktoyura')
+    : 'Игрок 2';
+  window._botSubstituteName = null; // clear after use
   document.getElementById('thinking-bar').classList.remove('visible');
   clearIngameChat();
   resetTimers();
