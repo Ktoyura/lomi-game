@@ -2586,38 +2586,61 @@ function closeDailyPopup() {
 }
 
 function claimDailyReward() {
-  if (!slotResult) { console.log('No slotResult!'); return; }
+  const result = slotResult;
+  if (!result) return;
 
-  if (slotResult.type === 'coins') {
-    totalPoints += slotResult.amount;
-    achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + slotResult.amount;
+  // Close popup immediately
+  document.getElementById('daily-popup').style.display = 'none';
+  if (slotInterval) { clearInterval(slotInterval); slotInterval = null; }
+  slotRunning = false;
+  slotResult = null;
+
+  // Apply reward
+  let earned = '';
+  if (result.type === 'coins') {
+    totalPoints += result.amount;
+    achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + result.amount;
     savePoints(); saveAchievements(); updatePointsUI();
-    showToast('🎁 Ежедневная награда!', `+${slotResult.amount} 🪙 монет!`);
-  } else if (slotResult.type === 'rating') {
-    addRatingPoints(slotResult.amount);
-    showToast('🎁 Ежедневная награда!', `+${slotResult.amount} 🏆 рейтинга!`);
+    earned = `+${result.amount} 🪙`;
+  } else if (result.type === 'rating') {
+    ratingPoints = Math.max(0, ratingPoints + result.amount);
+    achStats.totalRatingEarned = (achStats.totalRatingEarned||0) + result.amount;
+    savePoints(); saveAchievements(); updateRatingUI();
+    earned = `+${result.amount} 🏆`;
   } else {
-    if (slotResult._skin) {
-      const skin = slotResult._skin;
-      ownedItems.add(skin.id); saveShop();
-      showToast('🎰 Выпал скин!', `${skin.flag||''} ${skin.name} теперь твой!`);
+    if (result._skin) {
+      ownedItems.add(result._skin.id); saveShop();
+      earned = `Скин: ${result._skin.name}`;
     } else {
       totalPoints += 500; savePoints(); updatePointsUI();
-      showToast('🎁 Ежедневная награда!', '+500 🪙 (все скины уже есть!)');
+      earned = '+500 🪙';
     }
   }
 
+  // Save
   dailyState.lastClaim = Date.now();
   saveDailyState();
   saveProgressToServer();
+  updateDailyBox();
 
+  // Show notification via toast element directly
+  const toast = document.getElementById('toast');
+  if (toast) {
+    const icon = document.getElementById('toast-icon');
+    const name = document.getElementById('toast-name');
+    const desc = document.getElementById('toast-desc');
+    if (icon) icon.textContent = result.type === 'coins' ? '🪙' : result.type === 'rating' ? '🏆' : '🎰';
+    if (name) name.textContent = '🎁 Ежедневная награда!';
+    if (desc) desc.textContent = earned;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // Sound
   playTone(523,'sine',0.12,0.15);
   setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
   setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
   setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
-
-  closeDailyPopup();
-  updateDailyBox();
 }
 window.claimDailyReward = claimDailyReward;
 window.closeDailyPopup = closeDailyPopup;
@@ -3055,6 +3078,16 @@ function checkAchievements() {
       queueToast(ach);
     }
   }
+}
+
+function showToast(title, msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  document.getElementById('toast-icon').textContent = '🎁';
+  document.getElementById('toast-name').textContent = title;
+  document.getElementById('toast-desc').textContent = msg || '';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 function queueToast(ach) {
