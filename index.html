@@ -3462,6 +3462,8 @@ function logout() {
   localStorage.removeItem('lomi_achievements');
   localStorage.removeItem('lomi_guest_name');
   localStorage.removeItem('lomi_guest_bonus');
+  localStorage.removeItem('lomi_daily');
+  localStorage.removeItem('lomi_matches');
   // Reset in-memory state
   totalPoints = 0;
   ratingPoints = 0;
@@ -3471,6 +3473,8 @@ function logout() {
   equippedBoard = 'default';
   unlockedAch = new Set();
   achStats = { totalGames:0, totalWins:0, winStreak:0, bestStreak:0, botWins:0, hardBotWins:0, totalWalls:0 };
+  dailyState = { lastClaim: 0 };
+  matchHistory = [];
   isGuest = false;
   currentUser = '';
   showScreen('auth');
