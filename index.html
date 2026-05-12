@@ -704,12 +704,29 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 <div id="online" class="screen">
   <div class="online-title">🌐 Онлайн</div>
   <div class="online-tabs">
-    <button class="online-tab active" id="otab-create" onclick="switchOnlineTab('create')">Создать</button>
+    <button class="online-tab active" id="otab-search" onclick="switchOnlineTab('search')">🔍 Поиск</button>
+    <button class="online-tab" id="otab-create" onclick="switchOnlineTab('create')">Создать</button>
     <button class="online-tab" id="otab-join" onclick="switchOnlineTab('join')">Войти</button>
   </div>
 
+  <!-- SEARCH panel -->
+  <div class="online-panel" id="opanel-search">
+    <div style="font-size:0.82rem;color:var(--muted);text-align:center">Автоматический поиск соперника</div>
+    <div id="search-idle">
+      <button class="btn btn-primary" onclick="startSearch()" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)">🔍 Найти соперника</button>
+    </div>
+    <div id="search-active" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%">
+      <div style="font-size:2.5rem">🔍</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700">Ищем соперника...</div>
+      <div id="search-timer" style="font-family:'Unbounded',sans-serif;font-size:1.5rem;font-weight:900;color:#784BFF">0с</div>
+      <div style="font-size:0.75rem;color:var(--muted)">Если никого нет — подберём бота через 20 сек</div>
+      <button class="btn btn-secondary" onclick="cancelSearch()" style="max-width:200px">Отмена</button>
+    </div>
+    <div class="online-status" id="search-status"></div>
+  </div>
+
   <!-- CREATE panel -->
-  <div class="online-panel" id="opanel-create">
+  <div class="online-panel" id="opanel-create" style="display:none">
     <div style="font-size:0.82rem;color:var(--muted);text-align:center">Создай комнату и поделись кодом с другом</div>
     <button class="btn btn-primary" onclick="createRoom()">Создать комнату</button>
     <div class="room-code-display" id="room-code-display" style="display:none" onclick="copyCode()" title="Нажми чтобы скопировать">
@@ -1924,18 +1941,30 @@ function initSocket() {
     setOnlineStatus('create', '<span class="waiting-dots">Ждём соперника<span>.</span><span>.</span><span>.</span></span>', '');
   });
 
-  socket.on('room_joined', ({ code, playerIndex, opponentName: opp }) => {
+  socket.on('room_joined', ({ code, playerIndex, opponentName: opp, opponentStats: os }) => {
     myRoomCode = code;
     myPlayerIndex = playerIndex;
     opponentName = opp;
-    setOnlineStatus('join', `✅ Подключился! Ждём старта...`, 'good');
-    socket.emit('player_ready');
+    const wr = os&&os.games>0?Math.round(os.wins/os.games*100):0;
+    setOnlineStatus('join', `
+      <div style="background:var(--surface2);border-radius:12px;padding:10px 14px;border:1.5px solid rgba(0,245,196,0.3)">
+        <div style="font-size:0.7rem;color:var(--muted)">Соперник:</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--p2)">${opp}</div>
+        <div style="font-size:0.7rem;color:var(--muted)">🏆 ${os&&os.points||0} · ${os&&os.wins||0} побед · ${wr}% винрейт</div>
+      </div>`, '');
+    setTimeout(()=>socket.emit('player_ready'), 1500);
   });
 
-  socket.on('opponent_joined', ({ opponentName: opp }) => {
+  socket.on('opponent_joined', ({ opponentName: opp, opponentStats: os }) => {
     opponentName = opp;
-    setOnlineStatus('create', `✅ ${opp} зашёл! Начинаем...`, 'good');
-    socket.emit('player_ready');
+    const wr = os&&os.games>0?Math.round(os.wins/os.games*100):0;
+    setOnlineStatus('create', `
+      <div style="background:var(--surface2);border-radius:12px;padding:10px 14px;border:1.5px solid rgba(0,245,196,0.3)">
+        <div style="font-size:0.7rem;color:var(--muted)">Соперник нашёлся!</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--p2)">${opp}</div>
+        <div style="font-size:0.7rem;color:var(--muted)">🏆 ${os&&os.points||0} · ${os&&os.wins||0} побед · ${wr}% винрейт</div>
+      </div>`, '');
+    setTimeout(()=>socket.emit('player_ready'), 1500);
   });
 
   socket.on('game_start', ({ player0, player1 }) => {
@@ -2009,10 +2038,12 @@ function initSocket() {
 
 function switchOnlineTab(tab) {
   onlineTab = tab;
-  document.getElementById('otab-create').classList.toggle('active', tab==='create');
-  document.getElementById('otab-join').classList.toggle('active', tab==='join');
-  document.getElementById('opanel-create').style.display = tab==='create' ? 'flex' : 'none';
-  document.getElementById('opanel-join').style.display   = tab==='join'   ? 'flex' : 'none';
+  ['search','create','join'].forEach(t => {
+    const btn = document.getElementById(`otab-${t}`);
+    const panel = document.getElementById(`opanel-${t}`);
+    if (btn) btn.classList.toggle('active', t===tab);
+    if (panel) panel.style.display = t===tab ? 'flex' : 'none';
+  });
 }
 
 function setOnlineStatus(panel, html, cls) {
@@ -2022,10 +2053,83 @@ function setOnlineStatus(panel, html, cls) {
   el.className = 'online-status' + (cls ? ` ${cls}` : '');
 }
 
+// ── MATCHMAKING ──────────────────────────────────────────────────
+let searchInterval = null;
+let searchSeconds = 0;
+
+function startSearch() {
+  if (!socket) initSocket();
+  document.getElementById('search-idle').style.display = 'none';
+  document.getElementById('search-active').style.display = 'flex';
+  document.getElementById('search-status').textContent = '';
+  searchSeconds = 0;
+
+  searchInterval = setInterval(() => {
+    searchSeconds++;
+    const el = document.getElementById('search-timer');
+    if (el) el.textContent = `${searchSeconds}с`;
+  }, 1000);
+
+  // Send player stats
+  const stats = {
+    points: ratingPoints,
+    wins: achStats.totalWins || 0,
+    games: achStats.totalGames || 0,
+  };
+  socket.emit('find_match', { username: currentUser || 'Гость', stats });
+
+  socket.once('match_found', (data) => {
+    clearInterval(searchInterval);
+    document.getElementById('search-active').style.display = 'none';
+    document.getElementById('search-idle').style.display = 'flex';
+
+    if (data.isBot) {
+      // Bot substitute — play vs AI but show as online
+      showOpponentCard(data.opponentName, data.opponentStats, true);
+      setTimeout(() => startBotSubstitute(data.opponentName), 2000);
+    } else {
+      showOpponentCard(data.opponentName, data.opponentStats, false);
+      myPlayerIndex = data.playerIndex;
+      opponentName = data.opponentName;
+      socket.roomCode = data.code;
+      socket.emit('player_ready');
+    }
+  });
+}
+
+function cancelSearch() {
+  if (socket) socket.emit('cancel_search');
+  clearInterval(searchInterval);
+  document.getElementById('search-active').style.display = 'none';
+  document.getElementById('search-idle').style.display = 'flex';
+  searchSeconds = 0;
+}
+
+function showOpponentCard(name, stats, isBot) {
+  const statusEl = document.getElementById('search-status');
+  if (!statusEl) return;
+  const winrate = stats.games > 0 ? Math.round(stats.wins/stats.games*100) : 0;
+  statusEl.innerHTML = `
+    <div style="background:var(--surface2);border-radius:14px;padding:12px 16px;width:100%;border:1.5px solid rgba(0,245,196,0.3)">
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px">${isBot ? '🤖 Бот-подставка' : '✅ Соперник найден!'}</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;color:var(--p2)">${name}</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">
+        🏆 ${stats.points||0} очков · ${stats.wins||0} побед · ${winrate}% винрейт
+      </div>
+    </div>`;
+}
+
+function startBotSubstitute(botName) {
+  // Start game vs AI bot but pretend it's online
+  opponentName = botName;
+  showToast('🤖 Соперник найден!', `Играешь против ${botName}`);
+  startOnlineGame(0, botName, 'BOT');
+}
+
 function createRoom() {
   initSocket();
   setOnlineStatus('create', 'Создаём комнату...', '');
-  socket.emit('create_room', { username: currentUser || 'Игрок' });
+  socket.emit('create_room', { username: currentUser || 'Игрок', stats: { points: ratingPoints, wins: achStats.totalWins||0, games: achStats.totalGames||0 } });
 }
 
 function joinRoom() {
@@ -2033,7 +2137,7 @@ function joinRoom() {
   if (code.length < 4) { setOnlineStatus('join','Введи код комнаты','bad'); return; }
   initSocket();
   setOnlineStatus('join', 'Подключаемся...', '');
-  socket.emit('join_room', { code, username: currentUser || 'Игрок' });
+  socket.emit('join_room', { code, username: currentUser || 'Игрок', stats: { points: ratingPoints, wins: achStats.totalWins||0, games: achStats.totalGames||0 } });
 }
 
 function copyCode() {
@@ -3493,7 +3597,9 @@ function loadUser() {
       loadMatchHistory();
       updateUserUI();
       const lastScreen = localStorage.getItem('lomi_last_screen') || 'menu';
-      showScreen(lastScreen);
+      // For game screen — go to menu instead (can't restore mid-game state)
+      const restoreScreen = lastScreen === 'game' ? 'menu' : lastScreen;
+      showScreen(restoreScreen);
       // Sync from server in background — don't block UI
       apiCall('GET', '/profile').then(data => {
         if (data && !data.error) {
@@ -3521,7 +3627,9 @@ function loadUser() {
     loadPoints();
     loadMatchHistory();
     updateUserUI();
-    showScreen('menu');
+    const lastScreen = localStorage.getItem('lomi_last_screen') || 'menu';
+    const restoreScreen = lastScreen === 'game' ? 'menu' : lastScreen;
+    showScreen(restoreScreen);
     return;
   }
 
@@ -3744,16 +3852,13 @@ function startTimer() {
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     if (winner) { clearInterval(timerInterval); return; }
-    if (aiDifficulty && turn === 1) return; // don't tick during bot thinking
     timeLeft[turn]--;
     updateTimerUI();
-    // Warn sound at 30 seconds
     if (timeLeft[turn] === 30) playTone(880, 'sine', 0.15, 0.15);
     if (timeLeft[turn] <= 0) {
       timeLeft[turn] = 0;
       updateTimerUI();
       clearInterval(timerInterval);
-      // Time's up — that player loses
       timerTimeout(turn);
     }
   }, 1000);
@@ -3986,7 +4091,7 @@ function showScreen(id) {
   } else if (id === 'online') {
     stopMenuMusic();
     // Reset panels
-    switchOnlineTab('create');
+    switchOnlineTab('search');
     document.getElementById('room-code-display').style.display='none';
     document.getElementById('copy-hint').style.display='none';
     setOnlineStatus('create','','');
@@ -4826,11 +4931,11 @@ window.addEventListener('beforeunload', () => {
   if (active) {
     const id = active.id;
     // Only save safe screens (not mid-game states)
-    const safeScreens = ['menu','shop','achievements','leaderboard','profile','rules','online'];
+    const safeScreens = ['menu','shop','achievements','leaderboard','profile','rules','online','difficulty','game'];
     if (safeScreens.includes(id)) {
       localStorage.setItem('lomi_last_screen', id);
     } else {
-      localStorage.removeItem('lomi_last_screen');
+      localStorage.setItem('lomi_last_screen', 'menu');
     }
   }
 });
