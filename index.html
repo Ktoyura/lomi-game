@@ -2108,9 +2108,11 @@ function showOpponentCard(name, stats, isBot) {
   const statusEl = document.getElementById('search-status');
   if (!statusEl) return;
   const winrate = stats.games > 0 ? Math.round(stats.wins/stats.games*100) : 0;
+  // Save stats for use in game bar
+  window._botCardStats = stats;
   statusEl.innerHTML = `
     <div style="background:var(--surface2);border-radius:14px;padding:12px 16px;width:100%;border:1.5px solid rgba(0,245,196,0.3)">
-      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px">${isBot ? '✅ Соперник найден!' : '✅ Соперник найден!'}</div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px">✅ Соперник найден!</div>
       <div style="font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;color:var(--p2)">${name}</div>
       <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">
         🏆 ${stats.points||0} очков · ${stats.wins||0} побед · ${winrate}% винрейт
@@ -4213,6 +4215,7 @@ function startGame(diff) {
   window._botFakeRating = null;
   window._isBotSubstitute = false;
   window._botSubstituteName = null;
+  window._botCardStats = null;
   if (aiDifficulty) {
     if (!window._isBotSubstitute) {
       setTimeout(()=>{
@@ -4242,10 +4245,14 @@ function updateGamePointsBar() {
   if (gpCoins) gpCoins.textContent = totalPoints.toLocaleString();
   if (gpRating)gpRating.textContent= ratingPoints.toLocaleString();
 
-  // Show fake stats for bot
+  // Show bot stats from search card, or random if not available
   if (p2coins) {
-    if (!window._botFakeRating) window._botFakeRating = Math.floor(Math.random()*500)+50;
-    p2coins.textContent = '🏆 ' + window._botFakeRating;
+    if (window._botCardStats) {
+      p2coins.textContent = '🏆 ' + (window._botCardStats.points || 0);
+    } else {
+      if (!window._botFakeRating) window._botFakeRating = Math.floor(Math.random()*500)+50;
+      p2coins.textContent = '🏆 ' + window._botFakeRating;
+    }
   }
 }
 
