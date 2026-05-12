@@ -2120,10 +2120,15 @@ function showOpponentCard(name, stats, isBot) {
 }
 
 function startBotSubstitute(botName) {
-  // Start game vs AI bot but pretend it's online
+  const difficulties = ['easy', 'medium', 'hard'];
+  const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+
   opponentName = botName;
   showToast('🤖 Соперник найден!', `Играешь против ${botName}`);
-  startOnlineGame(0, botName, 'BOT');
+
+  onlineMode = false;
+  aiDifficulty = difficulty;
+  startGame(true);
 }
 
 function createRoom() {
