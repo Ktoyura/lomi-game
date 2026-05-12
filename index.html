@@ -2221,16 +2221,49 @@ function applyOpponentWall(oppIdx, r, c, dir) {
   updateUI(); draw();
 }
 
+function showOnlinePointsBlock(won) {
+  const block = document.getElementById('points-block');
+  if (!block) return;
+  block.style.display = 'block';
+  block.style.borderColor = won ? 'rgba(0,245,196,0.3)' : 'rgba(255,107,107,0.3)';
+
+  const rowsEl = document.getElementById('points-rows');
+  if (rowsEl) {
+    rowsEl.innerHTML = won
+      ? `<div style="display:flex;justify-content:space-between"><span>🌐 Онлайн победа</span><span style="color:#00F5C4">+150 🪙</span></div>
+         <div style="display:flex;justify-content:space-between"><span>🏆 Рейтинг</span><span style="color:#a78bfa">+100 🏆</span></div>`
+      : `<div style="display:flex;justify-content:space-between"><span>🌐 Онлайн поражение</span><span style="color:#ff6b6b">-30 🪙</span></div>
+         <div style="display:flex;justify-content:space-between"><span>🏆 Рейтинг</span><span style="color:#ff6b6b">-20 🏆</span></div>`;
+  }
+
+  const totalEl = document.getElementById('points-total');
+  if (totalEl) totalEl.textContent = won ? '+150 🪙' : '-30 🪙';
+  totalEl.style.color = won ? '#00F5C4' : '#ff6b6b';
+
+  const cumEl = document.getElementById('points-cumulative');
+  if (cumEl) cumEl.textContent = totalPoints.toLocaleString() + ' 🪙';
+}
+
 function showOnlineResult(subOverride, won) {
-  // Rating points for online
+  // Rating + coins for online
   if (won) {
     addRatingPoints(100);
-    showRatingChange('+100 🏆', '#00F5C4');
+    totalPoints += 150;
+    achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + 150;
+    savePoints(); saveAchievements(); updatePointsUI();
+    showRatingChange('+100 🏆  +150 🪙', '#00F5C4');
     addMatch('win', opponentName, 'online', null, 100);
+    // Show points block
+    setTimeout(()=>showOnlinePointsBlock(true), 300);
   } else {
     addRatingPoints(-20);
-    showRatingChange('-20 😔', '#ff6b6b');
+    // Lose coins too
+    const coinLoss = Math.min(30, totalPoints);
+    totalPoints = Math.max(0, totalPoints - 30);
+    savePoints(); updatePointsUI();
+    showRatingChange('-20 🏆  -30 🪙', '#ff6b6b');
     addMatch('loss', opponentName, 'online', null, -20);
+    setTimeout(()=>showOnlinePointsBlock(false), 300);
   }
   const w = won ? myPlayerIndex : 1 - myPlayerIndex;
   winner = w;
@@ -4096,6 +4129,9 @@ function showScreen(id) {
     stopMenuMusic();
     // Reset panels
     switchOnlineTab('search');
+    document.getElementById('search-status').innerHTML = '';
+    document.getElementById('search-idle').style.display = 'flex';
+    document.getElementById('search-active').style.display = 'none';
     document.getElementById('room-code-display').style.display='none';
     document.getElementById('copy-hint').style.display='none';
     setOnlineStatus('create','','');
