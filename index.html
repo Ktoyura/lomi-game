@@ -2122,16 +2122,23 @@ function startBotSubstitute(botName) {
   const difficulties = ['easy', 'medium', 'hard'];
   const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
 
-  opponentName = botName;
-  // Override bot display name in game
   window._botSubstituteName = botName;
-  window._botSubstituteDiff = difficulty;
+  window._isBotSubstitute = true;
 
   showToast('✅ Соперник найден!', `Играешь против ${botName}`);
 
+  // Reset online mode, set as bot game
   onlineMode = false;
+  if (socket) { socket.disconnect(); socket = null; }
   aiDifficulty = difficulty;
-  startGame(true);
+
+  // Start game after short delay
+  setTimeout(() => {
+    startGame(true);
+    // Override p2 name after game starts
+    const p2el = document.getElementById('p2name');
+    if (p2el) p2el.textContent = botName;
+  }, 500);
 }
 
 function createRoom() {
@@ -4203,12 +4210,16 @@ function startGame(diff) {
   const sr = document.getElementById('surrender-result');
   if (sr) sr.style.display = 'none';
   updateGamePointsBar();
-  window._botFakeRating = null; // reset for new game
+  window._botFakeRating = null;
+  window._isBotSubstitute = false;
+  window._botSubstituteName = null;
   if (aiDifficulty) {
-    setTimeout(()=>{
-      const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
-      addIngameMsg('ktoyura 🤖', greet, '#00F5C4');
-    }, 900);
+    if (!window._isBotSubstitute) {
+      setTimeout(()=>{
+        const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
+        addIngameMsg('ktoyura 🤖', greet, '#00F5C4');
+      }, 900);
+    }
   }
 }
 
@@ -4834,7 +4845,9 @@ function doMove(pi, r, c) {
 // ── Trigger AI after player move ─────────────────────────────────
 function scheduleAI() {
   if (!aiDifficulty || turn !== 1 || winner) return;
-  document.getElementById('thinking-bar').classList.add('visible');
+  if (!window._isBotSubstitute) {
+    document.getElementById('thinking-bar').classList.add('visible');
+  }
 
   // Always think 1-2 seconds (random)
   const thinkTime = 1000 + Math.random() * 1000;
