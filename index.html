@@ -818,7 +818,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       <span>🏆 <span id="gp-rating" style="color:#a78bfa;font-family:'Unbounded',sans-serif;font-size:0.65rem">0</span></span>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
-      <span>🪙 <span id="gp-p2coins" style="color:#FFD93D;font-family:'Unbounded',sans-serif;font-size:0.65rem">—</span></span>
+      <span id="gp-p2coins" style="color:#a78bfa;font-family:'Unbounded',sans-serif;font-size:0.65rem">🏆 —</span>
       <span style="color:#00F5C4;font-weight:700" id="gp-p2name">Игрок 2</span>
     </div>
   </div>
@@ -4203,6 +4203,7 @@ function startGame(diff) {
   const sr = document.getElementById('surrender-result');
   if (sr) sr.style.display = 'none';
   updateGamePointsBar();
+  window._botFakeRating = null; // reset for new game
   if (aiDifficulty) {
     setTimeout(()=>{
       const greet = BOT_REPLIES_GREET[Math.floor(Math.random()*BOT_REPLIES_GREET.length)];
@@ -4214,17 +4215,27 @@ function startGame(diff) {
 function updateGamePointsBar() {
   const bar = document.getElementById('game-points-bar');
   if (!bar) return;
-  bar.style.display = aiDifficulty ? 'flex' : 'none'; // show only vs bot
+  bar.style.display = aiDifficulty ? 'flex' : 'none';
 
-  const p1name = document.getElementById('gp-p1name');
-  const p2name = document.getElementById('gp-p2name');
+  const p1name  = document.getElementById('gp-p1name');
+  const p2name  = document.getElementById('gp-p2name');
   const gpCoins = document.getElementById('gp-coins');
-  const gpRating = document.getElementById('gp-rating');
+  const gpRating= document.getElementById('gp-rating');
+  const p2coins = document.getElementById('gp-p2coins');
 
-  if (p1name) p1name.textContent = currentUser || 'Игрок';
-  if (p2name) p2name.textContent = aiDifficulty ? 'ktoyura 🤖' : 'Игрок 2';
+  // Bot name — use substitute name if set
+  const botDisplayName = document.getElementById('p2name')?.textContent || 'ktoyura';
+
+  if (p1name)  p1name.textContent  = currentUser || 'Игрок';
+  if (p2name)  p2name.textContent  = botDisplayName + ' 🤖';
   if (gpCoins) gpCoins.textContent = totalPoints.toLocaleString();
-  if (gpRating) gpRating.textContent = ratingPoints.toLocaleString();
+  if (gpRating)gpRating.textContent= ratingPoints.toLocaleString();
+
+  // Show fake stats for bot
+  if (p2coins) {
+    if (!window._botFakeRating) window._botFakeRating = Math.floor(Math.random()*500)+50;
+    p2coins.textContent = '🏆 ' + window._botFakeRating;
+  }
 }
 
 function setMode(m) {
