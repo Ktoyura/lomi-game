@@ -527,7 +527,7 @@ const INTRO_AUDIO_B64 = '';</script>
       onkeydown="if(event.key==='Enter')doRegister()">
     <div class="account-error" id="reg-error"></div>
     <button class="btn btn-primary" onclick="doRegister()">Создать →</button>
-    <button class="btn btn-secondary" onclick="showScreen('auth')">Назад</button>
+    <button class="btn btn-secondary" id="reg-back-btn" onclick="showScreen('auth')">Назад</button>
   </div>
 </div>
 
@@ -4434,6 +4434,9 @@ function endTutorial() {
   localStorage.setItem('lomi_tutorial_done', '1');
   const ov = $t('tutorial-overlay');
   if (ov) ov.style.display = 'none';
+  // Hide back button on register screen
+  const backBtn = document.getElementById('reg-back-btn');
+  if (backBtn) backBtn.style.display = 'none';
   showScreen('register');
 }
 
@@ -4504,6 +4507,9 @@ function showScreen(id) {
     document.getElementById('reg-password').value='';
     document.getElementById('reg-avatar').textContent='?';
     document.getElementById('reg-avatar').style.background='linear-gradient(135deg,var(--p1),#784BFF)';
+    // Show back button (hidden during tutorial)
+    const backBtn = document.getElementById('reg-back-btn');
+    if (backBtn) backBtn.style.display = '';
     setTimeout(()=>document.getElementById('reg-username').focus(),100);
     stopMenuMusic();
   } else if (id === 'forgot') {
