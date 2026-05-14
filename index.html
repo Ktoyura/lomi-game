@@ -983,9 +983,16 @@ const INTRO_AUDIO_B64 = '';</script>
       </div>
     </div>
   </div>
-  <div class="btn-group" style="max-width:280px">
+  <div class="btn-group" style="max-width:280px" id="win-buttons-normal">
     <button class="btn btn-primary" onclick="startGame(aiDifficulty)">⚔️ Реванш</button>
     <button class="btn btn-secondary" onclick="showScreen('menu')">🚪 Выйти в меню</button>
+  </div>
+  <!-- Tutorial win button -->
+  <div id="win-buttons-tutorial" style="display:none;width:100%;max-width:280px;display:none;flex-direction:column;gap:12px">
+    <button class="btn btn-primary" onclick="endTutorial()" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);font-size:1rem;font-weight:900">
+      🎮 Создать аккаунт и продолжить
+    </button>
+    <div style="font-size:0.72rem;color:var(--muted);text-align:center">Сохрани прогресс — это займёт 30 секунд</div>
   </div>
 </div>
 
@@ -5327,44 +5334,48 @@ function handleMove(mx,my) {
 function showWin() {
   stopTimer();
   if (tutorialActive) {
-    // Give tutorial win reward - show normal win screen first
+    // Hide tutorial overlay
+    const ov = $t('tutorial-overlay');
+    if (ov) ov.style.display = 'none';
+
+    // Give rewards
     totalPoints += 200;
     achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + 200;
     ratingPoints = Math.max(0, ratingPoints + 20);
     achStats.totalRatingEarned = (achStats.totalRatingEarned||0) + 20;
     savePoints(); saveAchievements(); updatePointsUI(); updateRatingUI();
 
-    // Show win screen normally
-    const w = winner;
-    score[w]++;
-    updateScoreUI();
-    const isPlayer = w === 0;
-    const wr = document.getElementById('win-result');
-    if (wr) {
-      document.getElementById('win-title').textContent = isPlayer ? '🏆 Ты победил!' : '😔 Проиграл';
-      document.getElementById('win-subtitle').textContent = isPlayer ? 'Отличная игра!' : '';
-      const pb = document.getElementById('points-block');
-      if (pb) {
-        pb.style.display = 'block';
-        const rows = document.getElementById('points-rows');
-        if (rows) rows.innerHTML = `
-          <div style="display:flex;justify-content:space-between"><span>🎓 За обучение</span><span style="color:#FFD700">+200 🪙</span></div>
-          <div style="display:flex;justify-content:space-between"><span>🏆 Рейтинг</span><span style="color:#a78bfa">+20 🏆</span></div>`;
-        const tot = document.getElementById('points-total');
-        if (tot) { tot.textContent = '+200 🪙'; tot.style.color = '#FFD700'; }
-        const cum = document.getElementById('points-cumulative');
-        if (cum) cum.textContent = totalPoints.toLocaleString() + ' 🪙';
-      }
-      // Replace buttons with single registration button
-      const btns = document.getElementById('win-buttons');
-      if (btns) btns.innerHTML = `
-        <button onclick="endTutorial()" class="btn btn-primary" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);width:100%;font-size:1rem;font-weight:900">
-          🎮 Создать аккаунт и продолжить
-        </button>
-        <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:8px">Сохрани прогресс — это 30 секунд</div>`;
+    // Setup win screen
+    const w = winner; score[w]++; updateScoreUI();
+    document.getElementById('win-emoji').textContent = '🏆';
+    document.getElementById('win-title').textContent = 'Победа!';
+    document.getElementById('win-sub').textContent = 'Отличная первая партия!';
+
+    // Show points block
+    const pb = document.getElementById('points-block');
+    if (pb) {
+      pb.style.display = 'block';
+      document.getElementById('points-rows').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>🎓 За обучение</span><span style="color:#FFD700;font-weight:700">+200 🪙</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>🏆 Рейтинг</span><span style="color:#a78bfa;font-weight:700">+20 🏆</span>
+        </div>`;
+      const tot = document.getElementById('points-total');
+      if (tot) { tot.textContent = '+200 🪙'; tot.style.color='#FFD700'; }
+      const cum = document.getElementById('points-cumulative');
+      if (cum) cum.textContent = totalPoints.toLocaleString() + ' 🪙';
     }
+
+    // Show tutorial button, hide normal buttons
+    const normal = document.getElementById('win-buttons-normal');
+    const tutBtns = document.getElementById('win-buttons-tutorial');
+    if (normal) normal.style.display = 'none';
+    if (tutBtns) tutBtns.style.display = 'flex';
+
     showScreen('win');
-    if (isPlayer) playWin();
+    playWin();
     return;
   }
   const w = winner;
@@ -5372,6 +5383,12 @@ function showWin() {
   updateScoreUI();
   const isBot = aiDifficulty && w === 1;
   const isPlayerVsBot = aiDifficulty && w === 0;
+
+  // Reset tutorial buttons to normal
+  const nb = document.getElementById('win-buttons-normal');
+  const tb = document.getElementById('win-buttons-tutorial');
+  if (nb) nb.style.display = 'flex';
+  if (tb) tb.style.display = 'none';
 
   // Update achievement stats
   achStats.totalGames++;
