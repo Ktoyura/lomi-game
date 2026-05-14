@@ -4664,6 +4664,8 @@ function updateGamePointsBar() {
 }
 
 function setMode(m) {
+  // During tutorial wall step — can't switch back to move mode
+  if (tutorialActive && tutWaitingFor === 'wall' && m === 'move') return;
   mode = m;
   wallPreview = null;
   document.getElementById('btn-move').classList.toggle('active', m === 'move');
@@ -5304,6 +5306,16 @@ function handleMove(mx,my) {
   if (winner) return;
   if (aiDifficulty && turn === 1) return; // block input during AI turn
   if (mode==='move') {
+    // During tutorial wall step — block moves, force wall placement
+    if (tutorialActive && tutWaitingFor === 'wall') {
+      // Flash hint to remind player
+      const txt = $t('tut-text');
+      if (txt) {
+        txt.style.color = '#FF3333';
+        setTimeout(() => { if(txt) txt.style.color = '#FFD700'; }, 600);
+      }
+      return;
+    }
     const cell=hitCell(mx,my); if(!cell) return;
     const valid=getValidMoves(turn);
     if (valid.some(([r,c])=>r===cell.r&&c===cell.c)) {
