@@ -909,7 +909,7 @@ const INTRO_AUDIO_B64 = '';</script>
     <button class="mode-btn" id="btn-wall" onclick="setMode('wall')">⊞ Стена</button>
     <button class="mode-btn wall-dir-btn" id="btn-dir" onclick="toggleDir()" title="Повернуть стену">↔ Горизонт.</button>
     <button class="mode-btn btn-sm" id="btn-chat" onclick="toggleChat()" style="margin-left:4px" title="Чат">💬</button>
-    <button class="mode-btn btn-sm" onclick="confirmSurrender()" style="margin-left:2px;color:#ff6b6b;" title="Сдаться">🏳</button>
+    <button class="mode-btn btn-sm" onclick="confirmSurrender()" id="btn-surrender-tut" style="margin-left:2px;color:#ff6b6b;" title="Сдаться">🏳</button>
     <button class="mode-btn btn-sm" onclick="showScreen('menu')" style="margin-left:2px">✕</button>
   </div>
 
@@ -4248,27 +4248,33 @@ function tutPulseWallNearBot(dir) {
   if (!cv || !el) return;
   const rect = cv.getBoundingClientRect();
   const cs = rect.width / 9;
+  const gap = cs * 0.12; // wall gap between cells
 
-  // Лучшее место для стены — между ботом и его целью
-  let wr = Math.min(players[1].r + 1, 7);
-  let wc = Math.max(0, Math.min(7, players[1].c));
+  // Best wall position — between bot and its goal (row 8)
+  // Bot is player[1], going to row N-1
+  const br = Math.max(1, Math.min(7, players[1].r));
+  const bc = Math.max(0, Math.min(7, players[1].c));
 
-  // Показываем место для стены — между клетками (на линии между рядами)
   el.style.display = 'block';
+  el.style.background = 'rgba(255,215,0,0.6)';
+  el.style.border = '2px solid #FFD700';
+
   if (dir === 'h') {
-    // Горизонтальная стена — горизонтальная полоска
-    el.style.left   = (rect.left + wc * cs) + 'px';
-    el.style.top    = (rect.top  + wr * cs - 4) + 'px';
-    el.style.width  = (cs * 2) + 'px';
-    el.style.height = '10px';
-    el.style.borderRadius = '4px';
+    // Horizontal wall sits BETWEEN rows br-1 and br
+    const wallY = rect.top + br * cs - gap;
+    el.style.left   = (rect.left + bc * cs) + 'px';
+    el.style.top    = wallY + 'px';
+    el.style.width  = (cs * 2 - gap) + 'px';
+    el.style.height = (gap * 1.5 + 4) + 'px';
+    el.style.borderRadius = '3px';
   } else {
-    // Вертикальная стена — вертикальная полоска
-    el.style.left   = (rect.left + wc * cs + cs - 4) + 'px';
-    el.style.top    = (rect.top  + wr * cs) + 'px';
-    el.style.width  = '10px';
-    el.style.height = (cs * 2) + 'px';
-    el.style.borderRadius = '4px';
+    // Vertical wall sits BETWEEN cols bc and bc+1
+    const wallX = rect.left + (bc + 1) * cs - gap;
+    el.style.left   = wallX + 'px';
+    el.style.top    = (rect.top + br * cs) + 'px';
+    el.style.width  = (gap * 1.5 + 4) + 'px';
+    el.style.height = (cs * 2 - gap) + 'px';
+    el.style.borderRadius = '3px';
   }
 }
 
@@ -4408,6 +4414,9 @@ function startTutorial() {
 
   setTimeout(() => {
     startGame('easy');
+    // Hide surrender during tutorial
+    const sb = document.getElementById('btn-surrender-tut');
+    if (sb) sb.style.display = 'none';
     setTimeout(tutStep0, 500);
   }, 150);
 }
@@ -4418,8 +4427,7 @@ function endTutorial() {
   localStorage.setItem('lomi_tutorial_done', '1');
   const ov = $t('tutorial-overlay');
   if (ov) ov.style.display = 'none';
-  // Сразу переходим к созданию аккаунта
-  setTimeout(() => showScreen('register'), 800);
+  showScreen('register');
 }
 
 
@@ -5319,11 +5327,44 @@ function handleMove(mx,my) {
 function showWin() {
   stopTimer();
   if (tutorialActive) {
-    // Give tutorial win reward
+    // Give tutorial win reward - show normal win screen first
     totalPoints += 200;
-    ratingPoints += 20;
-    savePoints(); updatePointsUI(); updateRatingUI();
-    endTutorial();
+    achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + 200;
+    ratingPoints = Math.max(0, ratingPoints + 20);
+    achStats.totalRatingEarned = (achStats.totalRatingEarned||0) + 20;
+    savePoints(); saveAchievements(); updatePointsUI(); updateRatingUI();
+
+    // Show win screen normally
+    const w = winner;
+    score[w]++;
+    updateScoreUI();
+    const isPlayer = w === 0;
+    const wr = document.getElementById('win-result');
+    if (wr) {
+      document.getElementById('win-title').textContent = isPlayer ? '🏆 Ты победил!' : '😔 Проиграл';
+      document.getElementById('win-subtitle').textContent = isPlayer ? 'Отличная игра!' : '';
+      const pb = document.getElementById('points-block');
+      if (pb) {
+        pb.style.display = 'block';
+        const rows = document.getElementById('points-rows');
+        if (rows) rows.innerHTML = `
+          <div style="display:flex;justify-content:space-between"><span>🎓 За обучение</span><span style="color:#FFD700">+200 🪙</span></div>
+          <div style="display:flex;justify-content:space-between"><span>🏆 Рейтинг</span><span style="color:#a78bfa">+20 🏆</span></div>`;
+        const tot = document.getElementById('points-total');
+        if (tot) { tot.textContent = '+200 🪙'; tot.style.color = '#FFD700'; }
+        const cum = document.getElementById('points-cumulative');
+        if (cum) cum.textContent = totalPoints.toLocaleString() + ' 🪙';
+      }
+      // Replace buttons with single registration button
+      const btns = document.getElementById('win-buttons');
+      if (btns) btns.innerHTML = `
+        <button onclick="endTutorial()" class="btn btn-primary" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);width:100%;font-size:1rem;font-weight:900">
+          🎮 Создать аккаунт и продолжить
+        </button>
+        <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:8px">Сохрани прогресс — это 30 секунд</div>`;
+    }
+    showScreen('win');
+    if (isPlayer) playWin();
     return;
   }
   const w = winner;
