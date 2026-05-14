@@ -4240,6 +4240,243 @@ function tutPulseBtn(id) {
   el.style.top  = (rect.top - 58) + 'px';
 }
 
+// Подсвечивает клетку рядом с ботом для постановки стены
+function tutPulseWallNearBot(dir) {
+  tutHidePulse();
+  const cv = document.getElementById('game-canvas');
+  const el = $t('tut-pulse');
+  if (!cv || !el) return;
+  const rect = cv.getBoundingClientRect();
+  const cs = rect.width / 9;
+
+  // Лучшее место для стены — между ботом и его целью
+  let wr = Math.min(players[1].r + 1, 7);
+  let wc = Math.max(0, Math.min(7, players[1].c));
+
+  // Показываем место для стены — между клетками (на линии между рядами)
+  el.style.display = 'block';
+  if (dir === 'h') {
+    // Горизонтальная стена — горизонтальная полоска
+    el.style.left   = (rect.left + wc * cs) + 'px';
+    el.style.top    = (rect.top  + wr * cs - 4) + 'px';
+    el.style.width  = (cs * 2) + 'px';
+    el.style.height = '10px';
+    el.style.borderRadius = '4px';
+  } else {
+    // Вертикальная стена — вертикальная полоска
+    el.style.left   = (rect.left + wc * cs + cs - 4) + 'px';
+    el.style.top    = (rect.top  + wr * cs) + 'px';
+    el.style.width  = '10px';
+    el.style.height = (cs * 2) + 'px';
+    el.style.borderRadius = '4px';
+  }
+}
+
+function tutNextMove() {
+  const step = bfsNextStep(players[0].r, players[0].c, 0);
+  if (step) tutPulseCell(step[0], step[1]);
+}
+
+// ── TUTORIAL STEPS ────────────────────────────────────────────────
+function tutStep0() {
+  tutStep = 0; tutWaitingFor = null;
+  tutShow('🎯 Твоя цель — верхний ряд!', 'Ты розовая фишка внизу. Дойди до верхнего края первым — и победишь!');
+  tutPulseGoalRow();
+  setTimeout(tutStep1, 5000);
+}
+
+function tutStep1() {
+  tutStep = 1; tutWaitingFor = 'move';
+  tutShow('👆 Сделай первый ход', 'Нажми на подсвеченную клетку чтобы двигаться вперёд к цели');
+  tutNextMove();
+}
+
+function tutStep2() {
+  tutStep = 2; tutWaitingFor = 'bot';
+  tutShow('🤖 Соперник ходит...', 'Каждый делает по одному ходу — сначала ты, потом он. Следи за ним!');
+  tutHidePulse();
+}
+
+function tutStep3() {
+  tutStep = 3; tutWaitingFor = 'move';
+  tutShow('🏃 Ещё один шаг вперёд!', 'Продолжай двигаться к верхнему краю — подсвечена лучшая клетка');
+  tutNextMove();
+}
+
+function tutStep4() {
+  tutStep = 4; tutWaitingFor = 'bot';
+  tutShow('⚡ Соперник не отстаёт!', 'Он тоже спешит к цели. Пора поставить стену и заблокировать его!');
+  tutHidePulse();
+}
+
+function tutStep5() {
+  tutStep = 5; tutWaitingFor = null;
+  tutShow('🧱 Горизонтальная стена', 'Нажми кнопку СТЕНА внизу экрана — она перекроет путь вверх/вниз');
+  tutPulseBtn('btn-wall');
+  // После 2.5с переключаем и показываем куда ставить
+  setTimeout(() => {
+    if (tutStep !== 5) return;
+    setMode('wall');
+    wallDir = 'h';
+    const dirBtn = $t('btn-dir');
+    if (dirBtn) dirBtn.textContent = '↔ Горизонт.';
+    tutWaitingFor = 'wall';
+    tutShow('↔ Поставь горизонтальную стену!', 'Нажми на подсвеченное место — стена заблокирует соперника сверху/снизу');
+    tutPulseWallNearBot('h');
+  }, 2500);
+}
+
+function tutStep6() {
+  tutStep = 6; tutWaitingFor = 'bot';
+  tutShow('✅ Отлично! Стена поставлена!', 'Горизонтальная стена блокирует путь вверх/вниз. Соперник идёт в обход!');
+  tutHidePulse();
+  setMode('move');
+}
+
+function tutStep7() {
+  tutStep = 7; tutWaitingFor = null;
+  tutShow('🧱 Теперь вертикальная стена', 'Нажми кнопку ГОРИЗОНТ. чтобы переключить — вертикальная блокирует путь влево/вправо');
+  tutPulseBtn('btn-dir');
+  setTimeout(() => {
+    if (tutStep !== 7) return;
+    setMode('wall');
+    wallDir = 'v';
+    const dirBtn = $t('btn-dir');
+    if (dirBtn) dirBtn.textContent = '↕ Вертикаль';
+    tutWaitingFor = 'wall';
+    tutShow('↕ Поставь вертикальную стену!', 'Нажми на подсвеченное место — стена блокирует путь влево/вправо');
+    tutPulseWallNearBot('v');
+  }, 2500);
+}
+
+function tutStep8() {
+  tutStep = 8; tutWaitingFor = 'free';
+  tutShow('🏆 Финальный рывок к победе!', 'Ты знаешь всё! Двигайся к верхнему краю — подсказка всегда с тобой!');
+  tutNextMove();
+}
+
+// ── ХУКИ ─────────────────────────────────────────────────────────
+function tutOnPlayerMove() {
+  if (!tutorialActive) return;
+  if (tutWaitingFor === 'move') {
+    tutHidePulse();
+    if (tutStep === 1) setTimeout(tutStep2, 500);
+    else if (tutStep === 3) setTimeout(tutStep4, 500);
+  } else if (tutWaitingFor === 'free') {
+    setTimeout(() => {
+      if (!tutorialActive || winner) return;
+      tutShow('🏃 Вперёд к победе!', 'Иди к верхнему краю — ты уже близко! Можешь ставить стены чтобы блокировать.');
+      tutNextMove();
+    }, 500);
+  }
+}
+
+function tutOnBotMove() {
+  if (!tutorialActive) return;
+  if (tutWaitingFor === 'bot') {
+    if (tutStep === 2) setTimeout(tutStep3, 700);
+    else if (tutStep === 4) setTimeout(tutStep5, 700);
+    else if (tutStep === 6) setTimeout(tutStep7, 700);
+  }
+}
+
+function tutOnPlayerWall() {
+  if (!tutorialActive) return;
+  if (tutWaitingFor === 'wall') {
+    setMode('move');
+    tutHidePulse();
+    if (tutStep === 5) setTimeout(tutStep6, 500);
+    else if (tutStep === 7) setTimeout(tutStep8, 500);
+  }
+}
+
+function startTutorial() {
+  tutorialActive = true;
+  tutStep = 0;
+  tutWaitingFor = null;
+
+  isGuest = true;
+  currentUser = 'Новичок';
+  totalPoints = 0;
+  ratingPoints = 0;
+  loadAchievements();
+  loadShop();
+  applyBoardTheme();
+  updatePointsUI();
+  updateRatingUI();
+  updateUserUI();
+
+  setTimeout(() => {
+    startGame('easy');
+    setTimeout(tutStep0, 500);
+  }, 150);
+}
+
+function endTutorial() {
+  tutorialActive = false;
+  tutWaitingFor = null;
+  localStorage.setItem('lomi_tutorial_done', '1');
+  const ov = $t('tutorial-overlay');
+  if (ov) ov.style.display = 'none';
+  // Сразу переходим к созданию аккаунта
+  setTimeout(() => showScreen('register'), 800);
+}
+
+
+function $t(id) { return document.getElementById(id); }
+
+function tutShow(title, sub) {
+  const ov = $t('tutorial-overlay');
+  if (ov) ov.style.display = 'block';
+  if ($t('tut-text')) $t('tut-text').textContent = title;
+  if ($t('tut-sub'))  $t('tut-sub').textContent  = sub || '';
+}
+
+function tutHidePulse() {
+  if ($t('tut-pulse')) $t('tut-pulse').style.display = 'none';
+  if ($t('tut-arrow')) $t('tut-arrow').style.display = 'none';
+  if ($t('tut-goal'))  $t('tut-goal').style.display  = 'none';
+}
+
+function tutPulseCell(r, c) {
+  tutHidePulse();
+  const cv = document.getElementById('game-canvas');
+  const el = $t('tut-pulse');
+  if (!cv || !el) return;
+  const rect = cv.getBoundingClientRect();
+  const cs = rect.width / 9;
+  el.style.display = 'block';
+  el.style.left   = (rect.left + c * cs + cs * 0.06) + 'px';
+  el.style.top    = (rect.top  + r * cs + cs * 0.06) + 'px';
+  el.style.width  = (cs * 0.88) + 'px';
+  el.style.height = (cs * 0.88) + 'px';
+}
+
+function tutPulseGoalRow() {
+  tutHidePulse();
+  const cv = document.getElementById('game-canvas');
+  const el = $t('tut-goal');
+  if (!cv || !el) return;
+  const rect = cv.getBoundingClientRect();
+  const cs = rect.width / 9;
+  el.style.display = 'block';
+  el.style.left   = rect.left + 'px';
+  el.style.top    = (rect.top + 2) + 'px';
+  el.style.width  = rect.width + 'px';
+  el.style.height = (cs - 4) + 'px';
+}
+
+function tutPulseBtn(id) {
+  tutHidePulse();
+  const btn = $t(id);
+  const el  = $t('tut-arrow');
+  if (!btn || !el) return;
+  const rect = btn.getBoundingClientRect();
+  el.style.display = 'block';
+  el.style.left = (rect.left + rect.width/2 - 18) + 'px';
+  el.style.top  = (rect.top - 58) + 'px';
+}
+
 function tutNextMove() {
   // Always highlight BFS best next step for player
   const step = bfsNextStep(players[0].r, players[0].c, 0);
@@ -5267,7 +5504,14 @@ function handleMove(mx,my) {
 
 function showWin() {
   stopTimer();
-  if (tutorialActive) { endTutorial(); return; }
+  if (tutorialActive) {
+    // Give tutorial win reward
+    totalPoints += 200;
+    ratingPoints += 20;
+    savePoints(); updatePointsUI(); updateRatingUI();
+    endTutorial();
+    return;
+  }
   const w = winner;
   score[w]++;
   updateScoreUI();
