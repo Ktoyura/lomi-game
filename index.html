@@ -336,32 +336,37 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 </head>
 <body>
 <!-- TUTORIAL OVERLAY -->
-<div id="tutorial-overlay" style="display:none;position:fixed;inset:0;z-index:300;pointer-events:none">
-  <!-- Hint box -->
+<div id="tutorial-overlay" style="display:none;position:fixed;inset:0;z-index:9000;pointer-events:none">
+  <!-- Dark hint box at bottom -->
   <div id="tut-hint" style="
-    position:absolute;bottom:140px;left:50%;transform:translateX(-50%);
-    background:rgba(0,0,0,0.92);border:2px solid #FFD700;border-radius:16px;
-    padding:14px 24px;max-width:320px;width:90%;text-align:center;
-    pointer-events:auto;z-index:301;
+    position:absolute;bottom:100px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.95);border:2px solid #FFD700;border-radius:16px;
+    padding:16px 24px;max-width:340px;width:92%;text-align:center;
+    pointer-events:none;z-index:9001;box-shadow:0 0 40px rgba(255,215,0,0.3);
   ">
-    <div id="tut-step-label" style="font-size:0.6rem;color:#FFD700;font-family:'Unbounded',sans-serif;letter-spacing:0.2em;margin-bottom:6px">ШАГ 1 / 6</div>
-    <div id="tut-text" style="font-size:0.9rem;color:#fff;font-family:'Unbounded',sans-serif;font-weight:700;line-height:1.4"></div>
-    <div id="tut-sub" style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:6px"></div>
+    <div id="tut-text" style="font-size:0.95rem;color:#FFD700;font-family:'Unbounded',sans-serif;font-weight:900;line-height:1.4;margin-bottom:6px"></div>
+    <div id="tut-sub" style="font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5"></div>
   </div>
-  <!-- Highlight pulse for cells -->
-  <div id="tut-pulse" style="display:none;position:absolute;border:3px solid #FFD700;border-radius:8px;pointer-events:none;animation:tutPulse 1s ease-in-out infinite;z-index:302"></div>
-  <!-- Arrow pointing to element -->
-  <div id="tut-arrow" style="display:none;position:absolute;font-size:2rem;pointer-events:none;z-index:302;animation:tutBounce 0.8s ease-in-out infinite">👆</div>
+  <!-- Cell highlight -->
+  <div id="tut-pulse" style="display:none;position:absolute;border:3px solid #FFD700;border-radius:8px;pointer-events:none;animation:tutPulse 0.9s ease-in-out infinite;z-index:9002"></div>
+  <!-- Button arrow -->
+  <div id="tut-arrow" style="display:none;position:absolute;font-size:2.2rem;pointer-events:none;z-index:9002;animation:tutBounce 0.7s ease-in-out infinite">👇</div>
+  <!-- Goal row highlight -->
+  <div id="tut-goal" style="display:none;position:absolute;border:3px solid #00F5C4;border-radius:6px;pointer-events:none;animation:tutGoal 1.2s ease-in-out infinite;z-index:9001;background:rgba(0,245,196,0.08)"></div>
 </div>
 
 <style>
 @keyframes tutPulse {
-  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.6)}
-  50%{box-shadow:0 0 0 12px rgba(255,215,0,0)}
+  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.8);border-color:#FFD700}
+  50%{box-shadow:0 0 0 14px rgba(255,215,0,0);border-color:#FFF}
 }
 @keyframes tutBounce {
   0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-8px)}
+  50%{transform:translateY(-10px)}
+}
+@keyframes tutGoal {
+  0%,100%{box-shadow:0 0 0 0 rgba(0,245,196,0.6)}
+  50%{box-shadow:0 0 0 10px rgba(0,245,196,0)}
 }
 </style>
 
@@ -4174,298 +4179,210 @@ function doSurrender() {
 
 // ── TUTORIAL ─────────────────────────────────────────────────────
 let tutorialActive = false;
+let tutWaitingFor = null;
 let tutStep = 0;
-let tutWaitingFor = null; // 'move' | 'wall' | null
-
-// Tutorial overlay elements
-function tutEl(id) { return document.getElementById(id); }
-
-function showTutHint(title, body, highlight) {
-  const ov = tutEl('tutorial-overlay');
-  const tt = tutEl('tut-text');
-  const ts = tutEl('tut-sub');
-  const pulse = tutEl('tut-pulse');
-  const arrow = tutEl('tut-arrow');
-  if (!ov) return;
-  ov.style.display = 'block';
-  if (tt) tt.textContent = title;
-  if (ts) ts.textContent = body;
-  if (pulse) pulse.style.display = 'none';
-  if (arrow) arrow.style.display = 'none';
-  if (highlight) highlight();
-}
-
-function hideTutHint() {
-  const ov = tutEl('tutorial-overlay');
-  if (ov) ov.style.display = 'none';
-}
-
-function pulseCell(r, c) {
-  const canvas = document.getElementById('game-canvas');
-  const pulse = tutEl('tut-pulse');
-  if (!canvas || !pulse) return;
-  const rect = canvas.getBoundingClientRect();
-  const cs = rect.width / N;
-  pulse.style.display = 'block';
-  pulse.style.left   = (rect.left + c * cs + cs * 0.08) + 'px';
-  pulse.style.top    = (rect.top  + r * cs + cs * 0.08) + 'px';
-  pulse.style.width  = (cs * 0.84) + 'px';
-  pulse.style.height = (cs * 0.84) + 'px';
-}
-
-function pulseButton(id) {
-  const btn = document.getElementById(id);
-  const arrow = tutEl('tut-arrow');
-  if (!btn || !arrow) return;
-  const rect = btn.getBoundingClientRect();
-  arrow.style.display = 'block';
-  arrow.style.left = (rect.left + rect.width/2 - 16) + 'px';
-  arrow.style.top  = (rect.top - 52) + 'px';
-  arrow.textContent = '👇';
-}
-
-function pulseRow(rowIndex) {
-  const canvas = document.getElementById('game-canvas');
-  const pulse = tutEl('tut-pulse');
-  if (!canvas || !pulse) return;
-  const rect = canvas.getBoundingClientRect();
-  const cs = rect.width / N;
-  pulse.style.display = 'block';
-  pulse.style.left   = rect.left + 'px';
-  pulse.style.top    = (rect.top + rowIndex * cs) + 'px';
-  pulse.style.width  = rect.width + 'px';
-  pulse.style.height = (cs * 0.9) + 'px';
-  pulse.style.borderRadius = '6px';
-}
-
-// Tutorial script — scripted steps leading player to WIN
-const TUT_SCRIPT = [
-  // Step 0: Welcome + show goal
-  () => {
-    tutWaitingFor = null;
-    showTutHint(
-      '👋 Добро пожаловать в LOMI!',
-      'Ты — розовая фишка. Твоя цель — добраться до верхнего края первым!',
-      () => pulseRow(0)
-    );
-    setTimeout(() => tutNext(), 4000);
-  },
-  // Step 1: First move — guide to move up
-  () => {
-    tutWaitingFor = 'move';
-    const step = bfsNextStep(players[0].r, players[0].c, 0);
-    const hint = step ? `Нажми на подсвеченную клетку!` : 'Двигайся вперёд!';
-    showTutHint('🚶 Сделай первый ход', hint, () => {
-      if (step) pulseCell(step[0], step[1]);
-    });
-  },
-  // Step 2: Bot moves — explain
-  () => {
-    tutWaitingFor = 'bot_done';
-    showTutHint(
-      '🤖 Соперник ходит',
-      'Каждый игрок делает по одному ходу. Сначала ты — потом он.',
-      null
-    );
-  },
-  // Step 3: Move again — getting closer
-  () => {
-    tutWaitingFor = 'move';
-    const step = bfsNextStep(players[0].r, players[0].c, 0);
-    showTutHint('🏃 Продолжай идти!', 'Ещё один шаг вперёд — ты ближе к победе!', () => {
-      if (step) pulseCell(step[0], step[1]);
-    });
-  },
-  // Step 4: Bot moves again
-  () => {
-    tutWaitingFor = 'bot_done';
-    showTutHint('⚡ Соперник тоже спешит', 'Он тоже хочет добраться первым — не давай ему!', null);
-  },
-  // Step 5: Teach horizontal wall — block the bot
-  () => {
-    tutWaitingFor = null;
-    showTutHint(
-      '🧱 Поставь горизонтальную стену!',
-      'Нажми кнопку СТЕНА — она перекроет путь сопернику вверх или вниз.',
-      () => pulseButton('btn-wall')
-    );
-    // Auto-switch to wall mode after 2s
-    setTimeout(() => {
-      if (tutStep === 5) {
-        setMode('wall');
-        wallDir = 'h';
-        if (document.getElementById('btn-dir'))
-          document.getElementById('btn-dir').textContent = '↔ Горизонт.';
-        tutWaitingFor = 'wall';
-        // Suggest where to place — next to bot path
-        const botR = players[1].r + 1;
-        const botC = Math.max(0, Math.min(N-2, players[1].c - 1));
-        showTutHint(
-          '↔ Горизонтальная стена',
-          'Поставь стену рядом с соперником — подсвечено лучшее место!',
-          () => pulseCell(botR, botC)
-        );
-      }
-    }, 2500);
-  },
-  // Step 6: After wall — explain
-  () => {
-    tutWaitingFor = 'bot_done';
-    showTutHint(
-      '🎯 Отлично! Стена поставлена!',
-      'Горизонтальная стена блокирует путь вверх-вниз. Соперник вынужден обходить!',
-      null
-    );
-  },
-  // Step 7: Teach vertical wall
-  () => {
-    tutWaitingFor = null;
-    showTutHint(
-      '🧱 Теперь вертикальная стена!',
-      'Нажми кнопку ГОРИЗОНТ. чтобы переключить на вертикаль — она блокирует влево-вправо.',
-      () => pulseButton('btn-dir')
-    );
-    setTimeout(() => {
-      if (tutStep === 7) {
-        setMode('wall');
-        wallDir = 'v';
-        if (document.getElementById('btn-dir'))
-          document.getElementById('btn-dir').textContent = '↕ Вертикаль';
-        tutWaitingFor = 'wall';
-        const botC = Math.max(0, Math.min(N-2, players[1].c));
-        const botR = Math.max(0, Math.min(N-2, players[1].r));
-        showTutHint(
-          '↕ Вертикальная стена',
-          'Поставь вертикальную стену — она перекроет путь вбок!',
-          () => pulseCell(botR, botC)
-        );
-      }
-    }, 2500);
-  },
-  // Step 8: Free play — lead to victory
-  () => {
-    tutWaitingFor = 'move';
-    showTutHint(
-      '🏆 Финальный рывок!',
-      'Ты знаешь всё! Двигайся вперёд — дойди до верхнего края и победи!',
-      () => {
-        const step = bfsNextStep(players[0].r, players[0].c, 0);
-        if (step) pulseCell(step[0], step[1]);
-        pulseRow(0);
-      }
-    );
-    // From now on — keep guiding every move
-    tutWaitingFor = 'free';
-  },
-];
-
-function tutNext() {
-  tutStep++;
-  if (tutStep >= TUT_SCRIPT.length) {
-    tutWaitingFor = 'free';
-    return;
-  }
-  TUT_SCRIPT[tutStep]();
-}
-
-function tutOnPlayerMove() {
-  if (!tutorialActive) return;
-  if (tutWaitingFor === 'move') {
-    setTimeout(() => tutNext(), 600);
-  } else if (tutWaitingFor === 'free') {
-    // Keep guiding
-    const step = bfsNextStep(players[0].r, players[0].c, 0);
-    showTutHint('🏃 Вперёд!', 'Иди к верхнему краю — ты почти там!', () => {
-      if (step) pulseCell(step[0], step[1]);
-    });
-  }
-}
-
-function tutOnBotMove() {
-  if (!tutorialActive) return;
-  if (tutWaitingFor === 'bot_done') {
-    setTimeout(() => tutNext(), 800);
-  }
-}
-
-function tutOnPlayerWall() {
-  if (!tutorialActive) return;
-  if (tutWaitingFor === 'wall') {
-    setMode('move');
-    setTimeout(() => tutNext(), 600);
-  }
-}
-
-function startTutorial() {
-  tutorialActive = true;
-  tutStep = 0;
-  tutWaitingFor = null;
-
-  isGuest = true;
-  currentUser = 'Новичок';
-  totalPoints = 0;
-  ratingPoints = 0;
-  loadAchievements();
-  loadShop();
-  applyBoardTheme();
-  updatePointsUI();
-  updateRatingUI();
-  updateUserUI();
-
-  setTimeout(() => {
-    startGame('easy');
-    setTimeout(() => {
-      TUT_SCRIPT[0]();
-    }, 400);
-  }, 100);
-}
-
-function endTutorial() {
-  tutorialActive = false;
-  tutWaitingFor = null;
-  localStorage.setItem('lomi_tutorial_done', '1');
-  hideTutHint();
-  setTimeout(() => showSavePrompt(), 600);
-}
-
-function showSavePrompt() {
-  const msg = document.createElement('div');
-  msg.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;padding:2rem;';
-  msg.innerHTML = `
-    <div style="font-size:3.5rem">🏆</div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;text-align:center;color:#fff;line-height:1.4">
-      Ты выиграл свою<br>первую партию!
-    </div>
-    <div style="font-size:0.8rem;color:rgba(255,255,255,0.55);text-align:center;max-width:280px;line-height:1.6">
-      Сохранить прогресс и очки?<br>Это займёт 30 секунд.
-    </div>
-    <button onclick="this.parentElement.remove();showScreen('auth')" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);border:none;color:#fff;font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;padding:14px 0;border-radius:50px;cursor:pointer;width:100%;max-width:280px;">
-      💾 Сохранить прогресс
-    </button>
-    <button onclick="this.parentElement.remove();showScreen('menu')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);font-family:'Unbounded',sans-serif;font-size:0.75rem;padding:10px 0;border-radius:50px;cursor:pointer;width:100%;max-width:280px;">
-      Играть без сохранения
-    </button>`;
-  document.body.appendChild(msg);
-}
 
 function isTutorialNeeded() {
   return !localStorage.getItem('lomi_tutorial_done');
 }
 
+function $t(id) { return document.getElementById(id); }
+
+function tutShow(title, sub) {
+  const ov = $t('tutorial-overlay');
+  if (ov) ov.style.display = 'block';
+  if ($t('tut-text')) $t('tut-text').textContent = title;
+  if ($t('tut-sub'))  $t('tut-sub').textContent  = sub || '';
+}
+
+function tutHidePulse() {
+  if ($t('tut-pulse')) $t('tut-pulse').style.display = 'none';
+  if ($t('tut-arrow')) $t('tut-arrow').style.display = 'none';
+  if ($t('tut-goal'))  $t('tut-goal').style.display  = 'none';
+}
+
+function tutPulseCell(r, c) {
+  tutHidePulse();
+  const cv = document.getElementById('game-canvas');
+  const el = $t('tut-pulse');
+  if (!cv || !el) return;
+  const rect = cv.getBoundingClientRect();
+  const cs = rect.width / 9;
+  el.style.display = 'block';
+  el.style.left   = (rect.left + c * cs + cs * 0.06) + 'px';
+  el.style.top    = (rect.top  + r * cs + cs * 0.06) + 'px';
+  el.style.width  = (cs * 0.88) + 'px';
+  el.style.height = (cs * 0.88) + 'px';
+}
+
+function tutPulseGoalRow() {
+  tutHidePulse();
+  const cv = document.getElementById('game-canvas');
+  const el = $t('tut-goal');
+  if (!cv || !el) return;
+  const rect = cv.getBoundingClientRect();
+  const cs = rect.width / 9;
+  el.style.display = 'block';
+  el.style.left   = rect.left + 'px';
+  el.style.top    = (rect.top + 2) + 'px';
+  el.style.width  = rect.width + 'px';
+  el.style.height = (cs - 4) + 'px';
+}
+
+function tutPulseBtn(id) {
+  tutHidePulse();
+  const btn = $t(id);
+  const el  = $t('tut-arrow');
+  if (!btn || !el) return;
+  const rect = btn.getBoundingClientRect();
+  el.style.display = 'block';
+  el.style.left = (rect.left + rect.width/2 - 18) + 'px';
+  el.style.top  = (rect.top - 58) + 'px';
+}
+
+function tutNextMove() {
+  // Always highlight BFS best next step for player
+  const step = bfsNextStep(players[0].r, players[0].c, 0);
+  if (step) tutPulseCell(step[0], step[1]);
+}
+
+// ── TUTORIAL STEPS ────────────────────────────────────────────────
+function tutStep0() { // Goal
+  tutStep = 0; tutWaitingFor = null;
+  tutShow('🎯 Твоя цель — верхний ряд!', 'Ты розовая фишка. Дойди до верха первым — и победишь!');
+  tutPulseGoalRow();
+  setTimeout(tutStep1, 4000);
+}
+
+function tutStep1() { // First move
+  tutStep = 1; tutWaitingFor = 'move';
+  tutShow('👆 Сделай первый ход', 'Нажми на подсвеченную клетку чтобы двигаться вперёд');
+  tutNextMove();
+}
+
+function tutStep2() { // Bot moves
+  tutStep = 2; tutWaitingFor = 'bot';
+  tutShow('🤖 Соперник ходит...', 'Каждый делает по одному ходу — сначала ты, потом он');
+  tutHidePulse();
+}
+
+function tutStep3() { // Move again
+  tutStep = 3; tutWaitingFor = 'move';
+  tutShow('🏃 Ещё один шаг!', 'Продолжай двигаться к верхнему краю');
+  tutNextMove();
+}
+
+function tutStep4() { // Bot moves
+  tutStep = 4; tutWaitingFor = 'bot';
+  tutShow('⚡ Соперник не отстаёт', 'Он тоже идёт к цели — пора его заблокировать!');
+  tutHidePulse();
+}
+
+function tutStep5() { // Teach H wall
+  tutStep = 5; tutWaitingFor = null;
+  tutShow('🧱 Горизонтальная стена', 'Нажми кнопку СТЕНА — она перекроет путь вверх/вниз');
+  tutPulseBtn('btn-wall');
+  // Auto-switch to wall mode after 2s
+  setTimeout(() => {
+    if (tutStep === 5) {
+      setMode('wall');
+      wallDir = 'h';
+      const dirBtn = $t('btn-dir');
+      if (dirBtn) dirBtn.textContent = '↔ Горизонт.';
+      tutWaitingFor = 'wall';
+      // Highlight cell near bot
+      const br = Math.min(players[1].r + 1, 7);
+      const bc = Math.max(0, Math.min(7, players[1].c));
+      tutShow('↔ Поставь горизонтальную стену!', 'Нажми на подсвеченное место — это заблокирует соперника');
+      tutPulseCell(br, bc);
+    }
+  }, 2000);
+}
+
+function tutStep6() { // After H wall
+  tutStep = 6; tutWaitingFor = 'bot';
+  tutShow('✅ Стена поставлена!', 'Соперник вынужден идти в обход — ты выиграл время!');
+  tutHidePulse();
+  setMode('move');
+}
+
+function tutStep7() { // Teach V wall
+  tutStep = 7; tutWaitingFor = null;
+  tutShow('🧱 Вертикальная стена', 'Нажми ГОРИЗОНТ. чтобы переключить на вертикальную стену');
+  tutPulseBtn('btn-dir');
+  setTimeout(() => {
+    if (tutStep === 7) {
+      setMode('wall');
+      wallDir = 'v';
+      const dirBtn = $t('btn-dir');
+      if (dirBtn) dirBtn.textContent = '↕ Вертикаль';
+      tutWaitingFor = 'wall';
+      const bc = Math.max(0, Math.min(7, players[1].c));
+      const br = Math.max(0, Math.min(7, players[1].r));
+      tutShow('↕ Поставь вертикальную стену!', 'Блокирует путь влево/вправо — нажми на подсвеченное место');
+      tutPulseCell(br, bc);
+    }
+  }, 2000);
+}
+
+function tutStep8() { // Free play to win
+  tutStep = 8; tutWaitingFor = 'free';
+  tutShow('🏆 Финальный рывок!', 'Дойди до верхнего края — ты победишь! Подсказка всегда рядом.');
+  tutNextMove();
+}
+
+// Called when player makes a move
+function tutOnPlayerMove() {
+  if (!tutorialActive) return;
+  if (tutWaitingFor === 'move') {
+    tutHidePulse();
+    const funcs = [null, tutStep2, null, tutStep4, null];
+    const next = funcs[tutStep];
+    if (next) setTimeout(next, 500);
+  } else if (tutWaitingFor === 'free') {
+    // Keep guiding
+    setTimeout(() => {
+      if (tutorialActive && !winner) {
+        tutShow('🏃 Продолжай!', 'Иди к верхнему краю — ты почти там!');
+        tutNextMove();
+      }
+    }, 400);
+  }
+}
+
+// Called when bot finishes its move
+function tutOnBotMove() {
+  if (!tutorialActive) return;
+  if (tutWaitingFor === 'bot') {
+    const funcs = [null, null, tutStep3, null, tutStep5];
+    const next = funcs[tutStep];
+    if (next) setTimeout(next, 600);
+    else if (tutStep === 6) setTimeout(tutStep7, 600);
+    else if (tutStep === 7) setTimeout(tutStep8, 600);
+  }
+}
+
+// Called when player places a wall
+function tutOnPlayerWall() {
+  if (!tutorialActive) return;
+  if (tutWaitingFor === 'wall') {
+    setMode('move');
+    tutHidePulse();
+    if (tutStep === 5) setTimeout(tutStep6, 500);
+    else if (tutStep === 7) setTimeout(tutStep8, 500);
+  }
+}
+
 function startTutorial() {
   tutorialActive = true;
   tutStep = 0;
-  tutPlayerMoved = false;
-  tutWallPlaced = false;
-  tutBotMoved = false;
+  tutWaitingFor = null;
 
-  // Set up as guest so game works without auth
+  // Init as guest
   isGuest = true;
   currentUser = 'Новичок';
   totalPoints = 0;
   ratingPoints = 0;
-
-  // Load all required state
   loadAchievements();
   loadShop();
   applyBoardTheme();
@@ -4473,188 +4390,40 @@ function startTutorial() {
   updateRatingUI();
   updateUserUI();
 
-  // Start game vs easy bot
+  // Start game then show tutorial
   setTimeout(() => {
     startGame('easy');
-    // Show tutorial overlay after game starts
-    setTimeout(() => showTutStep(0), 300);
-  }, 100);
-}
-
-function showTutStep(step) {
-  tutStep = step;
-  const s = TUT_STEPS[step];
-  if (!s) { endTutorial(); return; }
-
-  const overlay = document.getElementById('tutorial-overlay');
-  const hintEl  = document.getElementById('tut-hint');
-  const labelEl = document.getElementById('tut-step-label');
-  const textEl  = document.getElementById('tut-text');
-  const subEl   = document.getElementById('tut-sub');
-  const pulse   = document.getElementById('tut-pulse');
-  const arrow   = document.getElementById('tut-arrow');
-
-  if (!overlay) return;
-  overlay.style.display = 'block';
-  labelEl.textContent = s.label;
-  textEl.textContent  = s.text;
-  subEl.textContent   = s.sub;
-
-  // Hide highlights
-  pulse.style.display = 'none';
-  arrow.style.display = 'none';
-
-  // Highlight based on type
-  if (s.type === 'move') {
-    highlightNextCell();
-  } else if (s.type === 'wall_h') {
-    // Switch to horizontal wall mode and highlight button
-    setWallDir('h');
-    highlightWallButton('h');
-  } else if (s.type === 'wall_v') {
-    // Switch to vertical wall mode and highlight button
-    setWallDir('v');
-    highlightWallButton('v');
-  } else if (s.type === 'goal') {
-    highlightGoalRow();
-  }
-
-  if (s.autoNext) {
-    setTimeout(() => {
-      if (tutStep === step) showTutStep(step + 1);
-    }, s.autoNext);
-  }
-}
-
-function highlightNextCell() {
-  // Highlight the cell directly above the player
-  const canvas = document.getElementById('game-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const step = bfsNextStep(players[0].r, players[0].c, 0);
-  if (!step) return;
-
-  const cs = CELL_SIZE || (rect.width / N);
-  const px = rect.left + step[1] * cs + cs * 0.1;
-  const py = rect.top  + step[0] * cs + cs * 0.1;
-  const pw = cs * 0.8;
-
-  const pulse = document.getElementById('tut-pulse');
-  pulse.style.display = 'block';
-  pulse.style.left   = px + 'px';
-  pulse.style.top    = py + 'px';
-  pulse.style.width  = pw + 'px';
-  pulse.style.height = pw + 'px';
-}
-
-function setWallDir(dir) {
-  wallDir = dir;
-  if (typeof setMode === 'function') setMode('wall');
-  const dirBtn = document.getElementById('btn-dir');
-  if (dirBtn) dirBtn.textContent = dir === 'h' ? '↔ Горизонт.' : '↕ Вертикаль';
-}
-
-function highlightWallButton(dir) {
-  const arrow = document.getElementById('tut-arrow');
-  const pulse = document.getElementById('tut-pulse');
-  pulse.style.display = 'none';
-
-  // First point to СТЕНА button
-  const wallBtn = document.getElementById('btn-wall');
-  const dirBtn  = document.getElementById('btn-dir');
-
-  // Point to dir button if wall mode already active, else to wall btn
-  const target = (mode === 'wall' && dirBtn) ? dirBtn : wallBtn;
-  if (!target) return;
-  const rect = target.getBoundingClientRect();
-  arrow.style.display = 'block';
-  arrow.style.left = (rect.left + rect.width/2 - 16) + 'px';
-  arrow.style.top  = (rect.top - 55) + 'px';
-  arrow.textContent = '👇';
-}
-
-function highlightGoalRow() {
-  const canvas = document.getElementById('game-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const cs = rect.width / N;
-  const pulse = document.getElementById('tut-pulse');
-  pulse.style.display = 'block';
-  pulse.style.left   = rect.left + 'px';
-  pulse.style.top    = rect.top + 'px';
-  pulse.style.width  = rect.width + 'px';
-  pulse.style.height = cs * 0.9 + 'px';
-  pulse.style.borderRadius = '8px';
-}
-
-function tutOnPlayerMove() {
-  if (!tutorialActive) return;
-  const s = TUT_STEPS[tutStep];
-  if (!s) return;
-  if (s.waitFor === 'player_move') {
-    setTimeout(() => showTutStep(tutStep + 1), 800);
-  }
-}
-
-function tutOnBotMove() {
-  if (!tutorialActive) return;
-  const s = TUT_STEPS[tutStep];
-  if (!s) return;
-  if (s.waitFor === 'bot_move') {
-    setTimeout(() => showTutStep(tutStep + 1), 800);
-  }
-}
-
-function tutOnPlayerWall() {
-  if (!tutorialActive) return;
-  const s = TUT_STEPS[tutStep];
-  if (!s) return;
-  if (s.waitFor === 'player_wall') {
-    setTimeout(() => showTutStep(tutStep + 1), 800);
-  }
+    setTimeout(tutStep0, 500);
+  }, 150);
 }
 
 function endTutorial() {
   tutorialActive = false;
+  tutWaitingFor = null;
   localStorage.setItem('lomi_tutorial_done', '1');
-  const overlay = document.getElementById('tutorial-overlay');
-  if (overlay) overlay.style.display = 'none';
-
-  // After tutorial — ask to save progress
-  setTimeout(() => {
-    showSavePrompt();
-  }, 500);
+  const ov = $t('tutorial-overlay');
+  if (ov) ov.style.display = 'none';
+  setTimeout(showSavePrompt, 800);
 }
 
 function showSavePrompt() {
-  // Show auth screen with custom message
   const msg = document.createElement('div');
-  msg.style.cssText = `
-    position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.9);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
-    padding:2rem;
-  `;
+  msg.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.93);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;padding:2rem;';
   msg.innerHTML = `
-    <div style="font-size:3rem">🏆</div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;text-align:center;color:#fff">
-      Отлично! Ты освоил игру!
-    </div>
-    <div style="font-size:0.85rem;color:rgba(255,255,255,0.6);text-align:center;max-width:280px">
-      Сохранить прогресс и очки? Создай аккаунт — это займёт 30 секунд
-    </div>
-    <button onclick="this.parentElement.remove();showScreen('auth')" style="
-      background:linear-gradient(135deg,#784BFF,#FF3CAC);border:none;color:#fff;
-      font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;
-      padding:14px 32px;border-radius:50px;cursor:pointer;width:100%;max-width:280px;
-    ">💾 Сохранить прогресс</button>
-    <button onclick="this.parentElement.remove();isGuest=true;currentUser='Гость';updateUserUI();showScreen('menu')" style="
-      background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);
-      font-family:'Unbounded',sans-serif;font-size:0.78rem;
-      padding:10px 24px;border-radius:50px;cursor:pointer;width:100%;max-width:280px;
-    ">Играть без сохранения</button>
-  `;
+    <div style="font-size:3.5rem">🏆</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;text-align:center;color:#fff;line-height:1.5">Ты выиграл первую<br>партию!</div>
+    <div style="font-size:0.8rem;color:rgba(255,255,255,0.55);text-align:center;max-width:280px;line-height:1.6">Сохранить прогресс и очки?<br>Это займёт 30 секунд.</div>
+    <button onclick="this.parentElement.remove();showScreen('auth')" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);border:none;color:#fff;font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;padding:14px 0;border-radius:50px;cursor:pointer;width:100%;max-width:280px;">💾 Сохранить прогресс</button>
+    <button onclick="this.parentElement.remove();showScreen('menu')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);font-family:'Unbounded',sans-serif;font-size:0.75rem;padding:10px 0;border-radius:50px;cursor:pointer;width:100%;max-width:280px;">Играть без сохранения</button>`;
   document.body.appendChild(msg);
 }
+
+
+function isTutorialNeeded() {
+  return !localStorage.getItem('lomi_tutorial_done');
+}
+
+
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
