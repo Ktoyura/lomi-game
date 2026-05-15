@@ -3776,6 +3776,8 @@ async function doLogin() {
 
 async function loginSuccess(username, userData) {
   setUser(username);
+  // Existing users never need tutorial
+  localStorage.setItem('lomi_tutorial_done', '1');
   isGuest = false;
   // Analytics: account registered
   if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'register');
@@ -3976,6 +3978,7 @@ function saveUsername() {
   if (err) { document.getElementById('acc-error').textContent = err; return; }
   isGuest = true;
   localStorage.setItem('lomi_guest_name', val);
+  localStorage.setItem('lomi_tutorial_done', '1');
   setUser(val);
   // First time bonus
   const isFirst = !localStorage.getItem('lomi_guest_bonus');
