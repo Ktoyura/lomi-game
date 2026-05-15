@@ -4864,6 +4864,14 @@ function showConfetti() {
   }
 }
 
+function startVsKtoyura() {
+  // Clear bot substitute name so ktoyura shows
+  window._botSubstituteName = null;
+  window._isBotSubstitute = false;
+  if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'vs_ktoyura');
+  startGame('hard');
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -4979,6 +4987,12 @@ function startGame(diff) {
   const botSubStats = window._botCardStats;
 
   aiDifficulty = diff === undefined ? false : diff;
+
+  // Analytics: bot game started
+  if (aiDifficulty && !tutorialActive && typeof ym !== 'undefined') {
+    ym(109239699, 'reachGoal', 'bot_game_start');
+    if (aiDifficulty === 'hard') ym(109239699, 'reachGoal', 'vs_ktoyura');
+  }
   calcSizes();
   canvas.width = BOARD_PX; canvas.height = BOARD_PX;
   initGame();
