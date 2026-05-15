@@ -335,20 +335,36 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 </style>
 </head>
 <body>
+<!-- MICRO REWARD POPUP -->
+<div id="micro-reward" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:9100;background:rgba(0,0,0,0.85);border:2px solid #FFD700;border-radius:12px;
+  padding:10px 24px;font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;
+  color:#FFD700;text-align:center;pointer-events:none;
+  animation:microRewardAnim 1.2s ease forwards">
+</div>
+<style>
+@keyframes microRewardAnim {
+  0%   {opacity:0;transform:translate(-50%,-60%);scale:0.8}
+  20%  {opacity:1;transform:translate(-50%,-50%);scale:1.05}
+  70%  {opacity:1;transform:translate(-50%,-50%);scale:1}
+  100% {opacity:0;transform:translate(-50%,-40%);scale:0.9}
+}
+</style>
+
 <!-- TUTORIAL OVERLAY -->
 <div id="tutorial-overlay" style="display:none;position:fixed;inset:0;z-index:9000;pointer-events:none">
-  <!-- Dark hint box at bottom -->
+  <!-- Dark hint box at TOP -->
   <div id="tut-hint" style="
-    position:absolute;bottom:100px;left:50%;transform:translateX(-50%);
-    background:rgba(0,0,0,0.95);border:2px solid #FFD700;border-radius:16px;
-    padding:16px 24px;max-width:340px;width:92%;text-align:center;
-    pointer-events:none;z-index:9001;box-shadow:0 0 40px rgba(255,215,0,0.3);
+    position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.95);border:2px solid #FFD700;border-radius:14px;
+    padding:10px 18px;max-width:340px;width:92%;text-align:center;
+    pointer-events:none;z-index:9001;box-shadow:0 0 30px rgba(255,215,0,0.3);
   ">
     <div id="tut-text" style="font-size:0.95rem;color:#FFD700;font-family:'Unbounded',sans-serif;font-weight:900;line-height:1.4;margin-bottom:6px"></div>
     <div id="tut-sub" style="font-size:0.75rem;color:rgba(255,255,255,0.7);line-height:1.5"></div>
   </div>
   <!-- Cell highlight -->
-  <div id="tut-pulse" style="display:none;position:absolute;border:3px solid #FFD700;border-radius:8px;pointer-events:none;animation:tutPulse 0.9s ease-in-out infinite;z-index:9002"></div>
+  <div id="tut-pulse" style="display:none;position:absolute;border:2px solid #FFD700;border-radius:8px;pointer-events:none;animation:tutCellBreath 0.8s ease-in-out infinite;z-index:9002;background:rgba(255,215,0,0.2)"></div>
   <!-- Button arrow -->
   <div id="tut-arrow" style="display:none;position:absolute;font-size:2.2rem;pointer-events:none;z-index:9002;animation:tutBounce 0.7s ease-in-out infinite">👇</div>
   <!-- Goal row highlight -->
@@ -357,8 +373,9 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 
 <style>
 @keyframes tutPulse {
-  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.8);border-color:#FFD700}
-  50%{box-shadow:0 0 0 14px rgba(255,215,0,0);border-color:#FFF}
+  0%   {box-shadow:0 0 0 0 rgba(255,215,0,0.9);border-color:#FFD700;transform:scale(1)}
+  40%  {box-shadow:0 0 0 10px rgba(255,215,0,0.3);border-color:#FFF;transform:scale(1.06)}
+  100% {box-shadow:0 0 0 18px rgba(255,215,0,0);border-color:#FFD700;transform:scale(1)}
 }
 @keyframes tutBounce {
   0%,100%{transform:translateY(0)}
@@ -367,6 +384,35 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 @keyframes tutGoal {
   0%,100%{box-shadow:0 0 0 0 rgba(0,245,196,0.6)}
   50%{box-shadow:0 0 0 10px rgba(0,245,196,0)}
+}
+@keyframes tutCellBreath {
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,215,0,0.8);background:rgba(255,215,0,0.25)}
+  50%{transform:scale(1.08);box-shadow:0 0 0 8px rgba(255,215,0,0);background:rgba(255,215,0,0.4)}
+}
+</style>
+
+<!-- MICRO REWARD POPUP -->
+<div id="micro-reward" style="
+  display:none;position:fixed;top:30%;left:50%;transform:translateX(-50%);
+  z-index:8000;pointer-events:none;text-align:center;
+">
+  <div id="micro-reward-text" style="
+    font-family:'Unbounded',sans-serif;font-size:1.4rem;font-weight:900;
+    color:#FFD700;text-shadow:0 0 20px rgba(255,215,0,0.8);
+    animation:microPop 0.8s ease forwards;
+  "></div>
+</div>
+
+<style>
+@keyframes microPop {
+  0%   { opacity:0; transform:scale(0.5) translateY(0); }
+  30%  { opacity:1; transform:scale(1.2) translateY(-10px); }
+  70%  { opacity:1; transform:scale(1) translateY(-20px); }
+  100% { opacity:0; transform:scale(0.9) translateY(-40px); }
+}
+@keyframes confettiFall {
+  0%   { transform:translateY(-20px) rotate(0deg); opacity:1; }
+  100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
 }
 </style>
 
@@ -399,6 +445,10 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 </div>
 
 <style>
+@keyframes onlinePulse {
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.4;transform:scale(0.8)}
+}
 @keyframes tapPulse {
   0%,100% { opacity:0.3; }
   50% { opacity:1; }
@@ -595,6 +645,10 @@ const INTRO_AUDIO_B64 = '';</script>
 <div id="menu" class="screen">
   <div class="logo">LOMI</div>
   <div class="tagline">Стратегическая игра стен</div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.65rem;color:rgba(255,255,255,0.45);font-family:'Unbounded',sans-serif;margin-top:-6px">
+    <span style="width:7px;height:7px;border-radius:50%;background:#00F5C4;display:inline-block;animation:onlinePulse 2s ease-in-out infinite;flex-shrink:0"></span>
+    <span id="online-count">--</span> онлайн
+  </div>
   <div style="display:flex;align-items:center;gap:8px">
     <!-- Daily reward box -->
     <div id="daily-box" onclick="window.openDailyReward()" title="Ежедневная награда" style="
@@ -2211,7 +2265,8 @@ function showOpponentCard(name, stats, isBot) {
 
 function startBotSubstitute(botName) {
   const difficulties = ['easy', 'medium', 'hard'];
-  const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+  // For second game (tutorial flow) — always easy
+  const difficulty = isSecondGame ? 'easy' : difficulties[Math.floor(Math.random() * difficulties.length)];
 
   window._botSubstituteName = botName;
   window._isBotSubstitute = true;
@@ -3021,6 +3076,58 @@ async function submitMyScore() {
   } catch(e) { console.log('Score submit failed:', e); }
 }
 
+const FAKE_PLAYERS = [
+  {username:'ProWaller',   points:1240,wins:87, games:130,isGuest:false},
+  {username:'StrategyKing',points:1180,wins:79, games:115,isGuest:false},
+  {username:'WallMaster',  points:1050,wins:71, games:108,isGuest:false},
+  {username:'QuoriPro',    points:980, wins:65, games:99, isGuest:false},
+  {username:'BlockerX',    points:920, wins:60, games:94, isGuest:false},
+  {username:'FastMover99', points:870, wins:55, games:89, isGuest:false},
+  {username:'TacticMind',  points:810, wins:50, games:82, isGuest:false},
+  {username:'WallHunter',  points:760, wins:46, games:77, isGuest:false},
+  {username:'PathFinder',  points:700, wins:42, games:70, isGuest:false},
+  {username:'SilentWall',  points:650, wins:38, games:65, isGuest:false},
+  {username:'MazeRunner',  points:600, wins:34, games:60, isGuest:false},
+  {username:'GridLock',    points:550, wins:30, games:54, isGuest:false},
+  {username:'WallBreaker', points:510, wins:27, games:49, isGuest:false},
+  {username:'QuoriBot',    points:470, wins:24, games:44, isGuest:false},
+  {username:'Blocker99',   points:430, wins:21, games:40, isGuest:false},
+  {username:'PathMaster',  points:390, wins:18, games:36, isGuest:false},
+  {username:'CornerKing',  points:360, wins:16, games:32, isGuest:false},
+  {username:'WallPusher',  points:330, wins:14, games:29, isGuest:false},
+  {username:'TacticPro',   points:300, wins:12, games:26, isGuest:false},
+  {username:'GridMaster',  points:270, wins:10, games:23, isGuest:false},
+  {username:'FastBlock',   points:240, wins:9,  games:20, isGuest:false},
+  {username:'WallSniper',  points:210, wins:8,  games:18, isGuest:false},
+  {username:'QuoriKing',   points:185, wins:7,  games:16, isGuest:false},
+  {username:'PathRunner',  points:160, wins:6,  games:14, isGuest:false},
+  {username:'BlockMaster', points:140, wins:5,  games:12, isGuest:false},
+  {username:'GridSniper',  points:120, wins:4,  games:10, isGuest:false},
+  {username:'WallRacer',   points:100, wins:4,  games:9,  isGuest:false},
+  {username:'TacticSniper',points:85,  wins:3,  games:8,  isGuest:false},
+  {username:'PathBlock',   points:70,  wins:3,  games:7,  isGuest:false},
+  {username:'GridRunner',  points:55,  wins:2,  games:6,  isGuest:false},
+  {username:'WallCraft',   points:48,  wins:2,  games:5,  isGuest:false},
+  {username:'QuoriSniper', points:42,  wins:2,  games:5,  isGuest:false},
+  {username:'TacticBlock', points:38,  wins:1,  games:4,  isGuest:false},
+  {username:'FastWall',    points:33,  wins:1,  games:4,  isGuest:false},
+  {username:'PathSniper',  points:28,  wins:1,  games:3,  isGuest:false},
+  {username:'GridBlock',   points:24,  wins:1,  games:3,  isGuest:false},
+  {username:'WallRunner',  points:20,  wins:1,  games:3,  isGuest:false},
+  {username:'QuoriWall',   points:17,  wins:1,  games:2,  isGuest:false},
+  {username:'BlockRunner', points:14,  wins:1,  games:2,  isGuest:false},
+  {username:'TacticWall',  points:12,  wins:0,  games:2,  isGuest:false},
+  {username:'FastSniper',  points:10,  wins:0,  games:2,  isGuest:false},
+  {username:'PathCraft',   points:8,   wins:0,  games:1,  isGuest:false},
+  {username:'GridWall',    points:6,   wins:0,  games:1,  isGuest:false},
+  {username:'WallCrafter', points:5,   wins:0,  games:1,  isGuest:false},
+  {username:'QuoriRunner', points:4,   wins:0,  games:1,  isGuest:false},
+  {username:'BlockSniper', points:3,   wins:0,  games:1,  isGuest:false},
+  {username:'TacticCraft', points:2,   wins:0,  games:1,  isGuest:false},
+  {username:'FastRunner',  points:1,   wins:0,  games:1,  isGuest:false},
+  {username:'PathWall',    points:0,   wins:0,  games:1,  isGuest:false},
+];
+
 async function loadLeaderboard() {
   const table = document.getElementById('lb-table');
   const myRankEl = document.getElementById('lb-my-rank');
@@ -3037,11 +3144,16 @@ async function loadLeaderboard() {
     const data = await apiCall('GET', '/leaderboard/all');
     if (!data || data.error) { table.innerHTML = '<div class="lb-loading">Не удалось загрузить 😔</div>'; return; }
 
+    // Merge with fake players
+    const realNames = new Set(data.map(p => p.username.toLowerCase()));
+    const fakes = FAKE_PLAYERS.filter(f => !realNames.has(f.username.toLowerCase()));
+    const merged = [...data, ...fakes].sort((a,b) => b.points - a.points).slice(0, 50);
+
     table.innerHTML = '';
     const rankEmojis = { 1:'🥇', 2:'🥈', 3:'🥉' };
     let myRank = null;
 
-    data.forEach((player, i) => {
+    merged.forEach((player, i) => {
       const rank = i + 1;
       const isMe = player.username.toLowerCase() === (currentUser||'').toLowerCase();
       if (isMe) myRank = rank;
@@ -3641,9 +3753,15 @@ async function loginSuccess(username, userData) {
     savePoints(); saveAchievements(); saveShop();
     updatePointsUI(); updateRatingUI();
 
-    // Новый пользователь — показать приветственный бонус
+    // Новый пользователь — показать приветственный бонус или сразу матч
     const isNewUser = !userData.points && !(userData.stats?.totalGames);
     if (isNewUser) {
+      // Check if came from tutorial — skip welcome bonus, go straight to match
+      if (localStorage.getItem('lomi_tutorial_done')) {
+        updateUserUI();
+        afterTutorialRegister();
+        return;
+      }
       setTimeout(()=>showWelcomeBonus(), 300);
       return;
     }
@@ -3700,7 +3818,6 @@ function logout() {
   localStorage.removeItem('lomi_guest_bonus');
   localStorage.removeItem('lomi_daily');
   localStorage.removeItem('lomi_matches');
-  localStorage.removeItem('lomi_tutorial_done');
   // Reset in-memory state
   totalPoints = 0;
   ratingPoints = 0;
@@ -4174,7 +4291,7 @@ function doSurrender() {
   document.getElementById('rating-change').style.display = 'none';
   document.getElementById('points-block').style.display  = 'none';
 
-  if (isBot) { playLose(); } else { playWin(); }
+  if (isBot) { playLose(); } else { playWin(); if (winner===0) spawnConfetti(); }
   document.getElementById('win-emoji').textContent = isBot ? '🤖' : '🏳️';
   document.getElementById('win-title').textContent = isBot ? 'ktoyura победил!' : winner===0 ? `${currentUser || 'Игрок 1'} победил!` : 'Игрок 2 победил!';
   document.getElementById('win-title').style.background = winner===0 ? 'linear-gradient(135deg,#FF3CAC,#784BFF)' : 'linear-gradient(135deg,#00F5C4,#784BFF)';
@@ -4189,8 +4306,90 @@ let tutorialActive = false;
 let tutWaitingFor = null;
 let tutStep = 0;
 
+// ── MICRO REWARDS ────────────────────────────────────────────────
+const MICRO_MSGS = ['🔥 Хороший ход!','⚡ Отлично!','💪 Так держать!','🎯 Точно!','✨ Супер!'];
+let microIdx = 0;
+function showMicroReward() {
+  if (!tutorialActive) return;
+  const el = document.getElementById('micro-reward');
+  if (!el) return;
+  el.textContent = MICRO_MSGS[microIdx % MICRO_MSGS.length];
+  microIdx++;
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  void el.offsetWidth; // reflow
+  el.style.animation = 'microRewardAnim 1.2s ease forwards';
+  setTimeout(() => { el.style.display = 'none'; }, 1200);
+  // Vibrate on mobile
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+
+// ── SECOND GAME (after tutorial win) ─────────────────────────────
+let isSecondGame = false;
+
+function startSecondGame() {
+  isSecondGame = true;
+  // Show dramatic intro
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;';
+  overlay.innerHTML = `
+    <div style="font-size:2rem">⚔️</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;color:#fff;text-align:center">
+      А сейчас посмотрим<br>насколько ты крепок...
+    </div>
+    <div id="second-game-count" style="font-family:'Unbounded',sans-serif;font-size:3rem;font-weight:900;color:#FFD700">3</div>
+  `;
+  document.body.appendChild(overlay);
+
+  let count = 3;
+  const countEl = overlay.querySelector('#second-game-count');
+  const countDown = setInterval(() => {
+    count--;
+    if (count <= 0) {
+      clearInterval(countDown);
+      overlay.remove();
+      launchSecondGame();
+    } else {
+      countEl.textContent = count;
+    }
+  }, 1000);
+}
+
+function launchSecondGame() {
+  // Connect socket and search for opponent
+  if (!socket) initSocket();
+  onlineMode = false; // will be set true if real opponent found
+
+  // Show searching screen briefly
+  showScreen('online');
+  switchOnlineTab('search');
+  startSearch();
+
+  // After 20 sec if no opponent — bot substitute
+  // (handled by existing matchmaking system)
+}
+
+function onSecondGameWin() {
+  isSecondGame = false;
+  // After win screen is shown, add register button
+  setTimeout(() => {
+    const normal = document.getElementById('win-buttons-normal');
+    if (normal) normal.innerHTML = `
+      <button onclick="goToRegister()" class="btn btn-primary" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);font-size:0.9rem;font-weight:900">
+        🎮 Создать аккаунт
+      </button>
+      <button onclick="showScreen('menu')" class="btn btn-secondary" style="font-size:0.8rem">
+        Играть без аккаунта
+      </button>`;
+  }, 300);
+}
+
 function isTutorialNeeded() {
-  return !localStorage.getItem('lomi_tutorial_done');
+  // Don't show tutorial if user already has an account or has seen it
+  if (localStorage.getItem('lomi_tutorial_done')) return false;
+  if (localStorage.getItem('lomi_token')) return false;
+  if (localStorage.getItem('lomi_guest_name')) return false;
+  return true;
 }
 
 function $t(id) { return document.getElementById(id); }
@@ -4231,7 +4430,7 @@ function tutPulseGoalRow() {
   const cs = rect.width / 9;
   el.style.display = 'block';
   el.style.left   = rect.left + 'px';
-  el.style.top    = (rect.top + 2) + 'px';
+  el.style.top    = (rect.top + rect.height - cs + 2) + 'px';
   el.style.width  = rect.width + 'px';
   el.style.height = (cs - 4) + 'px';
 }
@@ -4257,9 +4456,9 @@ function tutPulseWallNearBot(dir) {
   const cs = rect.width / 9;
   const gap = cs * 0.12; // wall gap between cells
 
-  // Best wall position — between bot and its goal (row 8)
-  // Bot is player[1], going to row N-1
-  const br = Math.max(1, Math.min(7, players[1].r));
+  // Best wall position — between bot and its goal (row 0)
+  // Bot (pi=1) goes to row 0, so wall above bot
+  const br = Math.max(1, Math.min(7, players[1].r - 1));
   const bc = Math.max(0, Math.min(7, players[1].c));
 
   el.style.display = 'block';
@@ -4286,21 +4485,21 @@ function tutPulseWallNearBot(dir) {
 }
 
 function tutNextMove() {
-  const step = bfsNextStep(players[0].r, players[0].c, 0);
+  const step = bfsNextStep(players[0].r, players[0].c, N-1);
   if (step) tutPulseCell(step[0], step[1]);
 }
 
 // ── TUTORIAL STEPS ────────────────────────────────────────────────
 function tutStep0() {
   tutStep = 0; tutWaitingFor = null;
-  tutShow('🎯 Твоя цель — верхний ряд!', 'Ты розовая фишка внизу. Дойди до верхнего края первым — и победишь!');
+  tutShow('🎯 Твоя цель — нижний ряд!', 'Ты розовая фишка вверху. Дойди до нижнего края первым — и победишь!');
   tutPulseGoalRow();
   setTimeout(tutStep1, 5000);
 }
 
 function tutStep1() {
   tutStep = 1; tutWaitingFor = 'move';
-  tutShow('👆 Сделай первый ход', 'Нажми на подсвеченную клетку чтобы двигаться вперёд к цели');
+  tutShow('👆 Сделай первый ход', 'Нажми на подсвеченную клетку чтобы двигаться вниз к цели');
   tutNextMove();
 }
 
@@ -4312,7 +4511,7 @@ function tutStep2() {
 
 function tutStep3() {
   tutStep = 3; tutWaitingFor = 'move';
-  tutShow('🏃 Ещё один шаг вперёд!', 'Продолжай двигаться к верхнему краю — подсвечена лучшая клетка');
+  tutShow('🏃 Ещё один шаг вниз!', 'Продолжай двигаться к нижнему краю — подсвечена лучшая клетка');
   tutNextMove();
 }
 
@@ -4364,23 +4563,51 @@ function tutStep7() {
 
 function tutStep8() {
   tutStep = 8; tutWaitingFor = 'free';
-  tutShow('🏆 Финальный рывок к победе!', 'Ты знаешь всё! Двигайся к верхнему краю — подсказка всегда с тобой!');
+  tutShow('🏆 Финальный рывок к победе!', 'Ты знаешь всё! Двигайся к нижнему краю — подсказка всегда с тобой!');
   tutNextMove();
 }
 
 // ── ХУКИ ─────────────────────────────────────────────────────────
+const TUT_POPUPS = ['Отлично! 🔥','Хороший ход! ⚡','Так держать! 💪','Умно! 🧠','Красиво! ✨'];
+let tutPopupIdx = 0;
+
+function showMicroPopup() {
+  const msg = TUT_POPUPS[tutPopupIdx % TUT_POPUPS.length];
+  tutPopupIdx++;
+  // Vibrate on mobile
+  if (navigator.vibrate) navigator.vibrate(40);
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = `position:fixed;left:50%;top:35%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.85);border:2px solid #FFD700;border-radius:50px;
+    padding:10px 24px;font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:900;
+    color:#FFD700;z-index:9999;pointer-events:none;
+    animation:microPopupAnim 1.2s ease forwards`;
+  const style = document.createElement('style');
+  style.textContent = `@keyframes microPopupAnim {
+    0%{opacity:0;transform:translateX(-50%) translateY(10px) scale(0.8)}
+    20%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.05)}
+    70%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+    100%{opacity:0;transform:translateX(-50%) translateY(-20px) scale(0.9)}
+  }`;
+  document.head.appendChild(style);
+  document.body.appendChild(el);
+  setTimeout(() => { el.remove(); style.remove(); }, 1200);
+}
+
 function tutOnPlayerMove() {
   if (!tutorialActive) return;
+  showMicroPopup();
   if (tutWaitingFor === 'move') {
     tutHidePulse();
-    if (tutStep === 1) setTimeout(tutStep2, 500);
-    else if (tutStep === 3) setTimeout(tutStep4, 500);
+    if (tutStep === 1) setTimeout(tutStep2, 600);
+    else if (tutStep === 3) setTimeout(tutStep4, 600);
   } else if (tutWaitingFor === 'free') {
     setTimeout(() => {
       if (!tutorialActive || winner) return;
-      tutShow('🏃 Вперёд к победе!', 'Иди к верхнему краю — ты уже близко! Можешь ставить стены чтобы блокировать.');
+      tutShow('🏃 Вперёд к победе!', 'Иди к нижнему краю — ты уже близко! Можешь ставить стены чтобы блокировать.');
       tutNextMove();
-    }, 500);
+    }, 600);
   }
 }
 
@@ -4434,10 +4661,37 @@ function endTutorial() {
   localStorage.setItem('lomi_tutorial_done', '1');
   const ov = $t('tutorial-overlay');
   if (ov) ov.style.display = 'none';
-  // Hide back button on register screen
+}
+
+function goToRegister() {
   const backBtn = document.getElementById('reg-back-btn');
   if (backBtn) backBtn.style.display = 'none';
   showScreen('register');
+}
+
+// Called after successful registration from tutorial
+function afterTutorialRegister() {
+  // Show "opponent found" effect then start match
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  msg.innerHTML = `
+    <div style="font-size:2rem">🌐</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:#fff">Соперник найден...</div>
+    <div id="countdown-num" style="font-family:'Unbounded',sans-serif;font-size:4rem;font-weight:900;color:#784BFF">3</div>
+  `;
+  document.body.appendChild(msg);
+  let count = 3;
+  const iv = setInterval(() => {
+    count--;
+    const el = msg.querySelector('#countdown-num');
+    if (el) el.textContent = count || '🏁';
+    if (count <= 0) {
+      clearInterval(iv);
+      msg.remove();
+      showScreen('online');
+      setTimeout(startSearch, 300);
+    }
+  }, 1000);
 }
 
 
@@ -4479,7 +4733,7 @@ function tutPulseGoalRow() {
   const cs = rect.width / 9;
   el.style.display = 'block';
   el.style.left   = rect.left + 'px';
-  el.style.top    = (rect.top + 2) + 'px';
+  el.style.top    = (rect.top + rect.height - cs + 2) + 'px';
   el.style.width  = rect.width + 'px';
   el.style.height = (cs - 4) + 'px';
 }
@@ -4494,6 +4748,29 @@ function tutPulseBtn(id) {
   el.style.left = (rect.left + rect.width/2 - 18) + 'px';
   el.style.top  = (rect.top - 58) + 'px';
 }
+// ── MICRO REWARDS ────────────────────────────────────────────────
+
+// ── CONFETTI ──────────────────────────────────────────────────────
+function showConfetti() {
+  const colors = ['#FF3CAC','#784BFF','#00F5C4','#FFD700','#FF6B35','#fff'];
+  for (let i=0;i<80;i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      const size = Math.random()*10+5;
+      el.style.cssText = `
+        position:fixed;z-index:9998;pointer-events:none;
+        width:${size}px;height:${size}px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        left:${Math.random()*100}vw;top:-20px;
+        border-radius:${Math.random()>0.5?'50%':'2px'};
+        animation:confettiFall ${1.5+Math.random()*2}s ease forwards;
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }, Math.random()*600);
+  }
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -4529,6 +4806,7 @@ function showScreen(id) {
     setTimeout(()=>document.getElementById('login-username').focus(),100);
     stopMenuMusic();
   } else if (id === 'menu') {
+    updateOnlineCounter();
     stopTimer();
     if (onlineMode) { if (socket) socket.disconnect(); socket=null; onlineMode=false; }
     clearIngameChat();
@@ -5327,7 +5605,13 @@ function handleMove(mx,my) {
     if (valid.some(([r,c])=>r===cell.r&&c===cell.c)) {
       players[turn]={r:cell.r,c:cell.c};
       playMove();
-      if (turn===0) tutOnPlayerMove();
+      if (turn===0) {
+        tutOnPlayerMove();
+        // Micro reward every 2nd move during tutorial, or randomly otherwise
+        if (tutorialActive || Math.random() < 0.3) {
+          showMicroReward();
+        }
+      }
       if ((turn===0&&cell.r===N-1)||(turn===1&&cell.r===0)) {
         winner=turn; showWin();
       } else { turn=1-turn; }
@@ -5347,6 +5631,33 @@ function handleMove(mx,my) {
       scheduleAI();
     }
   }
+}
+
+function spawnConfetti() {
+  const colors = ['#FF3CAC','#784BFF','#00F5C4','#FFD700','#FF6B35','#fff'];
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8000;overflow:hidden';
+  document.body.appendChild(container);
+  for (let i=0;i<80;i++) {
+    const el = document.createElement('div');
+    const color = colors[Math.floor(Math.random()*colors.length)];
+    const size = Math.random()*10+6;
+    const left = Math.random()*100;
+    const delay = Math.random()*0.8;
+    const dur = Math.random()*1.5+1.5;
+    const rotate = Math.random()*720-360;
+    el.style.cssText = `position:absolute;width:${size}px;height:${size}px;background:${color};
+      left:${left}%;top:-20px;border-radius:${Math.random()>0.5?'50%':'2px'};
+      animation:confettiFall ${dur}s ${delay}s ease-in forwards`;
+    container.appendChild(el);
+  }
+  const style = document.createElement('style');
+  style.textContent = `@keyframes confettiFall {
+    0%{transform:translateY(0) rotate(0deg);opacity:1}
+    100%{transform:translateY(110vh) rotate(720deg);opacity:0}
+  }`;
+  document.head.appendChild(style);
+  setTimeout(() => { container.remove(); style.remove(); }, 4000);
 }
 
 function showWin() {
@@ -5390,10 +5701,18 @@ function showWin() {
     const normal = document.getElementById('win-buttons-normal');
     const tutBtns = document.getElementById('win-buttons-tutorial');
     if (normal) normal.style.display = 'none';
-    if (tutBtns) tutBtns.style.display = 'flex';
+    if (tutBtns) {
+      tutBtns.style.display = 'flex';
+      tutBtns.innerHTML = `
+        <button class="btn btn-primary" onclick="endTutorial();startSecondGame()" style="background:linear-gradient(135deg,#FF6B35,#FFD700);font-size:0.9rem;font-weight:900">
+          ⚔️ Забрать и сыграть ещё раз!
+        </button>
+        <div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-top:4px">Посмотрим насколько ты крепок...</div>`;
+    }
 
     showScreen('win');
     playWin();
+    spawnConfetti();
     return;
   }
   const w = winner;
@@ -5405,8 +5724,13 @@ function showWin() {
   // Reset tutorial buttons to normal
   const nb = document.getElementById('win-buttons-normal');
   const tb = document.getElementById('win-buttons-tutorial');
-  if (nb) nb.style.display = 'flex';
+  if (nb) {
+    nb.style.display = 'flex';
+    nb.innerHTML = `<button class="btn btn-primary" onclick="startGame(aiDifficulty)">⚔️ Реванш</button>
+    <button class="btn btn-secondary" onclick="showScreen('menu')">🚪 Выйти в меню</button>`;
+  }
   if (tb) tb.style.display = 'none';
+  if (isSecondGame) setTimeout(onSecondGameWin, 400);
 
   // Update achievement stats
   achStats.totalGames++;
@@ -5465,7 +5789,7 @@ function showWin() {
     document.getElementById('points-block').style.display = 'none';
   }
 
-  if (isBot) { playLose(); } else { playWin(); }
+  if (isBot) { playLose(); } else { playWin(); if (w===0) spawnConfetti(); }
   document.getElementById('win-title').textContent = isBot ? 'ktoyura победил!' : isPlayerVsBot ? 'Ты победил!' : w===0?'Победа Игрока 1!':'Победа Игрока 2!';
   document.getElementById('win-sub').textContent = isBot ? 'ktoyura слишком умён 🤖' : isPlayerVsBot ? 'Ты обыграл ktoyura! 🎉' : w===0?'Розовый добрался первым 🎉':'Бирюзовый добрался первым 🎉';
   document.getElementById('win-emoji').textContent = isBot ? '🤖' : '🏆';
@@ -5502,6 +5826,16 @@ document.addEventListener('click', function startAudio() {
 // Don't save screen on unload — intro plays on every refresh
 // localStorage.removeItem('lomi_last_screen'); // cleared below in loadUser
 
+// ── ONLINE COUNTER ───────────────────────────────────────────────
+function updateOnlineCounter() {
+  const el = document.getElementById('online-count');
+  if (!el) return;
+  const count = Math.floor(Math.random() * 21) + 10; // 10-30
+  el.textContent = count;
+}
+updateOnlineCounter();
+setInterval(updateOnlineCounter, 30000);
+
 // Init — load data (loadUser called by intro or directly)
 loadAchievements();
 loadPoints();
@@ -5521,7 +5855,10 @@ function runIntro() {
     screen.style.opacity = '0';
     setTimeout(() => {
       screen.remove();
-      if (isTutorialNeeded()) {
+      // Only show tutorial if no existing account/session
+      const hasToken = localStorage.getItem('lomi_token');
+      const hasGuest = localStorage.getItem('lomi_guest_name');
+      if (isTutorialNeeded() && !hasToken && !hasGuest) {
         startTutorial();
       } else {
         loadUser();
