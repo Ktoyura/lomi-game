@@ -737,6 +737,7 @@ const INTRO_AUDIO_B64 = '';</script>
     <button class="btn btn-secondary" onclick="showScreen('difficulty')" style="border-color:rgba(0,245,196,0.3);color:var(--p2)">Против ktoyura</button>
     <button class="btn btn-secondary" onclick="showScreen('shop')">🛒 Магазин</button>
     <button class="btn btn-secondary" onclick="showScreenSafe('leaderboard')">🏆 Таблица лидеров</button>
+    <button class="btn btn-secondary" onclick="showScreen('puzzles')" style="border-color:rgba(255,211,61,0.4);color:#FFD93D">🧩 Пазлы</button>
     <button class="btn btn-secondary" onclick="showScreen('achievements')">🏅 Достижения</button>
     <button class="btn btn-secondary" onclick="showScreen('rules')">Как играть</button>
   </div>
@@ -2736,6 +2737,8 @@ const SLOT_ITEMS = [
 ];
 
 let dailyState = { lastClaim: 0 };
+let puzzlePoints = 0;      // 🧩 Пазл-очки
+let solvedPuzzles = new Set(); // решённые пазлы
 let slotInterval = null;
 let slotResult = null;
 let slotRunning = false;
@@ -4751,6 +4754,7 @@ function startTutorial() {
   ratingPoints = 0;
   loadAchievements();
   loadShop();
+  loadPuzzlePoints();
   applyBoardTheme();
   updatePointsUI();
   updateRatingUI();
@@ -4969,6 +4973,8 @@ function showScreen(id) {
     loadLeaderboard();
     startLbAutoRefresh();
     stopMenuMusic();
+  } else if (id === 'puzzles') {
+    initPuzzleScreen();
   } else if (id === 'achievements') {
     renderAchievements();
     stopMenuMusic();
@@ -6109,6 +6115,537 @@ window.addEventListener('load', runIntro);
 
 
 
+
+// ══════════════════════════════════════════════════════════════════
+// 🧩 PUZZLE SYSTEM
+// ══════════════════════════════════════════════════════════════════
+
+// Load/save puzzle points
+function loadPuzzlePoints() {
+  puzzlePoints = parseInt(localStorage.getItem('lomi_puzzle_points') || '0');
+  const solved = localStorage.getItem('lomi_solved_puzzles');
+  solvedPuzzles = solved ? new Set(JSON.parse(solved)) : new Set();
+  updatePuzzleUI();
+}
+function savePuzzlePoints() {
+  localStorage.setItem('lomi_puzzle_points', puzzlePoints);
+  localStorage.setItem('lomi_solved_puzzles', JSON.stringify([...solvedPuzzles]));
+  updatePuzzleUI();
+}
+function updatePuzzleUI() {
+  const el = document.getElementById('puzzle-points-display');
+  if (el) el.textContent = puzzlePoints + ' 🧩';
+  const pp = document.getElementById('puzzle-pp');
+  if (pp) pp.textContent = puzzlePoints;
+}
+
+// ── PUZZLE DEFINITIONS ────────────────────────────────────────────
+// Each puzzle: { id, title, stars, task, optimal, board }
+// board: { p0:[r,c], p1:[r,c], walls:[{r,c,dir}], wallsLeft:[n,n] }
+// task: 'win_in_N' | 'block' | 'reach'
+
+const PUZZLES = [
+  // ⭐ EASY (stars:1) — простые ходы
+  { id:1, stars:1, title:'Один шаг', task:'Дойди до нижнего ряда за 1 ход', type:'win_in_N', optimal:1,
+    board:{ p0:[7,4], p1:[1,4], walls:[], wallsLeft:[10,10] } },
+  { id:2, stars:1, title:'Финишная прямая', task:'Один ход — и ты победил!', type:'win_in_N', optimal:1,
+    board:{ p0:[7,3], p1:[0,4], walls:[], wallsLeft:[8,8] } },
+  { id:3, stars:1, title:'Обход стены', task:'Найди путь вокруг стены', type:'reach', optimal:2,
+    board:{ p0:[6,4], p1:[1,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:4,dir:'h'}], wallsLeft:[8,8] } },
+  { id:4, stars:1, title:'Простая блокада', task:'Поставь стену и выиграй', type:'win_in_N', optimal:2,
+    board:{ p0:[6,4], p1:[2,4], walls:[], wallsLeft:[5,5] } },
+  { id:5, stars:1, title:'Короткий путь', task:'Найди кратчайший путь к победе', type:'reach', optimal:2,
+    board:{ p0:[6,3], p1:[1,5], walls:[{r:7,c:4,dir:'v'}], wallsLeft:[8,8] } },
+
+  // ⭐⭐ MEDIUM-EASY (stars:2)
+  { id:6, stars:2, title:'Умная стена', task:'Поставь стену чтобы заблокировать соперника', type:'block', optimal:2,
+    board:{ p0:[5,4], p1:[3,4], walls:[], wallsLeft:[5,3] } },
+  { id:7, stars:2, title:'Двойной путь', task:'Соперник близко — действуй быстро!', type:'win_in_N', optimal:3,
+    board:{ p0:[5,4], p1:[3,4], walls:[{r:6,c:3,dir:'h'}], wallsLeft:[4,4] } },
+  { id:8, stars:2, title:'Лабиринт', task:'Найди выход из лабиринта стен', type:'reach', optimal:4,
+    board:{ p0:[7,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:6,c:4,dir:'v'}], wallsLeft:[5,5] } },
+  { id:9, stars:2, title:'Ловушка', task:'Поставь стену и захвати путь', type:'block', optimal:2,
+    board:{ p0:[4,4], p1:[4,5], walls:[{r:5,c:3,dir:'h'}], wallsLeft:[5,3] } },
+  { id:10, stars:2, title:'Гонка', task:'Ты на шаг позади — найди как обогнать', type:'win_in_N', optimal:3,
+    board:{ p0:[6,4], p1:[5,4], walls:[], wallsLeft:[3,3] } },
+
+  // ⭐⭐⭐ MEDIUM (stars:3)
+  { id:11, stars:3, title:'Вилка', task:'Создай угрозу с двух сторон', type:'win_in_N', optimal:3,
+    board:{ p0:[5,4], p1:[3,3], walls:[{r:4,c:4,dir:'h'}], wallsLeft:[4,4] } },
+  { id:12, stars:3, title:'Прорыв', task:'Найди брешь в обороне', type:'reach', optimal:5,
+    board:{ p0:[7,4], p1:[1,4], walls:[{r:6,c:3,dir:'h'},{r:6,c:5,dir:'h'},{r:5,c:3,dir:'v'},{r:5,c:6,dir:'v'}], wallsLeft:[6,6] } },
+  { id:13, stars:3, title:'Контрудар', task:'Соперник идёт быстро — останови его', type:'block', optimal:2,
+    board:{ p0:[4,4], p1:[6,4], walls:[{r:5,c:3,dir:'h'}], wallsLeft:[5,2] } },
+  { id:14, stars:3, title:'Зигзаг', task:'Путь не прямой — найди оптимальный маршрут', type:'reach', optimal:5,
+    board:{ p0:[8,0], p1:[0,8], walls:[{r:7,c:1,dir:'h'},{r:6,c:2,dir:'v'},{r:5,c:3,dir:'h'},{r:4,c:4,dir:'v'}], wallsLeft:[7,7] } },
+  { id:15, stars:3, title:'Стратег', task:'Один ход меняет всё', type:'win_in_N', optimal:4,
+    board:{ p0:[5,3], p1:[3,5], walls:[{r:6,c:2,dir:'h'},{r:4,c:4,dir:'v'}], wallsLeft:[4,4] } },
+
+  // ⭐⭐⭐⭐ HARD (stars:4)
+  { id:16, stars:4, title:'Теснина', task:'Узкий проход — используй его с умом', type:'reach', optimal:6,
+    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:3,dir:'v'},{r:6,c:5,dir:'v'},{r:4,c:3,dir:'v'},{r:4,c:5,dir:'v'},{r:2,c:3,dir:'v'},{r:2,c:5,dir:'v'}], wallsLeft:[5,5] } },
+  { id:17, stars:4, title:'Двойная блокада', task:'Заблокируй оба пути соперника', type:'block', optimal:3,
+    board:{ p0:[4,4], p1:[4,4], walls:[], wallsLeft:[3,5] } },
+  { id:18, stars:4, title:'Цугцванг', task:'Любой ход соперника проигрышный', type:'win_in_N', optimal:4,
+    board:{ p0:[5,4], p1:[3,4], walls:[{r:4,c:3,dir:'h'},{r:4,c:5,dir:'h'}], wallsLeft:[3,3] } },
+  { id:19, stars:4, title:'Обманный манёвр', task:'Соперник думает что выигрывает — докажи обратное', type:'win_in_N', optimal:5,
+    board:{ p0:[6,2], p1:[2,6], walls:[{r:5,c:3,dir:'h'},{r:3,c:5,dir:'h'}], wallsLeft:[4,4] } },
+  { id:20, stars:4, title:'Крепость', task:'Прорвись через укреплённую оборону', type:'reach', optimal:7,
+    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:2,dir:'h'},{r:6,c:4,dir:'h'},{r:6,c:6,dir:'h'},{r:3,c:2,dir:'h'},{r:3,c:4,dir:'h'},{r:3,c:6,dir:'h'}], wallsLeft:[4,4] } },
+
+  // ⭐⭐⭐⭐⭐ MASTER (stars:5)
+  { id:21, stars:5, title:'Мастер стен', task:'Идеальная комбинация — найди её', type:'win_in_N', optimal:5,
+    board:{ p0:[6,4], p1:[2,4], walls:[{r:5,c:3,dir:'h'},{r:3,c:5,dir:'h'},{r:4,c:2,dir:'v'},{r:4,c:6,dir:'v'}], wallsLeft:[3,3] } },
+  { id:22, stars:5, title:'Эндшпиль', task:'Мало стен, мало ходов — думай на 5 шагов вперёд', type:'win_in_N', optimal:6,
+    board:{ p0:[7,3], p1:[1,5], walls:[{r:5,c:4,dir:'v'},{r:3,c:3,dir:'h'}], wallsLeft:[2,2] } },
+  { id:23, stars:5, title:'Гроссмейстер', task:'Только один путь к победе — найди его', type:'reach', optimal:8,
+    board:{ p0:[8,0], p1:[0,8], walls:[{r:7,c:2,dir:'v'},{r:6,c:4,dir:'h'},{r:5,c:6,dir:'v'},{r:4,c:2,dir:'h'},{r:3,c:4,dir:'v'},{r:2,c:6,dir:'h'}], wallsLeft:[3,3] } },
+  { id:24, stars:5, title:'Невозможный', task:'Говорят это нерешаемо... или нет?', type:'win_in_N', optimal:7,
+    board:{ p0:[8,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:5,c:3,dir:'h'},{r:5,c:5,dir:'h'},{r:3,c:3,dir:'h'},{r:3,c:5,dir:'h'}], wallsLeft:[2,2] } },
+  { id:25, stars:5, title:'Легенда', task:'Финальное испытание — только для лучших', type:'win_in_N', optimal:8,
+    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:3,dir:'v'},{r:6,c:5,dir:'v'},{r:4,c:1,dir:'h'},{r:4,c:7,dir:'h'},{r:2,c:3,dir:'v'},{r:2,c:5,dir:'v'}], wallsLeft:[1,1] } },
+];
+
+// Daily puzzle rotation
+const DAILY_PUZZLE_IDS = [3,7,12,18,24,5,10,15,20,25,1,6,11,16,21,4,9,14,19,23,2,8,13,17,22];
+
+function getDailyPuzzle() {
+  const day = Math.floor(Date.now() / 86400000);
+  const idx = day % DAILY_PUZZLE_IDS.length;
+  return PUZZLES.find(p => p.id === DAILY_PUZZLE_IDS[idx]);
+}
+
+// ── PUZZLE STATE ──────────────────────────────────────────────────
+let currentPuzzle = null;
+let puzzleMode = 'move';
+let puzzleWallDir = 'h';
+let puzzleMoves = 0;
+let puzzleStartTime = 0;
+let puzzleTimerInterval = null;
+let puzzlePlayers = [];
+let puzzleWalls = [];
+let puzzleWallsLeft = [];
+let puzzleIsDaily = false;
+let puzzleHintUsed = false;
+
+function loadPuzzleBoard(pz) {
+  puzzlePlayers = [
+    { r: pz.board.p0[0], c: pz.board.p0[1] },
+    { r: pz.board.p1[0], c: pz.board.p1[1] },
+  ];
+  puzzleWalls = pz.board.walls.map(w => ({ ...w, owner: 1 }));
+  puzzleWallsLeft = [...pz.board.wallsLeft];
+  puzzleMoves = 0;
+  puzzleHintUsed = false;
+  document.getElementById('puzzle-moves-count').textContent = 0;
+  document.getElementById('puzzle-optimal').textContent = pz.optimal;
+  document.getElementById('puzzle-hint-text').style.display = 'none';
+  setPuzzleMode('move');
+}
+
+function openPuzzle(idOrDaily) {
+  puzzleIsDaily = idOrDaily === 'daily';
+  currentPuzzle = puzzleIsDaily ? getDailyPuzzle() : PUZZLES.find(p => p.id === idOrDaily);
+  if (!currentPuzzle) return;
+
+  loadPuzzleBoard(currentPuzzle);
+
+  document.getElementById('puzzle-title').textContent =
+    (puzzleIsDaily ? '📅 ' : '') + currentPuzzle.title;
+  document.getElementById('puzzle-task').textContent = currentPuzzle.task;
+  document.getElementById('puzzle-win').style.display = 'none';
+
+  // Start timer
+  puzzleStartTime = Date.now();
+  clearInterval(puzzleTimerInterval);
+  puzzleTimerInterval = setInterval(() => {
+    const sec = Math.floor((Date.now() - puzzleStartTime) / 1000);
+    const el = document.getElementById('puzzle-time');
+    if (el) el.textContent = sec;
+  }, 1000);
+
+  showScreen('puzzle-game');
+  setTimeout(drawPuzzle, 100);
+}
+
+function exitPuzzle() {
+  clearInterval(puzzleTimerInterval);
+  showScreen('puzzles');
+  renderPuzzleGrid();
+}
+
+function resetPuzzle() {
+  if (!currentPuzzle) return;
+  loadPuzzleBoard(currentPuzzle);
+  puzzleStartTime = Date.now();
+  drawPuzzle();
+}
+
+function setPuzzleMode(m) {
+  puzzleMode = m;
+  document.getElementById('puzzle-btn-move').classList.toggle('active', m === 'move');
+  document.getElementById('puzzle-btn-wall').classList.toggle('active', m === 'wall');
+  drawPuzzle();
+}
+
+function togglePuzzleDir() {
+  puzzleWallDir = puzzleWallDir === 'h' ? 'v' : 'h';
+  document.getElementById('puzzle-btn-dir').textContent =
+    puzzleWallDir === 'h' ? '↔ Гориз.' : '↕ Верт.';
+  drawPuzzle();
+}
+
+// ── PUZZLE DRAWING ────────────────────────────────────────────────
+function drawPuzzle() {
+  const cv = document.getElementById('puzzle-canvas');
+  if (!cv) return;
+  const size = Math.min(window.innerWidth, 480);
+  cv.width = size; cv.height = size;
+  const ctx = cv.getContext('2d');
+  const cs = size / 9;
+  const gap = cs * 0.12;
+
+  // Background
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, size, size);
+
+  // Goal row highlight (bottom for player 0)
+  ctx.fillStyle = 'rgba(0,245,196,0.08)';
+  ctx.fillRect(0, 8 * cs, size, cs);
+  ctx.strokeStyle = 'rgba(0,245,196,0.4)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 8 * cs, size, cs);
+
+  // Grid cells
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const x = c * cs + gap/2, y = r * cs + gap/2;
+      const w = cs - gap, h = cs - gap;
+      ctx.fillStyle = '#1a1a2e';
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x,y,w,h,4); ctx.fill(); }
+      else { ctx.fillRect(x,y,w,h); }
+    }
+  }
+
+  // Walls
+  puzzleWalls.forEach(wall => {
+    ctx.fillStyle = wall.owner === 0 ? '#FF3CAC' : '#FF3333';
+    if (wall.dir === 'h') {
+      ctx.fillRect(wall.c * cs + gap/2, wall.r * cs - gap, cs * 2 - gap, gap * 1.5);
+    } else {
+      ctx.fillRect(wall.c * cs + cs - gap, wall.r * cs + gap/2, gap * 1.5, cs * 2 - gap);
+    }
+  });
+
+  // Players
+  const colors = ['#FF3CAC', '#FF3333'];
+  puzzlePlayers.forEach((p, i) => {
+    const cx = p.c * cs + cs/2, cy = p.r * cs + cs/2, r = cs * 0.35;
+    ctx.shadowColor = colors[i];
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${cs*0.3}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(i === 0 ? 'Я' : '👹', cx, cy);
+  });
+}
+
+// ── PUZZLE INPUT ──────────────────────────────────────────────────
+function puzzleHitCell(mx, my) {
+  const cv = document.getElementById('puzzle-canvas');
+  const cs = cv.width / 9;
+  const r = Math.floor(my / cs), c = Math.floor(mx / cs);
+  if (r >= 0 && r < 9 && c >= 0 && c < 9) return { r, c };
+  return null;
+}
+
+function puzzleCanMove(r, c) {
+  const p = puzzlePlayers[0];
+  const dr = Math.abs(r - p.r), dc = Math.abs(c - p.c);
+  if (dr + dc !== 1) return false;
+  // Check wall blocking
+  return !isPuzzleWallBlocking(p.r, p.c, r, c);
+}
+
+function isPuzzleWallBlocking(r1, c1, r2, c2) {
+  // Simplified wall check
+  for (const w of puzzleWalls) {
+    if (r2 === r1 + 1 && w.dir === 'h') {
+      if (w.r === r2 && (w.c === c1 || w.c === c1 - 1)) return true;
+    }
+    if (r2 === r1 - 1 && w.dir === 'h') {
+      if (w.r === r1 && (w.c === c1 || w.c === c1 - 1)) return true;
+    }
+    if (c2 === c1 + 1 && w.dir === 'v') {
+      if (w.c === c2 && (w.r === r1 || w.r === r1 - 1)) return true;
+    }
+    if (c2 === c1 - 1 && w.dir === 'v') {
+      if (w.c === c1 && (w.r === r1 || w.r === r1 - 1)) return true;
+    }
+  }
+  return false;
+}
+
+function puzzleHandleInput(mx, my) {
+  if (!currentPuzzle) return;
+
+  if (puzzleMode === 'move') {
+    const cell = puzzleHitCell(mx, my);
+    if (!cell) return;
+    if (puzzleCanMove(cell.r, cell.c)) {
+      puzzlePlayers[0] = { r: cell.r, c: cell.c };
+      puzzleMoves++;
+      document.getElementById('puzzle-moves-count').textContent = puzzleMoves;
+      playMove();
+      drawPuzzle();
+      checkPuzzleWin();
+    }
+  } else {
+    // Wall placement
+    const cv = document.getElementById('puzzle-canvas');
+    const cs = cv.width / 9;
+    const r = Math.floor(my / cs), c = Math.floor(mx / cs);
+    if (r < 0 || r > 7 || c < 0 || c > 7) return;
+    if (puzzleWallsLeft[0] <= 0) return;
+    // Simple duplicate check
+    const dup = puzzleWalls.find(w => w.r === r && w.c === c && w.dir === puzzleWallDir);
+    if (dup) return;
+    puzzleWalls.push({ r, c, dir: puzzleWallDir, owner: 0 });
+    puzzleWallsLeft[0]--;
+    puzzleMoves++;
+    document.getElementById('puzzle-moves-count').textContent = puzzleMoves;
+    playWall();
+    drawPuzzle();
+    checkPuzzleWin();
+  }
+}
+
+const puzzleCanvas = document.getElementById('puzzle-canvas');
+if (puzzleCanvas) {
+  puzzleCanvas.addEventListener('click', e => {
+    const rect = puzzleCanvas.getBoundingClientRect();
+    const scale = puzzleCanvas.width / rect.width;
+    puzzleHandleInput((e.clientX - rect.left) * scale, (e.clientY - rect.top) * scale);
+  });
+  puzzleCanvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const rect = puzzleCanvas.getBoundingClientRect();
+    const scale = puzzleCanvas.width / rect.width;
+    const t = e.touches[0];
+    puzzleHandleInput((t.clientX - rect.left) * scale, (t.clientY - rect.top) * scale);
+  }, { passive: false });
+}
+
+// ── PUZZLE WIN CHECK ──────────────────────────────────────────────
+function checkPuzzleWin() {
+  const p = puzzlePlayers[0];
+  if (p.r !== 8) return; // Player wins by reaching row 8
+
+  clearInterval(puzzleTimerInterval);
+  const elapsed = Math.floor((Date.now() - puzzleStartTime) / 1000);
+
+  // Calculate reward
+  const isOptimal = puzzleMoves <= currentPuzzle.optimal;
+  const isFast = elapsed < 30;
+  let reward = currentPuzzle.stars * 10;
+  if (isOptimal) reward += 20;
+  if (isFast) reward += 10;
+  if (puzzleIsDaily) reward *= 2;
+  if (puzzleHintUsed) reward = Math.floor(reward * 0.5);
+
+  // Stars
+  let stars = 1;
+  if (isOptimal && isFast) stars = 3;
+  else if (isOptimal || isFast) stars = 2;
+
+  // Save
+  puzzlePoints += reward;
+  solvedPuzzles.add(puzzleIsDaily ? 'daily' : currentPuzzle.id);
+  savePuzzlePoints();
+
+  // Show win
+  playWin();
+  const ov = document.getElementById('puzzle-win');
+  document.getElementById('puzzle-win-title').textContent =
+    stars === 3 ? '⭐ Идеально!' : stars === 2 ? '✅ Отлично!' : '👍 Решено!';
+  document.getElementById('puzzle-win-stats').textContent =
+    `Ходов: ${puzzleMoves} (оптимум: ${currentPuzzle.optimal}) · Время: ${elapsed}с`;
+  document.getElementById('puzzle-win-reward').textContent = `+${reward} 🧩`;
+  document.getElementById('puzzle-win-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+  ov.style.display = 'flex';
+}
+
+function closePuzzleWin() {
+  document.getElementById('puzzle-win').style.display = 'none';
+  showScreen('puzzles');
+  renderPuzzleGrid();
+}
+
+function retryPuzzle() {
+  document.getElementById('puzzle-win').style.display = 'none';
+  resetPuzzle();
+}
+
+// ── PUZZLE HINT ───────────────────────────────────────────────────
+function usePuzzleHint() {
+  if (puzzlePoints < 5) {
+    showToast('❌ Мало 🧩', 'Нужно 5 пазл-очков для подсказки');
+    return;
+  }
+  puzzlePoints -= 5;
+  puzzleHintUsed = true;
+  savePuzzlePoints();
+
+  // Show hint
+  const hintEl = document.getElementById('puzzle-hint-text');
+  const p = puzzlePlayers[0];
+  const step = bfsNextStep(p.r, p.c, 8); // find next step toward goal using main BFS
+  if (step) {
+    hintEl.textContent = `💡 Подсказка: двигайся на клетку (${step[0]+1}, ${step[1]+1})`;
+  } else {
+    hintEl.textContent = '💡 Подсказка: поставь стену чтобы замедлить соперника';
+  }
+  hintEl.style.display = 'block';
+}
+
+// ── PUZZLE GRID RENDER ────────────────────────────────────────────
+function filterPuzzles(filter) {
+  ['all',1,2,3,4,5].forEach(f => {
+    const btn = document.getElementById('pf-' + f);
+    if (btn) btn.classList.toggle('active', f === filter);
+  });
+  renderPuzzleGrid(filter);
+}
+
+function renderPuzzleGrid(filter = 'all') {
+  const grid = document.getElementById('puzzle-grid');
+  if (!grid) return;
+  const list = filter === 'all' ? PUZZLES : PUZZLES.filter(p => p.stars === filter);
+  grid.innerHTML = '';
+  list.forEach(pz => {
+    const solved = solvedPuzzles.has(pz.id);
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:${solved ? 'rgba(0,245,196,0.1)' : 'var(--surface2)'};
+      border:1.5px solid ${solved ? 'rgba(0,245,196,0.4)' : 'rgba(255,255,255,0.08)'};
+      border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;
+      transition:transform 0.15s;
+    `;
+    card.innerHTML = `
+      <div style="font-size:1.2rem">${solved ? '✅' : '🧩'}</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:0.6rem;font-weight:700;margin:4px 0">${pz.title}</div>
+      <div style="font-size:0.65rem">${'⭐'.repeat(pz.stars)}</div>
+      <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">+${pz.stars*10+(pz.stars===5?30:pz.stars===4?20:10)} 🧩</div>
+    `;
+    card.onclick = () => openPuzzle(pz.id);
+    grid.appendChild(card);
+  });
+}
+
+// ── PUZZLE SCREEN INIT ────────────────────────────────────────────
+function initPuzzleScreen() {
+  loadPuzzlePoints();
+  updatePuzzleUI();
+
+  // Daily puzzle card
+  const daily = getDailyPuzzle();
+  if (daily) {
+    const dailySolved = solvedPuzzles.has('daily');
+    document.getElementById('daily-puzzle-status').textContent =
+      dailySolved ? '✅ Решён сегодня' : 'Двойная награда!';
+    document.getElementById('daily-puzzle-reward').textContent =
+      dailySolved ? '' : '×2 🧩';
+  }
+
+  renderPuzzleGrid();
+}
+
 </script>
+<!-- PUZZLE SCREEN -->
+<div id="puzzles" class="screen" style="justify-content:flex-start;padding:1.2rem;gap:0.8rem;overflow-y:auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:480px">
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('menu')">← Назад</button>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900">🧩 Пазлы</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;color:#FFD93D" id="puzzle-points-display">0 🧩</div>
+  </div>
+
+  <!-- Daily puzzle -->
+  <div id="daily-puzzle-card" style="width:100%;max-width:480px;background:linear-gradient(135deg,rgba(255,211,61,0.15),rgba(255,107,107,0.1));border:2px solid rgba(255,211,61,0.4);border-radius:16px;padding:16px;cursor:pointer" onclick="openPuzzle('daily')">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:2rem">📅</div>
+      <div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:900;color:#FFD93D">Пазл дня</div>
+        <div style="font-size:0.72rem;color:var(--muted)" id="daily-puzzle-status">Двойная награда!</div>
+      </div>
+      <div style="margin-left:auto;font-size:0.75rem;color:#FFD93D" id="daily-puzzle-reward">×2 🧩</div>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div style="display:flex;gap:8px;width:100%;max-width:480px;overflow-x:auto">
+    <button onclick="filterPuzzles('all')" id="pf-all" class="mode-btn active" style="font-size:0.65rem;padding:6px 12px;white-space:nowrap">Все</button>
+    <button onclick="filterPuzzles(1)" id="pf-1" class="mode-btn" style="font-size:0.65rem;padding:6px 12px;white-space:nowrap">⭐</button>
+    <button onclick="filterPuzzles(2)" id="pf-2" class="mode-btn" style="font-size:0.65rem;padding:6px 12px;white-space:nowrap">⭐⭐</button>
+    <button onclick="filterPuzzles(3)" id="pf-3" class="mode-btn" style="font-size:0.65rem;padding:6px 12px;white-space:nowrap">⭐⭐⭐</button>
+    <button onclick="filterPuzzles(4)" id="pf-4" class="mode-btn" style="font-size:0.65rem;padding:6px 12px;white-space:nowrap">⭐⭐⭐⭐</button>
+    <button onclick="filterPuzzles(5)" id="pf-5" class="mode-btn" style="font-size:0.65rem;padding:6px 12px;white-space:nowrap">⭐⭐⭐⭐⭐</button>
+  </div>
+
+  <!-- Puzzle grid -->
+  <div id="puzzle-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;width:100%;max-width:480px"></div>
+</div>
+
+<!-- PUZZLE GAME SCREEN -->
+<div id="puzzle-game" class="screen" style="padding:0;gap:0">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;width:100%;max-width:480px">
+    <button class="btn btn-secondary btn-sm" onclick="exitPuzzle()">← Пазлы</button>
+    <div id="puzzle-title" style="font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:900"></div>
+    <div style="font-size:0.75rem;color:#FFD93D" id="puzzle-hint-btn" onclick="usePuzzleHint()" style="cursor:pointer">💡 <span id="puzzle-pp">0</span>🧩</div>
+  </div>
+
+  <!-- Puzzle task -->
+  <div id="puzzle-task" style="background:rgba(255,211,61,0.1);border:1px solid rgba(255,211,61,0.3);border-radius:12px;padding:10px 16px;margin:0 16px;font-size:0.78rem;color:#FFD93D;font-family:'Unbounded',sans-serif;text-align:center;max-width:448px;width:calc(100%-32px)"></div>
+
+  <!-- Stats -->
+  <div style="display:flex;gap:16px;padding:8px 16px;font-size:0.72rem;color:var(--muted)">
+    <span>Ходов: <b id="puzzle-moves-count" style="color:#fff">0</b></span>
+    <span>Цель: <b id="puzzle-optimal" style="color:#FFD93D">?</b></span>
+    <span id="puzzle-timer-display">⏱ <b id="puzzle-time" style="color:#fff">0</b>с</span>
+  </div>
+
+  <!-- Board -->
+  <canvas id="puzzle-canvas" style="touch-action:none;max-width:480px;width:100%;display:block"></canvas>
+
+  <!-- Hint display -->
+  <div id="puzzle-hint-text" style="display:none;background:rgba(120,75,255,0.2);border:1px solid rgba(120,75,255,0.4);border-radius:10px;padding:8px 16px;margin:8px 16px;font-size:0.75rem;color:#a78bfa;text-align:center"></div>
+
+  <!-- Controls -->
+  <div style="display:flex;gap:8px;padding:8px 16px;max-width:480px;width:100%">
+    <button class="mode-btn active" id="puzzle-btn-move" onclick="setPuzzleMode('move')" style="flex:1">▶ Ход</button>
+    <button class="mode-btn" id="puzzle-btn-wall" onclick="setPuzzleMode('wall')" style="flex:1">▦ Стена</button>
+    <button class="mode-btn" id="puzzle-btn-dir" onclick="togglePuzzleDir()" style="flex:1">↔ Гориз.</button>
+    <button class="mode-btn" onclick="resetPuzzle()" style="color:#ff6b6b">↺</button>
+  </div>
+</div>
+
+<!-- PUZZLE WIN OVERLAY -->
+<div id="puzzle-win" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);display:none;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:2rem">
+  <div style="font-size:3rem" id="puzzle-win-emoji">🧩</div>
+  <div style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;color:#fff" id="puzzle-win-title">Решено!</div>
+  <div style="font-size:0.8rem;color:var(--muted);text-align:center" id="puzzle-win-stats"></div>
+  <div style="background:rgba(255,211,61,0.15);border:2px solid rgba(255,211,61,0.4);border-radius:16px;padding:16px 24px;text-align:center">
+    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px">НАГРАДА</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1.5rem;font-weight:900;color:#FFD93D" id="puzzle-win-reward">+50 🧩</div>
+    <div id="puzzle-win-stars" style="font-size:1.2rem;margin-top:4px"></div>
+  </div>
+  <button class="btn btn-primary" onclick="closePuzzleWin()" style="max-width:280px;width:100%">Продолжить</button>
+  <button class="btn btn-secondary" onclick="retryPuzzle()" style="max-width:280px;width:100%;font-size:0.75rem">↺ Попробовать лучше</button>
+</div>
 </body>
 </html>
