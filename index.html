@@ -3,7 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LOMI</title>
+<title>LOMI — Стратегическая игра стен</title>
+
+<!-- SEO -->
+<meta name="description" content="Перехитри соперника. Заблокируй путь. Дойди первым. Стратегическая онлайн-игра LOMI — бесплатно, прямо в браузере.">
+<meta name="keywords" content="LOMI, стратегия, игра стен, онлайн игра, quoridor, головоломка">
+<meta name="author" content="LOMI Game">
+<meta name="theme-color" content="#0A0A12">
+
+<!-- Open Graph (Telegram, VK, Facebook) -->
+<meta property="og:title" content="LOMI — Стратегическая игра стен">
+<meta property="og:description" content="Перехитри соперника. Заблокируй путь. Дойди первым. Играй бесплатно!">
+<meta property="og:url" content="https://lomigame.space">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LOMI">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LOMI — Стратегическая игра стен">
+<meta name="twitter:description" content="Перехитри соперника. Заблокируй путь. Дойди первым.">
+
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109239699', 'ym');
+    ym(109239699, 'init', {webvisor:true, clickmap:true, trackLinks:true, accurateTrackBounce:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/109239699" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A0A12'/><text y='.9em' font-size='80' x='10'>🎮</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A0A12'/><text y='.9em' font-size='80' x='10'>🎮</text></svg>">
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -1041,6 +1076,15 @@ const INTRO_AUDIO_B64 = '';</script>
     <button class="btn btn-primary" onclick="startGame(aiDifficulty)">⚔️ Реванш</button>
     <button class="btn btn-secondary" onclick="showScreen('menu')">🚪 Выйти в меню</button>
   </div>
+  <button id="share-btn" onclick="shareResult()" style="
+    display:none;
+    background:linear-gradient(135deg,#25D366,#128C7E);
+    border:none;color:#fff;
+    font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;
+    padding:12px 24px;border-radius:50px;cursor:pointer;
+    max-width:280px;width:100%;margin-top:4px;
+    letter-spacing:0.05em;
+  ">📤 Вызвать друга на матч</button>
   <!-- Tutorial win button -->
   <div id="win-buttons-tutorial" style="display:none;width:100%;max-width:280px;display:none;flex-direction:column;gap:12px">
     <button class="btn btn-primary" onclick="endTutorial()" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);font-size:1rem;font-weight:900">
@@ -2313,6 +2357,7 @@ function leaveOnline() {
 
 function startOnlineGame(p0name, p1name) {
   onlineMode = true;
+  if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'online_game_start');
   aiDifficulty = false;
   calcSizes();
   canvas.width = BOARD_PX; canvas.height = BOARD_PX;
@@ -3732,6 +3777,8 @@ async function doLogin() {
 async function loginSuccess(username, userData) {
   setUser(username);
   isGuest = false;
+  // Analytics: account registered
+  if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'register');
 
   // Clear guest match history — don't mix with account data
   matchHistory = [];
@@ -4211,6 +4258,29 @@ function confirmSurrender() {
   }
 }
 
+function shareResult() {
+  if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'share_click');
+  const shareText = '⚔️ Вызываю тебя на матч в LOMI!\nДумаешь сможешь меня обыграть?\nlomigame.space';
+  if (navigator.share) {
+    navigator.share({
+      title: 'LOMI — Стратегическая игра стен',
+      text: shareText,
+      url: 'https://lomigame.space'
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(shareText).then(() => {
+      const btn = document.getElementById('share-btn');
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+      }
+    }).catch(() => {
+      prompt('Скопируй ссылку:', 'https://lomigame.space');
+    });
+  }
+}
+
 function showSurrenderBlock(timeElapsed, wallsPlaced, activity, coinPenalty, ratingPenalty) {
   const srEl = document.getElementById('surrender-result');
   if (!srEl) return;
@@ -4331,6 +4401,7 @@ let isSecondGame = false;
 
 function startSecondGame() {
   isSecondGame = true;
+  if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'second_game_start');
   // Show dramatic intro
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;';
@@ -4667,11 +4738,12 @@ function startTutorial() {
 
   setTimeout(() => {
     startGame('easy');
-    // Hide surrender during tutorial
     const sb = document.getElementById('btn-surrender-tut');
     if (sb) sb.style.display = 'none';
     setTimeout(tutStep0, 500);
   }, 150);
+  // Analytics: tutorial started
+  if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'tutorial_start');
 }
 
 function endTutorial() {
@@ -4680,6 +4752,8 @@ function endTutorial() {
   localStorage.setItem('lomi_tutorial_done', '1');
   const ov = $t('tutorial-overlay');
   if (ov) ov.style.display = 'none';
+  // Analytics: tutorial completed
+  if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'tutorial_complete');
 }
 
 function goToRegister() {
@@ -4834,6 +4908,7 @@ function showScreen(id) {
     updateDailyBox();
     setTimeout(startMenuMusic, 300);
   } else if (id === 'shop') {
+    if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'shop_open');
     shopTab = 'piece';
     shopFilter = 'flag';
     document.getElementById('tab-piece').classList.add('active');
@@ -5759,6 +5834,11 @@ function showWin() {
     <button class="btn btn-secondary" onclick="showScreen('menu')">🚪 Выйти в меню</button>`;
   }
   if (tb) tb.style.display = 'none';
+
+  // Share button — only on player win, not tutorial, not second game
+  const shareBtn = document.getElementById('share-btn');
+  if (shareBtn) shareBtn.style.display = (w === 0 && !tutorialActive && !isSecondGame) ? 'block' : 'none';
+
   if (isSecondGame) {
     if (w === 0) setTimeout(onSecondGameWin, 400);
     else setTimeout(onSecondGameLose, 400);
@@ -5882,15 +5962,21 @@ function runIntro() {
   const screen = document.getElementById('intro-screen');
   if (!screen) { loadUser(); return; }
 
+  // Skip intro for existing users — go straight to game
+  const hasToken = localStorage.getItem('lomi_token');
+  const hasGuest = localStorage.getItem('lomi_guest_name');
+  if (hasToken || hasGuest) {
+    screen.remove();
+    loadUser();
+    return;
+  }
+
   function onTap() {
     screen.style.transition = 'opacity 0.4s ease';
     screen.style.opacity = '0';
     setTimeout(() => {
       screen.remove();
-      // Only show tutorial if no existing account/session
-      const hasToken = localStorage.getItem('lomi_token');
-      const hasGuest = localStorage.getItem('lomi_guest_name');
-      if (isTutorialNeeded() && !hasToken && !hasGuest) {
+      if (isTutorialNeeded()) {
         startTutorial();
       } else {
         loadUser();
