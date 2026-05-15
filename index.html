@@ -879,7 +879,7 @@ const INTRO_AUDIO_B64 = '';</script>
     <div class="online-status" id="join-status"></div>
   </div>
 
-  <button class="btn btn-secondary" onclick="leaveOnline()">Назад</button>
+  <button class="btn btn-secondary" id="online-back-btn" onclick="leaveOnline()">Назад</button>
 </div>
 
 <!-- LEADERBOARD -->
@@ -4364,13 +4364,19 @@ function launchSecondGame() {
   showScreen('online');
   switchOnlineTab('search');
 
-  // Hide create/join tabs and cancel button for new user
+  // Hide create/join tabs, cancel button and back button for new user
   const tabCreate = document.getElementById('otab-create');
   const tabJoin   = document.getElementById('otab-join');
   const cancelBtn = document.querySelector('#opanel-search .btn-secondary');
+  const backBtn   = document.querySelector('#online .btn-back') ||
+                    document.querySelector('#online [onclick*="menu"]');
   if (tabCreate) tabCreate.style.display = 'none';
   if (tabJoin)   tabJoin.style.display   = 'none';
   if (cancelBtn) cancelBtn.style.display = 'none';
+  if (backBtn)   backBtn.style.display   = 'none';
+  // Also hide the main back button
+  const mainBack = document.getElementById('online-back-btn');
+  if (mainBack) mainBack.style.display = 'none';
 
   startSearch();
 }
@@ -4842,8 +4848,10 @@ function showScreen(id) {
     // Restore tabs (may be hidden during second game)
     const tabCreate = document.getElementById('otab-create');
     const tabJoin   = document.getElementById('otab-join');
+    const mainBack  = document.getElementById('online-back-btn');
     if (tabCreate && !isSecondGame) tabCreate.style.display = '';
     if (tabJoin   && !isSecondGame) tabJoin.style.display   = '';
+    if (mainBack  && !isSecondGame) mainBack.style.display  = '';
     // Reset panels
     switchOnlineTab('search');
     document.getElementById('search-status').innerHTML = '';
@@ -5681,9 +5689,12 @@ function spawnConfetti() {
 function showWin() {
   stopTimer();
   if (tutorialActive) {
-    // Hide tutorial overlay
+    // Hide tutorial overlay completely
     const ov = $t('tutorial-overlay');
     if (ov) ov.style.display = 'none';
+    // Also hide micro reward
+    const mr = document.getElementById('micro-reward');
+    if (mr) mr.style.display = 'none';
 
     // Give rewards
     totalPoints += 200;
