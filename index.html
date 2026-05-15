@@ -526,8 +526,8 @@ const INTRO_AUDIO_B64 = '';</script>
   <div class="logo">LOMI</div>
   <div class="tagline">Стратегическая игра стен</div>
   <div class="btn-group" style="max-width:320px;width:100%">
-    <button class="btn btn-primary" onclick="showScreen('register')" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)">Создать аккаунт</button>
-    <button class="btn btn-secondary" onclick="showScreen('login')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">Войти</button>
+    <button class="btn btn-primary" onclick="showScreenSafe('register')" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)">Создать аккаунт</button>
+    <button class="btn btn-secondary" onclick="showScreenSafe('login')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">Войти</button>
     <button class="btn btn-secondary" onclick="playAsGuest()">Играть как гость</button>
   </div>
   <div style="font-size:0.72rem;color:var(--muted);text-align:center;max-width:280px">
@@ -736,7 +736,7 @@ const INTRO_AUDIO_B64 = '';</script>
     <button class="btn btn-secondary" onclick="showScreenSafe('online')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">🌐 Онлайн</button>
     <button class="btn btn-secondary" onclick="showScreen('difficulty')" style="border-color:rgba(0,245,196,0.3);color:var(--p2)">Против ktoyura</button>
     <button class="btn btn-secondary" onclick="showScreen('shop')">🛒 Магазин</button>
-    <button class="btn btn-secondary" onclick="showScreen('leaderboard')">🏆 Таблица лидеров</button>
+    <button class="btn btn-secondary" onclick="showScreenSafe('leaderboard')">🏆 Таблица лидеров</button>
     <button class="btn btn-secondary" onclick="showScreen('achievements')">🏅 Достижения</button>
     <button class="btn btn-secondary" onclick="showScreen('rules')">Как играть</button>
   </div>
@@ -5988,7 +5988,7 @@ function showOfflineToast() {
 // Intercept online screen
 const _origShowScreen = null;
 function showScreenSafe(id) {
-  const onlineOnly = ['online'];
+  const onlineOnly = ['online', 'leaderboard', 'login', 'register'];
   if (onlineOnly.includes(id) && !isOnline()) {
     showOfflineToast();
     return;
@@ -5999,9 +5999,11 @@ function showScreenSafe(id) {
 // Listen for connection changes
 window.addEventListener('online',  () => {
   showToast('📶 Подключение восстановлено', 'Онлайн функции доступны!');
+  updateOnlineCounter();
 });
 window.addEventListener('offline', () => {
   showOfflineToast();
+  updateOnlineCounter();
 });
 
 // Service Worker registration
@@ -6014,8 +6016,17 @@ if ('serviceWorker' in navigator) {
 // ── ONLINE COUNTER ───────────────────────────────────────────────
 function updateOnlineCounter() {
   const el = document.getElementById('online-count');
+  const dot = el?.previousElementSibling;
+  const wrapper = el?.parentElement;
   if (!el) return;
-  const count = Math.floor(Math.random() * 21) + 10; // 10-30
+
+  if (!isOnline()) {
+    if (wrapper) wrapper.style.display = 'none';
+    return;
+  }
+
+  if (wrapper) wrapper.style.display = 'flex';
+  const count = Math.floor(Math.random() * 21) + 10;
   el.textContent = count;
 }
 updateOnlineCounter();
