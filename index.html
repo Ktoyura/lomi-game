@@ -483,7 +483,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       margin-top:40px;
       animation:tapPulse 1.5s ease-in-out infinite;
     ">НАЖМИ ЧТОБЫ НАЧАТЬ</div>
-    <div onclick="event.stopPropagation();document.getElementById('intro-screen').remove();localStorage.setItem('lomi_tutorial_done','1');showScreen('login');" style="
+    <div id="intro-login-btn" style="
       font-family:'Unbounded',sans-serif;
       font-size:0.65rem;
       color:rgba(255,255,255,0.22);
@@ -491,6 +491,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       cursor:pointer;
       letter-spacing:0.1em;
       pointer-events:auto;
+      padding:12px 24px;
     ">Уже есть аккаунт? Войти</div>
   </div>
 </div>
@@ -6054,6 +6055,20 @@ function runIntro() {
         loadUser();
       }
     }, 400);
+  }
+
+  // Login button — separate handler, stops propagation properly
+  const loginBtn = document.getElementById('intro-login-btn');
+  if (loginBtn) {
+    const goToLogin = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      screen.remove();
+      localStorage.setItem('lomi_tutorial_done', '1');
+      showScreen('login');
+    };
+    loginBtn.addEventListener('click', goToLogin);
+    loginBtn.addEventListener('touchend', goToLogin);
   }
 
   screen.addEventListener('click', onTap, { once: true });
