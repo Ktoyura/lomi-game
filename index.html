@@ -4309,18 +4309,20 @@ let tutStep = 0;
 // ── MICRO REWARDS ────────────────────────────────────────────────
 const MICRO_MSGS = ['🔥 Хороший ход!','⚡ Отлично!','💪 Так держать!','🎯 Точно!','✨ Супер!'];
 let microIdx = 0;
+let microMoveCount = 0;
 function showMicroReward() {
   if (!tutorialActive) return;
+  microMoveCount++;
+  if (microMoveCount % 3 !== 0) return; // every 3rd move only
   const el = document.getElementById('micro-reward');
   if (!el) return;
   el.textContent = MICRO_MSGS[microIdx % MICRO_MSGS.length];
   microIdx++;
   el.style.display = 'block';
   el.style.animation = 'none';
-  void el.offsetWidth; // reflow
+  void el.offsetWidth;
   el.style.animation = 'microRewardAnim 1.2s ease forwards';
   setTimeout(() => { el.style.display = 'none'; }, 1200);
-  // Vibrate on mobile
   if (navigator.vibrate) navigator.vibrate(30);
 }
 
@@ -4356,30 +4358,41 @@ function startSecondGame() {
 }
 
 function launchSecondGame() {
-  // Connect socket and search for opponent
   if (!socket) initSocket();
-  onlineMode = false; // will be set true if real opponent found
+  onlineMode = false;
 
-  // Show searching screen briefly
   showScreen('online');
   switchOnlineTab('search');
-  startSearch();
 
-  // After 20 sec if no opponent — bot substitute
-  // (handled by existing matchmaking system)
+  // Hide create/join tabs and cancel button for new user
+  const tabCreate = document.getElementById('otab-create');
+  const tabJoin   = document.getElementById('otab-join');
+  const cancelBtn = document.querySelector('#opanel-search .btn-secondary');
+  if (tabCreate) tabCreate.style.display = 'none';
+  if (tabJoin)   tabJoin.style.display   = 'none';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+
+  startSearch();
+}
+
+function onSecondGameLose() {
+  isSecondGame = false;
+  setTimeout(() => {
+    const normal = document.getElementById('win-buttons-normal');
+    if (normal) normal.innerHTML = `
+      <button onclick="goToRegister()" class="btn btn-primary" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);font-size:1rem;font-weight:900;width:100%">
+        🎮 Создать аккаунт
+      </button>`;
+  }, 300);
 }
 
 function onSecondGameWin() {
   isSecondGame = false;
-  // After win screen is shown, add register button
   setTimeout(() => {
     const normal = document.getElementById('win-buttons-normal');
     if (normal) normal.innerHTML = `
-      <button onclick="goToRegister()" class="btn btn-primary" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);font-size:0.9rem;font-weight:900">
+      <button onclick="goToRegister()" class="btn btn-primary" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);font-size:1rem;font-weight:900;width:100%">
         🎮 Создать аккаунт
-      </button>
-      <button onclick="showScreen('menu')" class="btn btn-secondary" style="font-size:0.8rem">
-        Играть без аккаунта
       </button>`;
   }, 300);
 }
@@ -4826,6 +4839,11 @@ function showScreen(id) {
     stopMenuMusic();
   } else if (id === 'online') {
     stopMenuMusic();
+    // Restore tabs (may be hidden during second game)
+    const tabCreate = document.getElementById('otab-create');
+    const tabJoin   = document.getElementById('otab-join');
+    if (tabCreate && !isSecondGame) tabCreate.style.display = '';
+    if (tabJoin   && !isSecondGame) tabJoin.style.display   = '';
     // Reset panels
     switchOnlineTab('search');
     document.getElementById('search-status').innerHTML = '';
@@ -5730,7 +5748,10 @@ function showWin() {
     <button class="btn btn-secondary" onclick="showScreen('menu')">🚪 Выйти в меню</button>`;
   }
   if (tb) tb.style.display = 'none';
-  if (isSecondGame) setTimeout(onSecondGameWin, 400);
+  if (isSecondGame) {
+    if (w === 0) setTimeout(onSecondGameWin, 400);
+    else setTimeout(onSecondGameLose, 400);
+  }
 
   // Update achievement stats
   achStats.totalGames++;
