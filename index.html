@@ -6052,15 +6052,23 @@ function runIntro() {
     screen.style.opacity = '0';
     setTimeout(() => {
       screen.remove();
-      if (isTutorialNeeded()) {
+      // Check if has existing session
+      const hasToken = localStorage.getItem('lomi_token');
+      const hasGuest = localStorage.getItem('lomi_guest_name');
+      if (hasToken || hasGuest) {
+        // Existing user — go to menu
+        loadUser();
+      } else if (isTutorialNeeded()) {
+        // Brand new user — tutorial
         startTutorial();
       } else {
-        loadUser();
+        // Clicked "Войти" before — go to auth
+        showScreen('auth');
       }
     }, 400);
   }
 
-  // Login button — separate handler, stops propagation properly
+  // Login button
   const loginBtn = document.getElementById('intro-login-btn');
   if (loginBtn) {
     const goToLogin = (e) => {
@@ -6068,7 +6076,6 @@ function runIntro() {
       e.stopPropagation();
       e.preventDefault();
       screen.remove();
-      localStorage.setItem('lomi_tutorial_done', '1');
       showScreen('login');
     };
     loginBtn.addEventListener('click', goToLogin);
