@@ -36,6 +36,13 @@
 <noscript><div><img src="https://mc.yandex.ru/watch/109239699" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LOMI">
+
 <!-- Favicon -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A0A12'/><text y='.9em' font-size='80' x='10'>🎮</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A0A12'/><text y='.9em' font-size='80' x='10'>🎮</text></svg>">
@@ -725,7 +732,7 @@ const INTRO_AUDIO_B64 = '';</script>
   </div>
   <div class="btn-group">
     <button class="btn btn-primary" onclick="startGame(false)">Играть вдвоём</button>
-    <button class="btn btn-secondary" onclick="showScreen('online')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">🌐 Онлайн</button>
+    <button class="btn btn-secondary" onclick="showScreenSafe('online')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">🌐 Онлайн</button>
     <button class="btn btn-secondary" onclick="showScreen('difficulty')" style="border-color:rgba(0,245,196,0.3);color:var(--p2)">Против ktoyura</button>
     <button class="btn btn-secondary" onclick="showScreen('shop')">🛒 Магазин</button>
     <button class="btn btn-secondary" onclick="showScreen('leaderboard')">🏆 Таблица лидеров</button>
@@ -5963,6 +5970,45 @@ document.addEventListener('click', function startAudio() {
 // Save screen on unload
 // Don't save screen on unload — intro plays on every refresh
 // localStorage.removeItem('lomi_last_screen'); // cleared below in loadUser
+
+// ── OFFLINE DETECTION ────────────────────────────────────────────
+function isOnline() { return navigator.onLine; }
+
+function showOfflineToast() {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  document.getElementById('toast-icon').textContent = '📶';
+  document.getElementById('toast-name').textContent = 'Нет интернета';
+  document.getElementById('toast-desc').textContent = 'Онлайн функции недоступны';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Intercept online screen
+const _origShowScreen = null;
+function showScreenSafe(id) {
+  const onlineOnly = ['online'];
+  if (onlineOnly.includes(id) && !isOnline()) {
+    showOfflineToast();
+    return;
+  }
+  showScreen(id);
+}
+
+// Listen for connection changes
+window.addEventListener('online',  () => {
+  showToast('📶 Подключение восстановлено', 'Онлайн функции доступны!');
+});
+window.addEventListener('offline', () => {
+  showOfflineToast();
+});
+
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 
 // ── ONLINE COUNTER ───────────────────────────────────────────────
 function updateOnlineCounter() {
