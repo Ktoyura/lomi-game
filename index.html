@@ -6044,7 +6044,10 @@ function runIntro() {
     return;
   }
 
+  let loginTapped = false;
+
   function onTap() {
+    if (loginTapped) return;
     screen.style.transition = 'opacity 0.4s ease';
     screen.style.opacity = '0';
     setTimeout(() => {
@@ -6061,6 +6064,7 @@ function runIntro() {
   const loginBtn = document.getElementById('intro-login-btn');
   if (loginBtn) {
     const goToLogin = (e) => {
+      loginTapped = true;
       e.stopPropagation();
       e.preventDefault();
       screen.remove();
