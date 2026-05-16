@@ -2737,9 +2737,6 @@ const SLOT_ITEMS = [
 ];
 
 let dailyState = { lastClaim: 0 };
-let puzzlePoints = 0;      // 🧩 Пазл-очки
-let solvedPuzzles = new Set(); // решённые пазлы
-let slotInterval = null;
 let slotResult = null;
 let slotRunning = false;
 
@@ -4185,6 +4182,7 @@ function startTimer() {
 }
 
 function stopTimer() {
+  if (puzzleActive) return;
   clearInterval(timerInterval);
   timerInterval = null;
 }
@@ -5686,7 +5684,7 @@ function doMove(pi, r, c) {
 
 // ── Trigger AI after player move ─────────────────────────────────
 function scheduleAI() {
-  if (!aiDifficulty || turn !== 1 || winner) return;
+  if (!aiDifficulty || aiDifficulty === 'puzzle' || turn !== 1 || winner) return;
   // Don't show thinking bar for bot substitute
   if (!window._isBotSubstitute) {
     document.getElementById('thinking-bar').classList.add('visible');
@@ -5729,47 +5727,41 @@ function scheduleAI() {
 
 function handleMove(mx,my) {
   if (winner) return;
-  if (aiDifficulty && turn === 1) return; // block input during AI turn
+  if (aiDifficulty && aiDifficulty !== 'puzzle' && turn === 1) return;
   if (mode==='move') {
-    // During tutorial wall step — block moves, force wall placement
     if (tutorialActive && tutWaitingFor === 'wall') {
-      // Flash hint to remind player
       const txt = $t('tut-text');
-      if (txt) {
-        txt.style.color = '#FF3333';
-        setTimeout(() => { if(txt) txt.style.color = '#FFD700'; }, 600);
-      }
+      if (txt) { txt.style.color='#FF3333'; setTimeout(()=>{if(txt)txt.style.color='#FFD700';},600); }
       return;
     }
     const cell=hitCell(mx,my); if(!cell) return;
     const valid=getValidMoves(turn);
     if (valid.some(([r,c])=>r===cell.r&&c===cell.c)) {
+      // Puzzle check
+      if (puzzleActive && !puzzleInterceptMove(cell.r, cell.c, 'move', null)) return;
       players[turn]={r:cell.r,c:cell.c};
       playMove();
-      if (turn===0) {
-        tutOnPlayerMove();
-        // Micro reward every 2nd move during tutorial, or randomly otherwise
-        if (tutorialActive || Math.random() < 0.3) {
-          showMicroReward();
-        }
+      if (!puzzleActive) {
+        if (turn===0) { tutOnPlayerMove(); if (tutorialActive) showMicroReward(); }
+        if ((turn===0&&cell.r===N-1)||(turn===1&&cell.r===0)) { winner=turn; showWin(); }
+        else { turn=1-turn; }
+        updateUI(); draw(); scheduleAI();
+      } else {
+        updateUI(); draw();
       }
-      if ((turn===0&&cell.r===N-1)||(turn===1&&cell.r===0)) {
-        winner=turn; showWin();
-      } else { turn=1-turn; }
-      updateUI(); draw();
-      scheduleAI();
     }
   } else {
     const slot=hitWallSlot(mx,my); if(!slot) return;
     if (wallsLeft[turn]<=0) return;
     if (canPlaceWall(slot.r,slot.c,wallDir)) {
+      // Puzzle check
+      if (puzzleActive && !puzzleInterceptMove(slot.r, slot.c, 'wall', wallDir)) return;
       walls.push({r:slot.r,c:slot.c,dir:wallDir,owner:turn});
       wallsLeft[turn]--;
       if (turn === 0) { achStats.totalWalls++; saveAchievements(); gameWallsUsed++; tutOnPlayerWall(); }
-      turn=1-turn;
+      if (!puzzleActive) { turn=1-turn; scheduleAI(); }
       playWall();
       updateUI(); draw();
-      scheduleAI();
     }
   }
 }
@@ -5803,6 +5795,7 @@ function spawnConfetti() {
 
 function showWin() {
   stopTimer();
+  if (puzzleActive) return; // puzzle handles its own win
   if (tutorialActive) {
     // Hide tutorial overlay completely
     const ov = $t('tutorial-overlay');
@@ -6116,15 +6109,32 @@ window.addEventListener('load', runIntro);
 
 
 
+
+
+
+
+
+
 // ══════════════════════════════════════════════════════════════════
-// 🧩 PUZZLE SYSTEM
+// 🧩 PUZZLE SYSTEM v3 — fully uses main game engine
 // ══════════════════════════════════════════════════════════════════
 
-// Load/save puzzle points
+let puzzlePoints = 0;
+let solvedPuzzles = new Set();
+let currentPuzzle = null;
+let puzzleIsDaily = false;
+let puzzleSolutionStep = 0;
+let puzzleMoveCount = 0;
+let puzzleStartTime = 0;
+let puzzleTimerInterval = null;
+let puzzleHintUsed = false;
+let puzzleActive = false;
+
+// ── STORAGE ──────────────────────────────────────────────────────
 function loadPuzzlePoints() {
   puzzlePoints = parseInt(localStorage.getItem('lomi_puzzle_points') || '0');
-  const solved = localStorage.getItem('lomi_solved_puzzles');
-  solvedPuzzles = solved ? new Set(JSON.parse(solved)) : new Set();
+  const saved = localStorage.getItem('lomi_solved_puzzles');
+  solvedPuzzles = saved ? new Set(JSON.parse(saved)) : new Set();
   updatePuzzleUI();
 }
 function savePuzzlePoints() {
@@ -6140,345 +6150,460 @@ function updatePuzzleUI() {
 }
 
 // ── PUZZLE DEFINITIONS ────────────────────────────────────────────
-// Each puzzle: { id, title, stars, task, optimal, board }
-// board: { p0:[r,c], p1:[r,c], walls:[{r,c,dir}], wallsLeft:[n,n] }
-// task: 'win_in_N' | 'block' | 'reach'
-
+// solution: exact sequence of moves player must make
+// { type:'move', r, c } or { type:'wall', r, c, dir }
+// botMoves: bot responses after each player move
 const PUZZLES = [
-  // ⭐ EASY (stars:1) — простые ходы
-  { id:1, stars:1, title:'Один шаг', task:'Дойди до нижнего ряда за 1 ход', type:'win_in_N', optimal:1,
-    board:{ p0:[7,4], p1:[1,4], walls:[], wallsLeft:[10,10] } },
-  { id:2, stars:1, title:'Финишная прямая', task:'Один ход — и ты победил!', type:'win_in_N', optimal:1,
-    board:{ p0:[7,3], p1:[0,4], walls:[], wallsLeft:[8,8] } },
-  { id:3, stars:1, title:'Обход стены', task:'Найди путь вокруг стены', type:'reach', optimal:2,
-    board:{ p0:[6,4], p1:[1,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:4,dir:'h'}], wallsLeft:[8,8] } },
-  { id:4, stars:1, title:'Простая блокада', task:'Поставь стену и выиграй', type:'win_in_N', optimal:2,
-    board:{ p0:[6,4], p1:[2,4], walls:[], wallsLeft:[5,5] } },
-  { id:5, stars:1, title:'Короткий путь', task:'Найди кратчайший путь к победе', type:'reach', optimal:2,
-    board:{ p0:[6,3], p1:[1,5], walls:[{r:7,c:4,dir:'v'}], wallsLeft:[8,8] } },
+  { id:1, stars:1, title:'Финишный рывок',
+    task:'Сделай 1 ход и победи! Ты в одном шаге от цели.',
+    board:{ p0:[7,4], p1:[0,4], walls:[], wallsLeft:[10,10] },
+    solution:[
+      {type:'move', r:8, c:4}
+    ], botMoves:[] },
 
-  // ⭐⭐ MEDIUM-EASY (stars:2)
-  { id:6, stars:2, title:'Умная стена', task:'Поставь стену чтобы заблокировать соперника', type:'block', optimal:2,
-    board:{ p0:[5,4], p1:[3,4], walls:[], wallsLeft:[5,3] } },
-  { id:7, stars:2, title:'Двойной путь', task:'Соперник близко — действуй быстро!', type:'win_in_N', optimal:3,
-    board:{ p0:[5,4], p1:[3,4], walls:[{r:6,c:3,dir:'h'}], wallsLeft:[4,4] } },
-  { id:8, stars:2, title:'Лабиринт', task:'Найди выход из лабиринта стен', type:'reach', optimal:4,
-    board:{ p0:[7,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:6,c:4,dir:'v'}], wallsLeft:[5,5] } },
-  { id:9, stars:2, title:'Ловушка', task:'Поставь стену и захвати путь', type:'block', optimal:2,
-    board:{ p0:[4,4], p1:[4,5], walls:[{r:5,c:3,dir:'h'}], wallsLeft:[5,3] } },
-  { id:10, stars:2, title:'Гонка', task:'Ты на шаг позади — найди как обогнать', type:'win_in_N', optimal:3,
-    board:{ p0:[6,4], p1:[5,4], walls:[], wallsLeft:[3,3] } },
+  { id:2, stars:1, title:'Два шага',
+    task:'Два хода прямо — и ты победитель!',
+    board:{ p0:[6,4], p1:[0,4], walls:[], wallsLeft:[10,10] },
+    solution:[
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:1, c:4}] },
 
-  // ⭐⭐⭐ MEDIUM (stars:3)
-  { id:11, stars:3, title:'Вилка', task:'Создай угрозу с двух сторон', type:'win_in_N', optimal:3,
-    board:{ p0:[5,4], p1:[3,3], walls:[{r:4,c:4,dir:'h'}], wallsLeft:[4,4] } },
-  { id:12, stars:3, title:'Прорыв', task:'Найди брешь в обороне', type:'reach', optimal:5,
-    board:{ p0:[7,4], p1:[1,4], walls:[{r:6,c:3,dir:'h'},{r:6,c:5,dir:'h'},{r:5,c:3,dir:'v'},{r:5,c:6,dir:'v'}], wallsLeft:[6,6] } },
-  { id:13, stars:3, title:'Контрудар', task:'Соперник идёт быстро — останови его', type:'block', optimal:2,
-    board:{ p0:[4,4], p1:[6,4], walls:[{r:5,c:3,dir:'h'}], wallsLeft:[5,2] } },
-  { id:14, stars:3, title:'Зигзаг', task:'Путь не прямой — найди оптимальный маршрут', type:'reach', optimal:5,
-    board:{ p0:[8,0], p1:[0,8], walls:[{r:7,c:1,dir:'h'},{r:6,c:2,dir:'v'},{r:5,c:3,dir:'h'},{r:4,c:4,dir:'v'}], wallsLeft:[7,7] } },
-  { id:15, stars:3, title:'Стратег', task:'Один ход меняет всё', type:'win_in_N', optimal:4,
-    board:{ p0:[5,3], p1:[3,5], walls:[{r:6,c:2,dir:'h'},{r:4,c:4,dir:'v'}], wallsLeft:[4,4] } },
+  { id:3, stars:1, title:'Обход стены',
+    task:'Стена слева — обойди справа и финишируй!',
+    board:{ p0:[7,3], p1:[0,5], walls:[{r:7,c:3,dir:'h'}], wallsLeft:[8,8] },
+    solution:[
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:1, c:5}] },
 
-  // ⭐⭐⭐⭐ HARD (stars:4)
-  { id:16, stars:4, title:'Теснина', task:'Узкий проход — используй его с умом', type:'reach', optimal:6,
-    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:3,dir:'v'},{r:6,c:5,dir:'v'},{r:4,c:3,dir:'v'},{r:4,c:5,dir:'v'},{r:2,c:3,dir:'v'},{r:2,c:5,dir:'v'}], wallsLeft:[5,5] } },
-  { id:17, stars:4, title:'Двойная блокада', task:'Заблокируй оба пути соперника', type:'block', optimal:3,
-    board:{ p0:[4,4], p1:[4,4], walls:[], wallsLeft:[3,5] } },
-  { id:18, stars:4, title:'Цугцванг', task:'Любой ход соперника проигрышный', type:'win_in_N', optimal:4,
-    board:{ p0:[5,4], p1:[3,4], walls:[{r:4,c:3,dir:'h'},{r:4,c:5,dir:'h'}], wallsLeft:[3,3] } },
-  { id:19, stars:4, title:'Обманный манёвр', task:'Соперник думает что выигрывает — докажи обратное', type:'win_in_N', optimal:5,
-    board:{ p0:[6,2], p1:[2,6], walls:[{r:5,c:3,dir:'h'},{r:3,c:5,dir:'h'}], wallsLeft:[4,4] } },
-  { id:20, stars:4, title:'Крепость', task:'Прорвись через укреплённую оборону', type:'reach', optimal:7,
-    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:2,dir:'h'},{r:6,c:4,dir:'h'},{r:6,c:6,dir:'h'},{r:3,c:2,dir:'h'},{r:3,c:4,dir:'h'},{r:3,c:6,dir:'h'}], wallsLeft:[4,4] } },
+  { id:4, stars:1, title:'Не дай обогнать',
+    task:'Поставь горизонтальную стену перед соперником, потом иди к победе!',
+    board:{ p0:[6,4], p1:[2,4], walls:[], wallsLeft:[5,5] },
+    solution:[
+      {type:'wall', r:3, c:3, dir:'h'},
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:2, c:3}, {type:'move', r:3, c:3}] },
 
-  // ⭐⭐⭐⭐⭐ MASTER (stars:5)
-  { id:21, stars:5, title:'Мастер стен', task:'Идеальная комбинация — найди её', type:'win_in_N', optimal:5,
-    board:{ p0:[6,4], p1:[2,4], walls:[{r:5,c:3,dir:'h'},{r:3,c:5,dir:'h'},{r:4,c:2,dir:'v'},{r:4,c:6,dir:'v'}], wallsLeft:[3,3] } },
-  { id:22, stars:5, title:'Эндшпиль', task:'Мало стен, мало ходов — думай на 5 шагов вперёд', type:'win_in_N', optimal:6,
-    board:{ p0:[7,3], p1:[1,5], walls:[{r:5,c:4,dir:'v'},{r:3,c:3,dir:'h'}], wallsLeft:[2,2] } },
-  { id:23, stars:5, title:'Гроссмейстер', task:'Только один путь к победе — найди его', type:'reach', optimal:8,
-    board:{ p0:[8,0], p1:[0,8], walls:[{r:7,c:2,dir:'v'},{r:6,c:4,dir:'h'},{r:5,c:6,dir:'v'},{r:4,c:2,dir:'h'},{r:3,c:4,dir:'v'},{r:2,c:6,dir:'h'}], wallsLeft:[3,3] } },
-  { id:24, stars:5, title:'Невозможный', task:'Говорят это нерешаемо... или нет?', type:'win_in_N', optimal:7,
-    board:{ p0:[8,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:5,c:3,dir:'h'},{r:5,c:5,dir:'h'},{r:3,c:3,dir:'h'},{r:3,c:5,dir:'h'}], wallsLeft:[2,2] } },
-  { id:25, stars:5, title:'Легенда', task:'Финальное испытание — только для лучших', type:'win_in_N', optimal:8,
-    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:3,dir:'v'},{r:6,c:5,dir:'v'},{r:4,c:1,dir:'h'},{r:4,c:7,dir:'h'},{r:2,c:3,dir:'v'},{r:2,c:5,dir:'v'}], wallsLeft:[1,1] } },
+  { id:5, stars:1, title:'Боковой путь',
+    task:'Соперник перекрыл центр — обойди сбоку!',
+    board:{ p0:[6,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'}], wallsLeft:[8,8] },
+    solution:[
+      {type:'move', r:6, c:5},
+      {type:'move', r:7, c:5},
+      {type:'move', r:8, c:5}
+    ], botMoves:[{type:'move', r:1, c:4}, {type:'move', r:2, c:4}] },
+
+  // ⭐⭐
+  { id:6, stars:2, title:'Блокада',
+    task:'Заблокируй соперника горизонтальной стеной и выиграй гонку!',
+    board:{ p0:[5,4], p1:[3,4], walls:[], wallsLeft:[5,3] },
+    solution:[
+      {type:'wall', r:4, c:3, dir:'h'},
+      {type:'move', r:6, c:4},
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:3, c:3},{type:'move', r:2, c:3},{type:'move', r:1, c:3}] },
+
+  { id:7, stars:2, title:'Вертикальный барьер',
+    task:'Поставь вертикальную стену — закрой соперника справа!',
+    board:{ p0:[5,3], p1:[3,5], walls:[], wallsLeft:[5,5] },
+    solution:[
+      {type:'wall', r:3, c:4, dir:'v'},
+      {type:'move', r:6, c:3},
+      {type:'move', r:7, c:3},
+      {type:'move', r:8, c:3}
+    ], botMoves:[{type:'move', r:2, c:5},{type:'move', r:1, c:5},{type:'move', r:0, c:5}] },
+
+  { id:8, stars:2, title:'Лабиринт',
+    task:'Найди правильный путь через стены!',
+    board:{ p0:[7,0], p1:[0,8], walls:[{r:7,c:1,dir:'h'},{r:5,c:3,dir:'h'}], wallsLeft:[5,5] },
+    solution:[
+      {type:'move', r:7, c:1},
+      {type:'move', r:8, c:1}
+    ], botMoves:[{type:'move', r:1, c:8}] },
+
+  { id:9, stars:2, title:'Двойной барьер',
+    task:'Закрой соперника с двух сторон!',
+    board:{ p0:[4,4], p1:[4,7], walls:[], wallsLeft:[5,3] },
+    solution:[
+      {type:'wall', r:4, c:5, dir:'v'},
+      {type:'move', r:5, c:4},
+      {type:'move', r:6, c:4},
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:3, c:7},{type:'move', r:2, c:7},{type:'move', r:1, c:7},{type:'move', r:0, c:7}] },
+
+  { id:10, stars:2, title:'Быстрый финиш',
+    task:'Соперник далеко — рви к финишу!',
+    board:{ p0:[5,4], p1:[0,4], walls:[{r:6,c:3,dir:'h'},{r:6,c:5,dir:'h'}], wallsLeft:[5,5] },
+    solution:[
+      {type:'move', r:5, c:5},
+      {type:'move', r:6, c:5},
+      {type:'move', r:7, c:5},
+      {type:'move', r:8, c:5}
+    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4}] },
+
+  // ⭐⭐⭐
+  { id:11, stars:3, title:'Стена и рывок',
+    task:'Сначала поставь стену, потом финишируй за 3 хода!',
+    board:{ p0:[5,4], p1:[3,4], walls:[{r:6,c:3,dir:'h'}], wallsLeft:[4,4] },
+    solution:[
+      {type:'wall', r:4, c:3, dir:'h'},
+      {type:'move', r:6, c:4},
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:3, c:3},{type:'move', r:2, c:3},{type:'move', r:1, c:3}] },
+
+  { id:12, stars:3, title:'Вилка',
+    task:'Поставь стену — создай угрозу с двух сторон!',
+    board:{ p0:[5,4], p1:[2,4], walls:[], wallsLeft:[4,4] },
+    solution:[
+      {type:'wall', r:3, c:3, dir:'h'},
+      {type:'move', r:6, c:4},
+      {type:'wall', r:2, c:4, dir:'v'},
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:2, c:3},{type:'move', r:1, c:3},{type:'move', r:1, c:4},{type:'move', r:0, c:4}] },
+
+  { id:13, stars:3, title:'Контрудар',
+    task:'Соперник близко к цели — останови его и победи!',
+    board:{ p0:[4,4], p1:[6,4], walls:[], wallsLeft:[5,2] },
+    solution:[
+      {type:'wall', r:7, c:3, dir:'h'},
+      {type:'move', r:5, c:4},
+      {type:'move', r:6, c:4},
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:6, c:3},{type:'move', r:5, c:3},{type:'move', r:4, c:3},{type:'move', r:3, c:3}] },
+
+  { id:14, stars:3, title:'Зигзаг',
+    task:'Прямой путь закрыт — найди зигзаг к победе!',
+    board:{ p0:[6,2], p1:[0,6], walls:[{r:7,c:2,dir:'h'},{r:5,c:4,dir:'h'}], wallsLeft:[4,4] },
+    solution:[
+      {type:'move', r:6, c:3},
+      {type:'move', r:7, c:3},
+      {type:'move', r:8, c:3}
+    ], botMoves:[{type:'move', r:1, c:6},{type:'move', r:2, c:6}] },
+
+  { id:15, stars:3, title:'Точный удар',
+    task:'Один точный ход меняет всё — найди его!',
+    board:{ p0:[5,3], p1:[3,5], walls:[{r:4,c:4,dir:'v'}], wallsLeft:[4,4] },
+    solution:[
+      {type:'wall', r:3, c:4, dir:'h'},
+      {type:'move', r:6, c:3},
+      {type:'move', r:7, c:3},
+      {type:'move', r:8, c:3}
+    ], botMoves:[{type:'move', r:2, c:5},{type:'move', r:1, c:5},{type:'move', r:0, c:5}] },
+
+  // ⭐⭐⭐⭐
+  { id:16, stars:4, title:'Крепость',
+    task:'Прорвись через укреплённую оборону!',
+    board:{ p0:[7,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:4,c:3,dir:'h'},{r:4,c:5,dir:'h'}], wallsLeft:[3,3] },
+    solution:[
+      {type:'move', r:7, c:5},
+      {type:'move', r:6, c:5},
+      {type:'move', r:5, c:5},
+      {type:'move', r:4, c:5},
+      {type:'move', r:3, c:5}
+    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4},{type:'move', r:4, c:4}] },
+
+  { id:17, stars:4, title:'Цугцванг',
+    task:'Любой ход соперника проигрышный — поставь его в тупик!',
+    board:{ p0:[5,4], p1:[3,4], walls:[{r:4,c:3,dir:'h'},{r:4,c:5,dir:'h'}], wallsLeft:[3,3] },
+    solution:[
+      {type:'wall', r:3, c:3, dir:'v'},
+      {type:'move', r:6, c:4},
+      {type:'move', r:7, c:4},
+      {type:'move', r:8, c:4}
+    ], botMoves:[{type:'move', r:3, c:5},{type:'move', r:2, c:5},{type:'move', r:1, c:5}] },
+
+  { id:18, stars:4, title:'Двойная угроза',
+    task:'Создай две угрозы одновременно — соперник не успеет закрыть обе!',
+    board:{ p0:[6,2], p1:[2,6], walls:[], wallsLeft:[3,3] },
+    solution:[
+      {type:'wall', r:2, c:5, dir:'h'},
+      {type:'move', r:7, c:2},
+      {type:'wall', r:2, c:3, dir:'v'},
+      {type:'move', r:8, c:2}
+    ], botMoves:[{type:'move', r:1, c:6},{type:'move', r:0, c:6},{type:'move', r:0, c:5}] },
+
+  { id:19, stars:4, title:'Обманный манёвр',
+    task:'Притворись что идёшь в одну сторону — победи с другой!',
+    board:{ p0:[6,4], p1:[2,4], walls:[{r:5,c:3,dir:'h'}], wallsLeft:[4,4] },
+    solution:[
+      {type:'move', r:6, c:3},
+      {type:'wall', r:3, c:3, dir:'h'},
+      {type:'move', r:7, c:3},
+      {type:'move', r:8, c:3}
+    ], botMoves:[{type:'move', r:2, c:3},{type:'move', r:2, c:4},{type:'move', r:1, c:4}] },
+
+  { id:20, stars:4, title:'Мастер стен',
+    task:'Правильная комбинация двух стен открывает путь к победе!',
+    board:{ p0:[7,4], p1:[1,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'}], wallsLeft:[2,2] },
+    solution:[
+      {type:'wall', r:2, c:3, dir:'h'},
+      {type:'move', r:7, c:5},
+      {type:'move', r:8, c:5}
+    ], botMoves:[{type:'move', r:1, c:5},{type:'move', r:0, c:5}] },
+
+  // ⭐⭐⭐⭐⭐
+  { id:21, stars:5, title:'Гроссмейстер',
+    task:'Только один маршрут к победе — найди его среди стен!',
+    board:{ p0:[8,0], p1:[0,8], walls:[{r:7,c:1,dir:'v'},{r:5,c:3,dir:'h'},{r:3,c:5,dir:'v'},{r:6,c:2,dir:'h'}], wallsLeft:[2,2] },
+    solution:[
+      {type:'move', r:8, c:1},
+      {type:'move', r:7, c:1},
+      {type:'move', r:6, c:1},
+      {type:'move', r:5, c:1},
+      {type:'move', r:4, c:1}
+    ], botMoves:[{type:'move', r:1, c:8},{type:'move', r:2, c:8},{type:'move', r:3, c:8},{type:'move', r:4, c:8}] },
+
+  { id:22, stars:5, title:'Эндшпиль',
+    task:'Одна стена решает всё — думай наперёд!',
+    board:{ p0:[7,3], p1:[1,5], walls:[{r:5,c:4,dir:'v'},{r:3,c:3,dir:'h'}], wallsLeft:[2,2] },
+    solution:[
+      {type:'wall', r:2, c:4, dir:'h'},
+      {type:'move', r:8, c:3}
+    ], botMoves:[{type:'move', r:1, c:4}] },
+
+  { id:23, stars:5, title:'Невозможное возможно',
+    task:'Все пути кажутся закрытыми — найди единственный выход!',
+    board:{ p0:[8,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:5,c:2,dir:'h'},{r:5,c:6,dir:'h'}], wallsLeft:[1,1] },
+    solution:[
+      {type:'move', r:8, c:5},
+      {type:'move', r:7, c:5},
+      {type:'move', r:6, c:5},
+      {type:'move', r:5, c:5},
+      {type:'move', r:4, c:5}
+    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4},{type:'move', r:4, c:4}] },
+
+  { id:24, stars:5, title:'Легенда',
+    task:'Финальное испытание. Только для лучших.',
+    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:3,dir:'v'},{r:6,c:5,dir:'v'},{r:4,c:2,dir:'h'},{r:4,c:6,dir:'h'}], wallsLeft:[1,1] },
+    solution:[
+      {type:'wall', r:5, c:4, dir:'h'},
+      {type:'move', r:8, c:3},
+      {type:'move', r:7, c:3},
+      {type:'move', r:6, c:3}
+    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4}] },
+
+  { id:25, stars:5, title:'Чемпион',
+    task:'Идеальная комбинация. Ни одной ошибки.',
+    board:{ p0:[7,4], p1:[1,4], walls:[{r:6,c:3,dir:'h'},{r:6,c:5,dir:'h'},{r:3,c:3,dir:'h'},{r:3,c:5,dir:'h'}], wallsLeft:[1,1] },
+    solution:[
+      {type:'move', r:7, c:5},
+      {type:'move', r:6, c:5},
+      {type:'move', r:5, c:5},
+      {type:'move', r:4, c:5},
+      {type:'move', r:3, c:5}
+    ], botMoves:[{type:'move', r:1, c:5},{type:'move', r:2, c:5},{type:'move', r:3, c:5},{type:'move', r:4, c:5}] },
 ];
 
-// Daily puzzle rotation
-const DAILY_PUZZLE_IDS = [3,7,12,18,24,5,10,15,20,25,1,6,11,16,21,4,9,14,19,23,2,8,13,17,22];
-
+const DAILY_IDS = [3,7,12,18,24,5,10,15,20,25,1,6,11,16,21,4,9,14,19,23,2,8,13,17,22];
 function getDailyPuzzle() {
-  const day = Math.floor(Date.now() / 86400000);
-  const idx = day % DAILY_PUZZLE_IDS.length;
-  return PUZZLES.find(p => p.id === DAILY_PUZZLE_IDS[idx]);
+  const day = Math.floor(Date.now()/86400000);
+  return PUZZLES.find(p => p.id === DAILY_IDS[day % DAILY_IDS.length]);
 }
 
-// ── PUZZLE STATE ──────────────────────────────────────────────────
-let currentPuzzle = null;
-let puzzleMode = 'move';
-let puzzleWallDir = 'h';
-let puzzleMoves = 0;
-let puzzleStartTime = 0;
-let puzzleTimerInterval = null;
-let puzzlePlayers = [];
-let puzzleWalls = [];
-let puzzleWallsLeft = [];
-let puzzleIsDaily = false;
-let puzzleHintUsed = false;
-
-function loadPuzzleBoard(pz) {
-  puzzlePlayers = [
-    { r: pz.board.p0[0], c: pz.board.p0[1] },
-    { r: pz.board.p1[0], c: pz.board.p1[1] },
-  ];
-  puzzleWalls = pz.board.walls.map(w => ({ ...w, owner: 1 }));
-  puzzleWallsLeft = [...pz.board.wallsLeft];
-  puzzleMoves = 0;
-  puzzleHintUsed = false;
-  document.getElementById('puzzle-moves-count').textContent = 0;
-  document.getElementById('puzzle-optimal').textContent = pz.optimal;
-  document.getElementById('puzzle-hint-text').style.display = 'none';
-  setPuzzleMode('move');
-}
-
+// ── OPEN PUZZLE — loads into MAIN game engine ─────────────────────
 function openPuzzle(idOrDaily) {
   puzzleIsDaily = idOrDaily === 'daily';
   currentPuzzle = puzzleIsDaily ? getDailyPuzzle() : PUZZLES.find(p => p.id === idOrDaily);
   if (!currentPuzzle) return;
 
-  loadPuzzleBoard(currentPuzzle);
+  puzzleSolutionStep = 0;
+  puzzleMoveCount = 0;
+  puzzleHintUsed = false;
+  puzzleActive = true;
 
-  document.getElementById('puzzle-title').textContent =
-    (puzzleIsDaily ? '📅 ' : '') + currentPuzzle.title;
-  document.getElementById('puzzle-task').textContent = currentPuzzle.task;
-  document.getElementById('puzzle-win').style.display = 'none';
+  // Load position into MAIN game state
+  const pz = currentPuzzle;
+  aiDifficulty = 'puzzle'; // special mode
+  winner = null;
+  turn = 0;
+  score = [0,0];
+  gameWallsUsed = 0;
+  onlineMode = false;
+
+  // Set board state
+  players = [
+    {r: pz.board.p0[0], c: pz.board.p0[1]},
+    {r: pz.board.p1[0], c: pz.board.p1[1]},
+  ];
+  walls = pz.board.walls.map(w => ({...w}));
+  wallsLeft = [...pz.board.wallsLeft];
+  wallPreview = null;
+
+  // Set canvas sizes
+  calcSizes();
+  canvas.width = BOARD_PX; canvas.height = BOARD_PX;
+
+  // Update UI
+  setMode('move');
+  updateUI();
+  draw();
+
+  // Hide surrender button
+  const sb = document.getElementById('btn-surrender-tut');
+  if (sb) sb.style.display = 'none';
+  const sb2 = document.querySelector('#game-controls .btn-secondary[onclick*="surrender"]');
+  if (sb2) sb2.style.display = 'none';
+
+  // Show puzzle overlay
+  showPuzzleOverlay();
+
+  showScreen('game');
 
   // Start timer
-  puzzleStartTime = Date.now();
   clearInterval(puzzleTimerInterval);
+  puzzleStartTime = Date.now();
   puzzleTimerInterval = setInterval(() => {
-    const sec = Math.floor((Date.now() - puzzleStartTime) / 1000);
-    const el = document.getElementById('puzzle-time');
-    if (el) el.textContent = sec;
+    const el = document.getElementById('puzzle-timer-val');
+    if (el) el.textContent = Math.floor((Date.now()-puzzleStartTime)/1000) + 'с';
   }, 1000);
+}
 
-  showScreen('puzzle-game');
-  setTimeout(drawPuzzle, 100);
+function showPuzzleOverlay() {
+  let ov = document.getElementById('puzzle-ingame-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'puzzle-ingame-overlay';
+    ov.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:500;pointer-events:none;padding:8px 12px;box-sizing:border-box;';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `
+    <div style="background:rgba(0,0,0,0.9);border:1.5px solid rgba(255,211,61,0.5);border-radius:12px;padding:10px 14px;pointer-events:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <button onclick="exitPuzzle()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.7rem;cursor:pointer;font-family:'Unbounded',sans-serif">← Пазлы</button>
+        <div style="font-family:'Unbounded',sans-serif;font-size:0.72rem;font-weight:900;color:#FFD93D">${(puzzleIsDaily?'📅 ':'')+currentPuzzle.title}</div>
+        <div style="font-size:0.65rem;color:var(--muted)">⏱ <span id="puzzle-timer-val">0с</span></div>
+      </div>
+      <div style="font-size:0.72rem;color:#FFD93D;text-align:center;font-family:'Unbounded',sans-serif;margin-bottom:4px">${currentPuzzle.task}</div>
+      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted)">
+        <span>Ходов: <b id="pz-moves" style="color:#fff">0</b> / ${currentPuzzle.solution.length}</span>
+        <span>${'⭐'.repeat(currentPuzzle.stars)}</span>
+        <span onclick="usePuzzleHint()" style="cursor:pointer;color:#a78bfa;pointer-events:auto">💡 Подсказка (5🧩)</span>
+      </div>
+      <div id="pz-feedback" style="display:none;text-align:center;font-size:0.72rem;margin-top:6px;padding:4px;border-radius:6px"></div>
+    </div>`;
+  ov.style.display = 'block';
+}
+
+function hidePuzzleOverlay() {
+  const ov = document.getElementById('puzzle-ingame-overlay');
+  if (ov) ov.style.display = 'none';
 }
 
 function exitPuzzle() {
+  puzzleActive = false;
+  aiDifficulty = false;
   clearInterval(puzzleTimerInterval);
+  hidePuzzleOverlay();
   showScreen('puzzles');
   renderPuzzleGrid();
 }
 
-function resetPuzzle() {
-  if (!currentPuzzle) return;
-  loadPuzzleBoard(currentPuzzle);
-  puzzleStartTime = Date.now();
-  drawPuzzle();
-}
+// ── HOOK INTO MAIN handleMove ─────────────────────────────────────
+// Called BEFORE the main handleMove processes input
+function puzzleInterceptMove(r, c, type, dir) {
+  if (!puzzleActive || aiDifficulty !== 'puzzle') return true; // not in puzzle — allow normally
 
-function setPuzzleMode(m) {
-  puzzleMode = m;
-  document.getElementById('puzzle-btn-move').classList.toggle('active', m === 'move');
-  document.getElementById('puzzle-btn-wall').classList.toggle('active', m === 'wall');
-  drawPuzzle();
-}
+  const expected = currentPuzzle.solution[puzzleSolutionStep];
+  if (!expected) return true;
 
-function togglePuzzleDir() {
-  puzzleWallDir = puzzleWallDir === 'h' ? 'v' : 'h';
-  document.getElementById('puzzle-btn-dir').textContent =
-    puzzleWallDir === 'h' ? '↔ Гориз.' : '↕ Верт.';
-  drawPuzzle();
-}
+  let correct = false;
+  if (type === 'move' && expected.type === 'move' && expected.r === r && expected.c === c) correct = true;
+  if (type === 'wall' && expected.type === 'wall' && expected.r === r && expected.c === c && expected.dir === dir) correct = true;
 
-// ── PUZZLE DRAWING ────────────────────────────────────────────────
-function drawPuzzle() {
-  const cv = document.getElementById('puzzle-canvas');
-  if (!cv) return;
-  const size = Math.min(window.innerWidth, 480);
-  cv.width = size; cv.height = size;
-  const ctx = cv.getContext('2d');
-  const cs = size / 9;
-  const gap = cs * 0.12;
-
-  // Background
-  ctx.fillStyle = '#111';
-  ctx.fillRect(0, 0, size, size);
-
-  // Goal row highlight (bottom for player 0)
-  ctx.fillStyle = 'rgba(0,245,196,0.08)';
-  ctx.fillRect(0, 8 * cs, size, cs);
-  ctx.strokeStyle = 'rgba(0,245,196,0.4)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 8 * cs, size, cs);
-
-  // Grid cells
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      const x = c * cs + gap/2, y = r * cs + gap/2;
-      const w = cs - gap, h = cs - gap;
-      ctx.fillStyle = '#1a1a2e';
-      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x,y,w,h,4); ctx.fill(); }
-      else { ctx.fillRect(x,y,w,h); }
-    }
-  }
-
-  // Walls
-  puzzleWalls.forEach(wall => {
-    ctx.fillStyle = wall.owner === 0 ? '#FF3CAC' : '#FF3333';
-    if (wall.dir === 'h') {
-      ctx.fillRect(wall.c * cs + gap/2, wall.r * cs - gap, cs * 2 - gap, gap * 1.5);
+  if (correct) {
+    puzzleMoveCount++;
+    const el = document.getElementById('pz-moves');
+    if (el) el.textContent = puzzleMoveCount;
+    showPzFeedback('✅ Правильно!', '#00F5C4', 'rgba(0,245,196,0.1)');
+    if (navigator.vibrate) navigator.vibrate(30);
+    puzzleSolutionStep++;
+    // Check if puzzle solved
+    if (puzzleSolutionStep >= currentPuzzle.solution.length) {
+      setTimeout(onPuzzleSolved, 600);
     } else {
-      ctx.fillRect(wall.c * cs + cs - gap, wall.r * cs + gap/2, gap * 1.5, cs * 2 - gap);
+      // Schedule bot response
+      const botMove = (currentPuzzle.botMoves || [])[puzzleSolutionStep - 1];
+      if (botMove) setTimeout(() => doPuzzleBotMove(botMove), 700);
     }
-  });
-
-  // Players
-  const colors = ['#FF3CAC', '#FF3333'];
-  puzzlePlayers.forEach((p, i) => {
-    const cx = p.c * cs + cs/2, cy = p.r * cs + cs/2, r = cs * 0.35;
-    ctx.shadowColor = colors[i];
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = colors[i];
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${cs*0.3}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(i === 0 ? 'Я' : '👹', cx, cy);
-  });
-}
-
-// ── PUZZLE INPUT ──────────────────────────────────────────────────
-function puzzleHitCell(mx, my) {
-  const cv = document.getElementById('puzzle-canvas');
-  const cs = cv.width / 9;
-  const r = Math.floor(my / cs), c = Math.floor(mx / cs);
-  if (r >= 0 && r < 9 && c >= 0 && c < 9) return { r, c };
-  return null;
-}
-
-function puzzleCanMove(r, c) {
-  const p = puzzlePlayers[0];
-  const dr = Math.abs(r - p.r), dc = Math.abs(c - p.c);
-  if (dr + dc !== 1) return false;
-  // Check wall blocking
-  return !isPuzzleWallBlocking(p.r, p.c, r, c);
-}
-
-function isPuzzleWallBlocking(r1, c1, r2, c2) {
-  // Simplified wall check
-  for (const w of puzzleWalls) {
-    if (r2 === r1 + 1 && w.dir === 'h') {
-      if (w.r === r2 && (w.c === c1 || w.c === c1 - 1)) return true;
-    }
-    if (r2 === r1 - 1 && w.dir === 'h') {
-      if (w.r === r1 && (w.c === c1 || w.c === c1 - 1)) return true;
-    }
-    if (c2 === c1 + 1 && w.dir === 'v') {
-      if (w.c === c2 && (w.r === r1 || w.r === r1 - 1)) return true;
-    }
-    if (c2 === c1 - 1 && w.dir === 'v') {
-      if (w.c === c1 && (w.r === r1 || w.r === r1 - 1)) return true;
-    }
-  }
-  return false;
-}
-
-function puzzleHandleInput(mx, my) {
-  if (!currentPuzzle) return;
-
-  if (puzzleMode === 'move') {
-    const cell = puzzleHitCell(mx, my);
-    if (!cell) return;
-    if (puzzleCanMove(cell.r, cell.c)) {
-      puzzlePlayers[0] = { r: cell.r, c: cell.c };
-      puzzleMoves++;
-      document.getElementById('puzzle-moves-count').textContent = puzzleMoves;
-      playMove();
-      drawPuzzle();
-      checkPuzzleWin();
-    }
+    return true; // allow move
   } else {
-    // Wall placement
-    const cv = document.getElementById('puzzle-canvas');
-    const cs = cv.width / 9;
-    const r = Math.floor(my / cs), c = Math.floor(mx / cs);
-    if (r < 0 || r > 7 || c < 0 || c > 7) return;
-    if (puzzleWallsLeft[0] <= 0) return;
-    // Simple duplicate check
-    const dup = puzzleWalls.find(w => w.r === r && w.c === c && w.dir === puzzleWallDir);
-    if (dup) return;
-    puzzleWalls.push({ r, c, dir: puzzleWallDir, owner: 0 });
-    puzzleWallsLeft[0]--;
-    puzzleMoves++;
-    document.getElementById('puzzle-moves-count').textContent = puzzleMoves;
-    playWall();
-    drawPuzzle();
-    checkPuzzleWin();
+    showPzFeedback('❌ Не то! Попробуй ещё раз.', '#FF3333', 'rgba(255,51,51,0.1)');
+    if (navigator.vibrate) navigator.vibrate([50,30,50]);
+    return false; // block move
   }
 }
 
-const puzzleCanvas = document.getElementById('puzzle-canvas');
-if (puzzleCanvas) {
-  puzzleCanvas.addEventListener('click', e => {
-    const rect = puzzleCanvas.getBoundingClientRect();
-    const scale = puzzleCanvas.width / rect.width;
-    puzzleHandleInput((e.clientX - rect.left) * scale, (e.clientY - rect.top) * scale);
-  });
-  puzzleCanvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const rect = puzzleCanvas.getBoundingClientRect();
-    const scale = puzzleCanvas.width / rect.width;
-    const t = e.touches[0];
-    puzzleHandleInput((t.clientX - rect.left) * scale, (t.clientY - rect.top) * scale);
-  }, { passive: false });
+function doPuzzleBotMove(botMove) {
+  if (botMove.type === 'move') {
+    players[1] = {r: botMove.r, c: botMove.c};
+    playMove();
+  } else {
+    walls.push({r:botMove.r, c:botMove.c, dir:botMove.dir, owner:1});
+    wallsLeft[1]--;
+    playWall();
+  }
+  turn = 0;
+  updateUI();
+  draw();
+  // Auto switch mode for next expected move
+  const next = currentPuzzle.solution[puzzleSolutionStep];
+  if (next) setMode(next.type === 'wall' ? 'wall' : 'move');
 }
 
-// ── PUZZLE WIN CHECK ──────────────────────────────────────────────
-function checkPuzzleWin() {
-  const p = puzzlePlayers[0];
-  if (p.r !== 8) return; // Player wins by reaching row 8
+function showPzFeedback(msg, color, bg) {
+  const el = document.getElementById('pz-feedback');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = color;
+  el.style.background = bg;
+  el.textContent = msg;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 1500);
+}
 
+// ── PUZZLE WIN ────────────────────────────────────────────────────
+function onPuzzleSolved() {
   clearInterval(puzzleTimerInterval);
-  const elapsed = Math.floor((Date.now() - puzzleStartTime) / 1000);
+  puzzleActive = false;
+  hidePuzzleOverlay();
 
-  // Calculate reward
-  const isOptimal = puzzleMoves <= currentPuzzle.optimal;
+  const elapsed = Math.floor((Date.now()-puzzleStartTime)/1000);
+  const optimal = currentPuzzle.solution.length;
+  const isOptimal = puzzleMoveCount <= optimal;
   const isFast = elapsed < 30;
+
   let reward = currentPuzzle.stars * 10;
   if (isOptimal) reward += 20;
   if (isFast) reward += 10;
   if (puzzleIsDaily) reward *= 2;
   if (puzzleHintUsed) reward = Math.floor(reward * 0.5);
 
-  // Stars
   let stars = 1;
   if (isOptimal && isFast) stars = 3;
   else if (isOptimal || isFast) stars = 2;
 
-  // Save
   puzzlePoints += reward;
   solvedPuzzles.add(puzzleIsDaily ? 'daily' : currentPuzzle.id);
   savePuzzlePoints();
-
-  // Show win
   playWin();
-  const ov = document.getElementById('puzzle-win');
+  aiDifficulty = false;
+
+  // Show win overlay
   document.getElementById('puzzle-win-title').textContent =
-    stars === 3 ? '⭐ Идеально!' : stars === 2 ? '✅ Отлично!' : '👍 Решено!';
+    stars===3?'⭐ Идеально!':stars===2?'✅ Отлично!':'👍 Решено!';
   document.getElementById('puzzle-win-stats').textContent =
-    `Ходов: ${puzzleMoves} (оптимум: ${currentPuzzle.optimal}) · Время: ${elapsed}с`;
+    `Ходов: ${puzzleMoveCount} из ${optimal} · Время: ${elapsed}с`;
   document.getElementById('puzzle-win-reward').textContent = `+${reward} 🧩`;
-  document.getElementById('puzzle-win-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-  ov.style.display = 'flex';
+  document.getElementById('puzzle-win-stars').textContent =
+    '⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('puzzle-win').style.display = 'flex';
 }
 
 function closePuzzleWin() {
@@ -6489,80 +6614,69 @@ function closePuzzleWin() {
 
 function retryPuzzle() {
   document.getElementById('puzzle-win').style.display = 'none';
-  resetPuzzle();
+  openPuzzle(puzzleIsDaily ? 'daily' : currentPuzzle.id);
 }
 
-// ── PUZZLE HINT ───────────────────────────────────────────────────
+// ── HINT ──────────────────────────────────────────────────────────
 function usePuzzleHint() {
-  if (puzzlePoints < 5) {
-    showToast('❌ Мало 🧩', 'Нужно 5 пазл-очков для подсказки');
-    return;
-  }
-  puzzlePoints -= 5;
-  puzzleHintUsed = true;
-  savePuzzlePoints();
-
-  // Show hint
-  const hintEl = document.getElementById('puzzle-hint-text');
-  const p = puzzlePlayers[0];
-  const step = bfsNextStep(p.r, p.c, 8); // find next step toward goal using main BFS
-  if (step) {
-    hintEl.textContent = `💡 Подсказка: двигайся на клетку (${step[0]+1}, ${step[1]+1})`;
+  if (puzzlePoints < 5) { showToast('❌ Мало 🧩','Нужно 5 пазл-очков'); return; }
+  const next = currentPuzzle.solution[puzzleSolutionStep];
+  if (!next) return;
+  puzzlePoints -= 5; puzzleHintUsed = true; savePuzzlePoints();
+  if (next.type === 'move') {
+    showPzFeedback(`💡 Иди на клетку (ряд ${next.r+1}, колонка ${next.c+1})`, '#a78bfa', 'rgba(120,75,255,0.1)');
+    setMode('move');
   } else {
-    hintEl.textContent = '💡 Подсказка: поставь стену чтобы замедлить соперника';
+    showPzFeedback(`💡 Поставь ${next.dir==='h'?'горизонт.':'вертик.'} стену на (${next.r+1}, ${next.c+1})`, '#a78bfa', 'rgba(120,75,255,0.1)');
+    wallDir = next.dir;
+    const dirBtn = document.getElementById('btn-dir');
+    if (dirBtn) dirBtn.textContent = next.dir==='h'?'↔ Горизонт.':'↕ Вертикаль';
+    setMode('wall');
   }
-  hintEl.style.display = 'block';
 }
 
-// ── PUZZLE GRID RENDER ────────────────────────────────────────────
+// ── GRID ──────────────────────────────────────────────────────────
 function filterPuzzles(filter) {
   ['all',1,2,3,4,5].forEach(f => {
-    const btn = document.getElementById('pf-' + f);
-    if (btn) btn.classList.toggle('active', f === filter);
+    const b = document.getElementById('pf-'+f);
+    if (b) b.classList.toggle('active', f===filter);
   });
   renderPuzzleGrid(filter);
 }
 
-function renderPuzzleGrid(filter = 'all') {
+function renderPuzzleGrid(filter='all') {
   const grid = document.getElementById('puzzle-grid');
   if (!grid) return;
-  const list = filter === 'all' ? PUZZLES : PUZZLES.filter(p => p.stars === filter);
+  const list = filter==='all' ? PUZZLES : PUZZLES.filter(p=>p.stars===filter);
   grid.innerHTML = '';
   list.forEach(pz => {
     const solved = solvedPuzzles.has(pz.id);
+    const maxReward = pz.stars*10+30;
     const card = document.createElement('div');
-    card.style.cssText = `
-      background:${solved ? 'rgba(0,245,196,0.1)' : 'var(--surface2)'};
-      border:1.5px solid ${solved ? 'rgba(0,245,196,0.4)' : 'rgba(255,255,255,0.08)'};
-      border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;
-      transition:transform 0.15s;
-    `;
+    card.style.cssText = `background:${solved?'rgba(0,245,196,0.08)':'var(--surface2)'};border:1.5px solid ${solved?'rgba(0,245,196,0.35)':'rgba(255,255,255,0.07)'};border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;transition:transform 0.15s;`;
     card.innerHTML = `
-      <div style="font-size:1.2rem">${solved ? '✅' : '🧩'}</div>
-      <div style="font-family:'Unbounded',sans-serif;font-size:0.6rem;font-weight:700;margin:4px 0">${pz.title}</div>
-      <div style="font-size:0.65rem">${'⭐'.repeat(pz.stars)}</div>
-      <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">+${pz.stars*10+(pz.stars===5?30:pz.stars===4?20:10)} 🧩</div>
-    `;
+      <div style="font-size:1.3rem">${solved?'✅':'🧩'}</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:0.58rem;font-weight:700;margin:4px 0;line-height:1.3">${pz.title}</div>
+      <div style="font-size:0.6rem">${'⭐'.repeat(pz.stars)}</div>
+      <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">${pz.solution.length} ${pz.solution.length===1?'ход':'хода'} · до +${maxReward}🧩</div>`;
     card.onclick = () => openPuzzle(pz.id);
+    card.onmouseenter = ()=>card.style.transform='scale(1.04)';
+    card.onmouseleave = ()=>card.style.transform='scale(1)';
     grid.appendChild(card);
   });
 }
 
-// ── PUZZLE SCREEN INIT ────────────────────────────────────────────
+// ── SCREEN INIT ───────────────────────────────────────────────────
 function initPuzzleScreen() {
   loadPuzzlePoints();
-  updatePuzzleUI();
-
-  // Daily puzzle card
   const daily = getDailyPuzzle();
   if (daily) {
-    const dailySolved = solvedPuzzles.has('daily');
-    document.getElementById('daily-puzzle-status').textContent =
-      dailySolved ? '✅ Решён сегодня' : 'Двойная награда!';
-    document.getElementById('daily-puzzle-reward').textContent =
-      dailySolved ? '' : '×2 🧩';
+    const done = solvedPuzzles.has('daily');
+    const ds = document.getElementById('daily-puzzle-status');
+    const dr = document.getElementById('daily-puzzle-reward');
+    if (ds) ds.textContent = done?'✅ Решён сегодня':'Двойная награда!';
+    if (dr) dr.textContent = done?'':'×2 🧩';
   }
-
   renderPuzzleGrid();
 }
 
