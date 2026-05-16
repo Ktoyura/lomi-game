@@ -775,6 +775,18 @@ const INTRO_AUDIO_B64 = '';</script>
     </div>
   </div>
 
+  <!-- Puzzle stats -->
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:480px">
+    <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,211,61,0.2)">
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#FFD93D" id="profile-puzzles">0</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">🧩 Пазлов решено</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,211,61,0.2)">
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#FFD93D" id="profile-puzzle-pts">0</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">🧩 Пазл-очков</div>
+    </div>
+  </div>
+
   <!-- Winrate bar -->
   <div style="width:100%;max-width:480px">
     <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);margin-bottom:4px">
@@ -2879,6 +2891,14 @@ function startSlotSpin() {
     winIdx = rIdxs[Math.floor(Math.random() * rIdxs.length)];
   } else {
     winIdx = SLOT_ITEMS.findIndex(i => i.type === 'skin');
+    // Pick a random unowned skin
+    const allSkins = SHOP_ITEMS ? SHOP_ITEMS.filter(s => (s.type === 'piece' || s.type === 'flag') && !ownedItems.has(s.id)) : [];
+    const randomSkin = allSkins.length > 0
+      ? allSkins[Math.floor(Math.random() * allSkins.length)]
+      : null;
+    if (randomSkin) {
+      SLOT_ITEMS[winIdx] = { ...SLOT_ITEMS[winIdx], _skin: randomSkin, label: randomSkin.name, icon: randomSkin.emoji || '🎰' };
+    }
   }
   slotResult = SLOT_ITEMS[winIdx];
 
@@ -3066,6 +3086,12 @@ function renderProfile() {
   const pg = document.getElementById('profile-games'); if (pg) pg.textContent = games;
   const pwr = document.getElementById('profile-winrate'); if (pwr) pwr.textContent = winrate + '%';
   const pwb = document.getElementById('profile-winbar'); if (pwb) pwb.style.width = winrate + '%';
+
+  // Puzzle stats
+  const ppz = document.getElementById('profile-puzzles');
+  if (ppz) ppz.textContent = solvedPuzzles ? solvedPuzzles.size : 0;
+  const ppp = document.getElementById('profile-puzzle-pts');
+  if (ppp) ppp.textContent = puzzlePoints || 0;
 
   // Match history
   const container = document.getElementById('match-history');
@@ -4897,6 +4923,16 @@ function startVsKtoyura() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Always hide puzzle overlay when leaving game screen
+  if (id !== 'game' && puzzleActive) {
+    puzzleActive = false;
+    aiDifficulty = false;
+    clearInterval(puzzleTimerInterval);
+  }
+  if (id !== 'game') {
+    const ov = document.getElementById('puzzle-ingame-overlay');
+    if (ov) ov.style.display = 'none';
+  }
   if (id === 'welcome-bonus') {
     stopMenuMusic();
   } else if (id === 'auth') {
@@ -6501,6 +6537,8 @@ function exitPuzzle() {
   aiDifficulty = false;
   clearInterval(puzzleTimerInterval);
   hidePuzzleOverlay();
+  const ov = document.getElementById('puzzle-ingame-overlay');
+  if (ov) ov.remove(); // полностью удаляем
   showScreen('puzzles');
   renderPuzzleGrid();
 }
