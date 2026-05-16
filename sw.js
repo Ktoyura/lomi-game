@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lomi-v1';
+const CACHE_NAME = 'lomi-v3';
 const ASSETS = [
   '/',
   '/index.html',
