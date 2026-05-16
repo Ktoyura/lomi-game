@@ -482,14 +482,14 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 
   <!-- Buttons -->
   <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;">
-    <button id="intro-new-btn" onclick="document.getElementById('intro-screen').style.display='none'; isTutorialNeeded()?startTutorial():showScreen('register')" style="
+    <button id="intro-new-btn" style="
       font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
       padding:1.1rem 2rem;border-radius:16px;border:none;cursor:pointer;
       background:linear-gradient(135deg,#784BFF,#00F5C4);color:#fff;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     ">Первый раз</button>
-    <button id="intro-login-btn" onclick="document.getElementById('intro-screen').style.display='none'; showScreen('login')" style="
+    <button id="intro-login-btn" style="
       font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
       padding:1rem 2rem;border-radius:16px;border:1.5px solid rgba(120,75,255,0.4);
@@ -525,7 +525,7 @@ const INTRO_AUDIO_B64 = '';</script>
 <button class="mute-btn" id="mute-btn" onclick="toggleMute()" title="Звук">🔊</button>
 
 <!-- AUTH SCREEN -->
-<div id="auth" class="screen active">
+<div id="auth" class="screen">
   <div class="logo">LOMI</div>
   <div class="tagline">Стратегическая игра стен</div>
   <div class="btn-group" style="max-width:320px;width:100%">
@@ -4828,13 +4828,15 @@ function startTutorial() {
   updateRatingUI();
   updateUserUI();
 
+  // Сразу показываем игровой экран — не ждём setTimeout
+  showScreen('game');
+
   setTimeout(() => {
     startGame('easy');
     const sb = document.getElementById('btn-surrender-tut');
     if (sb) sb.style.display = 'none';
     setTimeout(tutStep0, 500);
   }, 150);
-  // Analytics: tutorial started
   if (typeof ym !== 'undefined') ym(109239699, 'reachGoal', 'tutorial_start');
 }
 
@@ -6144,7 +6146,7 @@ function runIntro() {
   const screen = document.getElementById('intro-screen');
   if (!screen) { loadUser(); return; }
 
-  // Существующий пользователь — сразу в игру
+  // Существующий пользователь — интро не нужно, сразу в игру
   const hasToken = localStorage.getItem('lomi_token');
   const hasGuest = localStorage.getItem('lomi_guest_name');
   if (hasToken || hasGuest) {
@@ -6153,14 +6155,16 @@ function runIntro() {
     return;
   }
 
-  // Простые onclick — самый надёжный способ на iOS Safari
+  // Новый пользователь — показываем интро, вешаем кнопки
   const newBtn = document.getElementById('intro-new-btn');
   const loginBtn = document.getElementById('intro-login-btn');
 
   if (newBtn) {
     newBtn.onclick = function() {
       screen.style.display = 'none';
-      if (isTutorialNeeded()) {
+      // tutorialDone хранится в lomi_tutorial_done
+      const tutDone = localStorage.getItem('lomi_tutorial_done');
+      if (!tutDone) {
         startTutorial();
       } else {
         showScreen('register');
