@@ -482,19 +482,19 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 
   <!-- Buttons -->
   <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;">
-    <button id="intro-new-btn" style="
+    <button id="intro-new-btn" onclick="document.getElementById('intro-screen').style.display='none'; isTutorialNeeded()?startTutorial():showScreen('register')" style="
       font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
       padding:1.1rem 2rem;border-radius:16px;border:none;cursor:pointer;
-      background:linear-gradient(135deg,#fff,#784BFF);color:#fff;
-      -webkit-tap-highlight-color:transparent;
+      background:linear-gradient(135deg,#784BFF,#00F5C4);color:#fff;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     ">Первый раз</button>
-    <button id="intro-login-btn" style="
+    <button id="intro-login-btn" onclick="document.getElementById('intro-screen').style.display='none'; showScreen('login')" style="
       font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
       padding:1rem 2rem;border-radius:16px;border:1.5px solid rgba(120,75,255,0.4);
       cursor:pointer;background:transparent;color:#a78bfa;
-      -webkit-tap-highlight-color:transparent;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     ">Уже есть аккаунт? Войти</button>
   </div>
 </div>
@@ -6144,55 +6144,39 @@ function runIntro() {
   const screen = document.getElementById('intro-screen');
   if (!screen) { loadUser(); return; }
 
-  // Skip intro for existing users — go straight to game
+  // Существующий пользователь — сразу в игру
   const hasToken = localStorage.getItem('lomi_token');
   const hasGuest = localStorage.getItem('lomi_guest_name');
   if (hasToken || hasGuest) {
-    screen.remove();
+    screen.style.display = 'none';
     loadUser();
     return;
   }
 
-  // "Первый раз" button → tutorial (or auth for new users)
+  // Простые onclick — самый надёжный способ на iOS Safari
   const newBtn = document.getElementById('intro-new-btn');
+  const loginBtn = document.getElementById('intro-login-btn');
+
   if (newBtn) {
-    const goNew = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      screen.remove();
+    newBtn.onclick = function() {
+      screen.style.display = 'none';
       if (isTutorialNeeded()) {
         startTutorial();
       } else {
         showScreen('register');
       }
     };
-    newBtn.addEventListener('click', goNew, { capture: true });
-    newBtn.addEventListener('touchend', goNew, { capture: true });
   }
 
-  // "Войти" button → login screen
-  const loginBtn = document.getElementById('intro-login-btn');
   if (loginBtn) {
-    const goLogin = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      screen.remove();
+    loginBtn.onclick = function() {
+      screen.style.display = 'none';
       showScreen('login');
     };
-    loginBtn.addEventListener('click', goLogin, { capture: true });
-    loginBtn.addEventListener('touchend', goLogin, { capture: true });
   }
 }
 
-// Run intro on load — with DOMContentLoaded fallback for iOS Safari + SW cache
-let _introStarted = false;
-function _startIntro() {
-  if (_introStarted) return;
-  _introStarted = true;
-  runIntro();
-}
-document.addEventListener('DOMContentLoaded', _startIntro);
-window.addEventListener('load', _startIntro);
+window.addEventListener('load', runIntro);
 
 
 
