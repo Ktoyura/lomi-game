@@ -492,6 +492,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       letter-spacing:0.1em;
       pointer-events:auto;
       padding:12px 24px;
+      -webkit-tap-highlight-color:transparent;
     ">Уже есть аккаунт? Войти</div>
   </div>
 </div>
@@ -6120,8 +6121,9 @@ function runIntro() {
 
   let loginTapped = false;
 
-  function onTap() {
+  function goToAuth() {
     if (loginTapped) return;
+    loginTapped = true;
     screen.style.transition = 'opacity 0.4s ease';
     screen.style.opacity = '0';
     setTimeout(() => {
@@ -6130,34 +6132,33 @@ function runIntro() {
       const hasToken = localStorage.getItem('lomi_token');
       const hasGuest = localStorage.getItem('lomi_guest_name');
       if (hasToken || hasGuest) {
-        // Existing user — go to menu
         loadUser();
       } else if (isTutorialNeeded()) {
-        // Brand new user — tutorial
         startTutorial();
       } else {
-        // Clicked "Войти" before — go to auth
         showScreen('auth');
       }
     }, 400);
   }
 
-  // Login button
+  // Login button — go directly to login screen, block ALL further events
   const loginBtn = document.getElementById('intro-login-btn');
   if (loginBtn) {
     const goToLogin = (e) => {
-      loginTapped = true;
       e.stopPropagation();
       e.preventDefault();
+      if (loginTapped) return;
+      loginTapped = true;
       screen.remove();
       showScreen('login');
     };
-    loginBtn.addEventListener('click', goToLogin);
-    loginBtn.addEventListener('touchend', goToLogin);
+    loginBtn.addEventListener('click', goToLogin, { capture: true });
+    loginBtn.addEventListener('touchend', goToLogin, { capture: true });
   }
 
-  screen.addEventListener('click', onTap, { once: true });
-  screen.addEventListener('touchstart', onTap, { once: true });
+  // Tap anywhere else on screen → tutorial or auth
+  // Only 'click' here — touchstart fires BEFORE button's touchend on iOS, causing race condition
+  screen.addEventListener('click', goToAuth, { once: true });
 }
 
 // Run intro on load
