@@ -459,41 +459,43 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 </style>
 
 <!-- INTRO SCREEN -->
-<div id="intro-screen" style="position:fixed;inset:0;z-index:9999;background:#000;overflow:hidden;cursor:pointer;">
-  <canvas id="intro-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
-  <!-- Tap to start overlay -->
-  <div id="intro-tap" style="
-    position:absolute;inset:0;z-index:10;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    background:#000;
-  ">
-    <div style="
-      font-family:'Unbounded',sans-serif;
-      font-size:clamp(3rem,15vw,8rem);
-      font-weight:900;
-      color:#fff;
-      letter-spacing:-0.02em;
-      line-height:1;
-    ">LOMI</div>
-    <div id="tap-hint" style="
-      font-family:'Unbounded',sans-serif;
-      font-size:clamp(0.6rem,2vw,0.9rem);
-      color:rgba(255,255,255,0.4);
-      letter-spacing:0.3em;
-      margin-top:40px;
-      animation:tapPulse 1.5s ease-in-out infinite;
-    ">НАЖМИ ЧТОБЫ НАЧАТЬ</div>
-    <div id="intro-login-btn" style="
-      font-family:'Unbounded',sans-serif;
-      font-size:0.65rem;
-      color:rgba(255,255,255,0.22);
-      margin-top:28px;
-      cursor:pointer;
-      letter-spacing:0.1em;
-      pointer-events:auto;
-      padding:12px 24px;
+<div id="intro-screen" style="position:fixed;inset:0;z-index:9999;background:#0A0A12;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2rem;">
+  <!-- Logo -->
+  <div style="
+    font-family:'Unbounded',sans-serif;
+    font-size:clamp(4rem,20vw,9rem);
+    font-weight:900;
+    letter-spacing:-0.03em;
+    line-height:1;
+    background:linear-gradient(135deg,#fff 0%,#784BFF 50%,#00F5C4 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  ">LOMI</div>
+  <div style="
+    font-family:'DM Sans',sans-serif;
+    font-size:0.85rem;
+    color:rgba(255,255,255,0.35);
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    margin-top:12px;
+    margin-bottom:56px;
+  ">Стратегическая игра стен</div>
+
+  <!-- Buttons -->
+  <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;">
+    <button id="intro-new-btn" style="
+      font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;
+      letter-spacing:0.04em;text-transform:uppercase;
+      padding:1.1rem 2rem;border-radius:16px;border:none;cursor:pointer;
+      background:linear-gradient(135deg,#fff,#784BFF);color:#fff;
       -webkit-tap-highlight-color:transparent;
-    ">Уже есть аккаунт? Войти</div>
+    ">Первый раз</button>
+    <button id="intro-login-btn" style="
+      font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;
+      letter-spacing:0.04em;text-transform:uppercase;
+      padding:1rem 2rem;border-radius:16px;border:1.5px solid rgba(120,75,255,0.4);
+      cursor:pointer;background:transparent;color:#a78bfa;
+      -webkit-tap-highlight-color:transparent;
+    ">Уже есть аккаунт? Войти</button>
   </div>
 </div>
 
@@ -4653,15 +4655,15 @@ function tutNextMove() {
 // ── TUTORIAL STEPS ────────────────────────────────────────────────
 function tutStep0() {
   tutStep = 0; tutWaitingFor = null;
-  tutShow('🎯 Твоя цель — нижний ряд!', 'Ты белая фишка вверху. Дойди до нижнего края первым — и победишь!');
-  tutPulseGoalRow();
-  setTimeout(tutStep1, 5000);
+  tutShow('🎯 Твоя цель — нижний ряд!', 'Ты красная фишка вверху. Дойди до нижнего края первым — и победишь!');
+  tutHidePulse();
+  setTimeout(tutStep1, 4000);
 }
 
 function tutStep1() {
   tutStep = 1; tutWaitingFor = 'move';
-  tutShow('👆 Сделай первый ход', 'Нажми на подсвеченную клетку чтобы двигаться вниз к цели');
-  tutNextMove();
+  tutShow('👆 Сделай первый ход', 'Нажми на соседнюю клетку чтобы двигаться вниз к цели');
+  tutHidePulse();
 }
 
 function tutStep2() {
@@ -4672,8 +4674,8 @@ function tutStep2() {
 
 function tutStep3() {
   tutStep = 3; tutWaitingFor = 'move';
-  tutShow('🏃 Ещё один шаг вниз!', 'Продолжай двигаться к нижнему краю — подсвечена лучшая клетка');
-  tutNextMove();
+  tutShow('🏃 Ещё один шаг вниз!', 'Продолжай двигаться к нижнему краю');
+  tutHidePulse();
 }
 
 function tutStep4() {
@@ -4724,8 +4726,8 @@ function tutStep7() {
 
 function tutStep8() {
   tutStep = 8; tutWaitingFor = 'free';
-  tutShow('🏆 Финальный рывок к победе!', 'Ты знаешь всё! Двигайся к нижнему краю — подсказка всегда с тобой!');
-  tutNextMove();
+  tutShow('🏆 Финальный рывок к победе!', 'Ты знаешь всё! Двигайся к нижнему краю и побеждай!');
+  tutHidePulse();
 }
 
 // ── ХУКИ ─────────────────────────────────────────────────────────
@@ -4767,7 +4769,7 @@ function tutOnPlayerMove() {
     setTimeout(() => {
       if (!tutorialActive || winner) return;
       tutShow('🏃 Вперёд к победе!', 'Иди к нижнему краю — ты уже близко! Можешь ставить стены чтобы блокировать.');
-      tutNextMove();
+      tutHidePulse();
     }, 600);
   }
 }
@@ -6119,46 +6121,35 @@ function runIntro() {
     return;
   }
 
-  let loginTapped = false;
-
-  function goToAuth() {
-    if (loginTapped) return;
-    loginTapped = true;
-    screen.style.transition = 'opacity 0.4s ease';
-    screen.style.opacity = '0';
-    setTimeout(() => {
-      screen.remove();
-      // Check if has existing session
-      const hasToken = localStorage.getItem('lomi_token');
-      const hasGuest = localStorage.getItem('lomi_guest_name');
-      if (hasToken || hasGuest) {
-        loadUser();
-      } else if (isTutorialNeeded()) {
-        startTutorial();
-      } else {
-        showScreen('auth');
-      }
-    }, 400);
-  }
-
-  // Login button — go directly to login screen, block ALL further events
-  const loginBtn = document.getElementById('intro-login-btn');
-  if (loginBtn) {
-    const goToLogin = (e) => {
+  // "Первый раз" button → tutorial (or auth for new users)
+  const newBtn = document.getElementById('intro-new-btn');
+  if (newBtn) {
+    const goNew = (e) => {
       e.stopPropagation();
       e.preventDefault();
-      if (loginTapped) return;
-      loginTapped = true;
+      screen.remove();
+      if (isTutorialNeeded()) {
+        startTutorial();
+      } else {
+        showScreen('register');
+      }
+    };
+    newBtn.addEventListener('click', goNew, { capture: true });
+    newBtn.addEventListener('touchend', goNew, { capture: true });
+  }
+
+  // "Войти" button → login screen
+  const loginBtn = document.getElementById('intro-login-btn');
+  if (loginBtn) {
+    const goLogin = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
       screen.remove();
       showScreen('login');
     };
-    loginBtn.addEventListener('click', goToLogin, { capture: true });
-    loginBtn.addEventListener('touchend', goToLogin, { capture: true });
+    loginBtn.addEventListener('click', goLogin, { capture: true });
+    loginBtn.addEventListener('touchend', goLogin, { capture: true });
   }
-
-  // Tap anywhere else on screen → tutorial or auth
-  // Only 'click' here — touchstart fires BEFORE button's touchend on iOS, causing race condition
-  screen.addEventListener('click', goToAuth, { once: true });
 }
 
 // Run intro on load
