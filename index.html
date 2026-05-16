@@ -3754,7 +3754,7 @@ function loadAuthToken() {
   authToken = localStorage.getItem('lomi_token');
 }
 
-async function apiCall(method, path, body) {
+async async function apiCall(method, path, body) {
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
   const res = await fetch(SERVER_URL + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
@@ -6184,8 +6184,15 @@ function runIntro() {
   }
 }
 
-// Run intro on load
-window.addEventListener('load', runIntro);
+// Run intro on load — with DOMContentLoaded fallback for iOS Safari + SW cache
+let _introStarted = false;
+function _startIntro() {
+  if (_introStarted) return;
+  _introStarted = true;
+  runIntro();
+}
+document.addEventListener('DOMContentLoaded', _startIntro);
+window.addEventListener('load', _startIntro);
 
 
 
@@ -6511,6 +6518,13 @@ function openPuzzle(idOrDaily) {
   currentPuzzle = puzzleIsDaily ? getDailyPuzzle() : PUZZLES.find(p => p.id === idOrDaily);
   if (!currentPuzzle) return;
 
+  // Блокируем повторное прохождение уже решённых пазлов
+  const alreadyDone = solvedPuzzles.has(puzzleIsDaily ? 'daily' : currentPuzzle.id);
+  if (alreadyDone && !puzzleIsDaily) {
+    showToast('✅ Уже пройден', 'Этот пазл уже решён! Попробуй следующий.');
+    return;
+  }
+
   puzzleSolutionStep = 0;
   puzzleMoveCount = 0;
   puzzleHintUsed = false;
@@ -6822,14 +6836,14 @@ function renderPuzzleGrid(filter='all') {
     const solved = solvedPuzzles.has(pz.id);
     const maxReward = pz.stars*10+30;
     const card = document.createElement('div');
-    card.style.cssText = `background:${solved?'rgba(0,245,196,0.08)':'var(--surface2)'};border:1.5px solid ${solved?'rgba(0,245,196,0.35)':'rgba(255,255,255,0.07)'};border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;transition:transform 0.15s;`;
+    card.style.cssText = `background:${solved?'rgba(0,245,196,0.08)':'var(--surface2)'};border:1.5px solid ${solved?'rgba(0,245,196,0.35)':'rgba(255,255,255,0.07)'};border-radius:12px;padding:12px 8px;cursor:${solved?'default':'pointer'};text-align:center;transition:transform 0.15s;opacity:${solved?'0.75':'1'};`;
     card.innerHTML = `
       <div style="font-size:1.3rem">${solved?'✅':'🧩'}</div>
       <div style="font-family:'Unbounded',sans-serif;font-size:0.58rem;font-weight:700;margin:4px 0;line-height:1.3">${pz.title}</div>
       <div style="font-size:0.6rem">${'⭐'.repeat(pz.stars)}</div>
-      <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">${solved ? '✓ Пройден · повтор' : pz.solution.length + ' ' + (pz.solution.length===1?'ход':'хода') + ' · до +' + maxReward + '🧩'}</div>`;
-    card.onclick = () => openPuzzle(pz.id);
-    card.onmouseenter = ()=>card.style.transform='scale(1.04)';
+      <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">${solved ? '✓ Пройден' : pz.solution.length + ' ' + (pz.solution.length===1?'ход':'хода') + ' · до +' + maxReward + '🧩'}</div>`;
+    card.onclick = solved ? () => showToast('✅ Уже пройден', 'Этот пазл решён! Попробуй следующий.') : () => openPuzzle(pz.id);
+    card.onmouseenter = ()=>{ if (!solved) card.style.transform='scale(1.04)'; };
     card.onmouseleave = ()=>card.style.transform='scale(1)';
     grid.appendChild(card);
   });
