@@ -2882,6 +2882,13 @@ function spinReel(reelEl, items, finalIdx, extraCruise, onDone) {
 }
 
 function openDailyReward() {
+  // Если таймер идёт — не открывать попап, просто показать тост
+  if (!canClaimDaily()) {
+    const timeLeft = getTimeUntilNextClaim();
+    showToast('⏳ Уже получено', `Следующий бонус через ${timeLeft}`);
+    return;
+  }
+
   slotResult = null;
   slotRunning = false;
   document.getElementById('daily-result').style.display = 'none';
@@ -2892,11 +2899,6 @@ function openDailyReward() {
   for (let i = 0; i < 3; i++) {
     const reel = document.getElementById(`reel${i}`);
     if (reel) buildReel(reel, SLOT_ITEMS);
-  }
-
-  if (!canClaimDaily()) {
-    document.getElementById('daily-day-label').textContent = `Следующий бонус через ${getTimeUntilNextClaim()}`;
-    return;
   }
 
   document.getElementById('daily-day-label').textContent = 'Крутится... 🎰';
@@ -2985,7 +2987,7 @@ function closeDailyPopup() {
   slotRunning = false; slotResult = null;
 }
 
-function claimDailyReward() {
+async function claimDailyReward() {
   const result = slotResult;
   if (!result) return;
 
@@ -2995,7 +2997,7 @@ function claimDailyReward() {
   slotRunning = false;
   slotResult = null;
 
-  // Apply reward
+  // Apply reward locally FIRST
   let earned = '';
   if (result.type === 'coins') {
     totalPoints += result.amount;
@@ -3017,11 +3019,23 @@ function claimDailyReward() {
     }
   }
 
-  // Save
+  // Snapshot current values BEFORE async save (prevents race with background /profile sync)
+  const snapCoins = totalPoints;
+  const snapRating = ratingPoints;
+
+  // Save daily state
   dailyState.lastClaim = Date.now();
   saveDailyState();
-  saveProgressToServer();
   updateDailyBox();
+
+  // Save to server and wait — then re-assert local values in case background sync overwrote them
+  try {
+    await saveProgressToServer();
+  } catch(e) {}
+
+  // Re-assert: if background /profile sync ran during await and overwrote with old values, fix it
+  if (totalPoints < snapCoins) { totalPoints = snapCoins; savePoints(); updatePointsUI(); }
+  if (ratingPoints < snapRating) { ratingPoints = snapRating; savePoints(); updateRatingUI(); }
 
   // Show notification via toast element directly
   const toast = document.getElementById('toast');
@@ -3909,10 +3923,11 @@ function playAsGuest() {
 
 async function saveProgressToServer() {
   if (isGuest || !authToken) return;
+  window._savingProgress = true;
   try {
     await apiCall('POST', '/progress', {
-      points: ratingPoints,  // рейтинговые очки
-      coins: totalPoints,    // монеты для магазина
+      points: ratingPoints,
+      coins: totalPoints,
       stats: achStats,
       unlockedAch: [...unlockedAch],
       equippedPiece,
@@ -3920,6 +3935,7 @@ async function saveProgressToServer() {
       ownedItems: [...ownedItems],
     });
   } catch(e) { console.log('Save to server failed:', e); }
+  window._savingProgress = false;
 }
 
 function logout() {
@@ -3969,7 +3985,7 @@ function loadUser() {
       showScreen('menu');
       // Sync from server in background — don't block UI
       apiCall('GET', '/profile').then(data => {
-        if (data && !data.error) {
+        if (data && !data.error && !window._savingProgress) {
           // Silently update data without re-showing welcome or menu
           ratingPoints = data.points || ratingPoints;
           totalPoints  = data.coins  || totalPoints;
@@ -4858,7 +4874,21 @@ function afterTutorialRegister() {
       clearInterval(iv);
       msg.remove();
       showScreen('online');
-      setTimeout(startSearch, 300);
+
+      // Скрыть табы и кнопку Назад — новичок не должен никуда уйти
+      const tabs = document.querySelector('.online-tabs');
+      const backBtn = document.getElementById('online-back-btn');
+      if (tabs) tabs.style.display = 'none';
+      if (backBtn) backBtn.style.display = 'none';
+
+      setTimeout(() => {
+        startSearch();
+        // Восстановить табы и кнопку после того как матч найден (бот придёт за 5с)
+        setTimeout(() => {
+          if (tabs) tabs.style.display = '';
+          if (backBtn) backBtn.style.display = '';
+        }, 6000);
+      }, 300);
     }
   }, 1000);
 }
