@@ -3026,23 +3026,25 @@ async function claimDailyReward() {
     }
   }
 
-  // Snapshot current values BEFORE async save (prevents race with background /profile sync)
-  const snapCoins = totalPoints;
-  const snapRating = ratingPoints;
-
-  // Save daily state
+  // Save daily state IMMEDIATELY
   dailyState.lastClaim = Date.now();
   saveDailyState();
   updateDailyBox();
 
-  // Save to server and wait — then re-assert local values in case background sync overwrote them
-  try {
-    await saveProgressToServer();
-  } catch(e) {}
+  // Snapshot AFTER applying reward
+  const snapCoins = totalPoints;
+  const snapRating = ratingPoints;
 
-  // Re-assert: if background /profile sync ran during await and overwrote with old values, fix it
-  if (totalPoints < snapCoins) { totalPoints = snapCoins; savePoints(); updatePointsUI(); }
-  if (ratingPoints < snapRating) { ratingPoints = snapRating; savePoints(); updateRatingUI(); }
+  // Save to server immediately — don't wait
+  saveProgressToServer().catch(() => {});
+
+  // Re-assert after 3s in case background sync overwrote
+  setTimeout(() => {
+    let changed = false;
+    if (totalPoints < snapCoins) { totalPoints = snapCoins; savePoints(); updatePointsUI(); changed = true; }
+    if (ratingPoints < snapRating) { ratingPoints = snapRating; savePoints(); updateRatingUI(); changed = true; }
+    if (changed) saveProgressToServer().catch(() => {});
+  }, 3000);
 
   // Show notification via toast element directly
   const toast = document.getElementById('toast');
@@ -3891,6 +3893,11 @@ async function loginSuccess(username, userData) {
     if (userData.equippedPiece) equippedPiece = userData.equippedPiece;
     if (userData.equippedWall)  equippedWall  = userData.equippedWall;
     if (userData.ownedItems)    ownedItems    = new Set(userData.ownedItems);
+    // Restore daily claim from server
+    if (userData.lastDailyClaim && userData.lastDailyClaim > dailyState.lastClaim) {
+      dailyState.lastClaim = userData.lastDailyClaim;
+      saveDailyState();
+    }
     savePoints(); saveAchievements(); saveShop();
     updatePointsUI(); updateRatingUI();
 
@@ -3994,18 +4001,22 @@ function loadUser() {
       // Sync from server in background — don't block UI
       apiCall('GET', '/profile').then(data => {
         if (data && !data.error && !window._savingProgress) {
-          // Silently update data without re-showing welcome or menu
-          ratingPoints = data.points || ratingPoints;
-          totalPoints  = data.coins  || totalPoints;
+          // Only sync if server has MORE data (don't overwrite local earned rewards)
+          if (data.points !== undefined) ratingPoints = Math.max(ratingPoints, data.points);
+          if (data.coins  !== undefined) totalPoints  = Math.max(totalPoints,  data.coins);
           if (data.stats)       achStats    = { ...achStats, ...data.stats };
           if (data.unlockedAch) unlockedAch = new Set(data.unlockedAch);
           if (data.equippedPiece) equippedPiece = data.equippedPiece;
           if (data.equippedWall)  equippedWall  = data.equippedWall;
-          if (data.ownedItems)    ownedItems    = new Set(data.ownedItems);
+          if (data.ownedItems) {
+            // Merge owned items — never remove locally owned
+            data.ownedItems.forEach(id => ownedItems.add(id));
+          }
           // Restore daily claim time from server
           if (data.lastDailyClaim && data.lastDailyClaim > dailyState.lastClaim) {
             dailyState.lastClaim = data.lastDailyClaim;
             saveDailyState();
+            updateDailyBox();
           }
           savePoints(); saveShop();
           updatePointsUI(); updateRatingUI();
