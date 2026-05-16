@@ -6735,7 +6735,7 @@ function highlightPuzzleWall(r, c, dir) {
   el.style.border = '2px solid #a78bfa';
   if (dir === 'h') {
     el.style.left   = (rect.left + c*cs + gap/2) + 'px';
-    el.style.top    = (rect.top  + r*cs - gap*0.6) + 'px';
+    el.style.top    = (rect.top  + (r+1)*cs - gap*0.6) + 'px';
     el.style.width  = (cs*2-gap) + 'px';
     el.style.height = (gap*1.2) + 'px';
   } else {

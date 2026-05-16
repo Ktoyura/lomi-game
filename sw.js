@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lomi-v3';
+const CACHE_NAME = 'lomi-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -12,23 +12,22 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// Activate — clean old caches
+// Activate — clean ALL old caches immediately
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch — serve from cache when offline
+// Fetch — network-first for HTML, cache-first for everything else
 self.addEventListener('fetch', e => {
-  // Only cache GET requests for the game itself
   if (e.request.method !== 'GET') return;
 
-  // API and socket requests — always go to network
   const url = new URL(e.request.url);
+
+  // API and socket requests — always go to network, no cache
   if (url.hostname.includes('railway') ||
       url.hostname.includes('socket.io') ||
       url.hostname.includes('yandex') ||
@@ -37,26 +36,43 @@ self.addEventListener('fetch', e => {
       url.pathname.includes('/profile') ||
       url.pathname.includes('/leaderboard') ||
       url.pathname.includes('/progress')) {
-    return; // let network handle it
+    return;
   }
 
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        // Cache successful responses for game files
-        if (response.ok && (
-          e.request.url.includes('index.html') ||
-          e.request.url === location.origin + '/'
-        )) {
+  // index.html и корень — NETWORK FIRST: всегда пробуем сервер,
+  // кэш только если сеть недоступна (офлайн-режим)
+  const isHTML = url.pathname === '/' ||
+                 url.pathname === '/index.html' ||
+                 url.pathname.endsWith('.html');
+
+  if (isHTML) {
+    e.respondWith(
+      fetch(e.request).then(response => {
+        if (response.ok) {
+          // Обновляем кэш свежей версией
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }
         return response;
       }).catch(() => {
-        // Offline fallback — return cached index
-        return caches.match('/index.html');
-      });
+        // Офлайн — отдаём из кэша
+        return caches.match(e.request) || caches.match('/index.html');
+      })
+    );
+    return;
+  }
+
+  // Все остальные ресурсы (шрифты, иконки) — cache-first
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match('/index.html'));
     })
   );
 });
