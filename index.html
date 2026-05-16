@@ -6196,6 +6196,7 @@ function updatePuzzleUI() {
 // { type:'move', r, c } or { type:'wall', r, c, dir }
 // botMoves: bot responses after each player move
 const PUZZLES = [
+  // ⭐
   { id:1, stars:1, title:'Финишный рывок',
     task:'Сделай 1 ход и победи! Ты в одном шаге от цели.',
     board:{ p0:[7,4], p1:[0,4], walls:[], wallsLeft:[10,10] },
@@ -6212,12 +6213,13 @@ const PUZZLES = [
     ], botMoves:[{type:'move', r:1, c:4}] },
 
   { id:3, stars:1, title:'Обход стены',
-    task:'Стена слева — обойди справа и финишируй!',
-    board:{ p0:[7,3], p1:[0,5], walls:[{r:7,c:3,dir:'h'}], wallsLeft:[8,8] },
+    task:'Стена закрывает путь вниз — обойди правее и финишируй!',
+    board:{ p0:[7,2], p1:[0,5], walls:[{r:7,c:2,dir:'h'}], wallsLeft:[8,8] },
     solution:[
+      {type:'move', r:7, c:3},
       {type:'move', r:7, c:4},
       {type:'move', r:8, c:4}
-    ], botMoves:[{type:'move', r:1, c:5}] },
+    ], botMoves:[{type:'move', r:1, c:5},{type:'move', r:2, c:5}] },
 
   { id:4, stars:1, title:'Не дай обогнать',
     task:'Поставь горизонтальную стену перед соперником, потом иди к победе!',
@@ -6226,16 +6228,17 @@ const PUZZLES = [
       {type:'wall', r:3, c:3, dir:'h'},
       {type:'move', r:7, c:4},
       {type:'move', r:8, c:4}
-    ], botMoves:[{type:'move', r:2, c:3}, {type:'move', r:3, c:3}] },
+    ], botMoves:[{type:'move', r:2, c:3},{type:'move', r:2, c:4}] },
 
   { id:5, stars:1, title:'Боковой путь',
-    task:'Соперник перекрыл центр — обойди сбоку!',
+    task:'Центр перекрыт стенами — найди свободный проход сбоку!',
     board:{ p0:[6,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'}], wallsLeft:[8,8] },
     solution:[
-      {type:'move', r:6, c:5},
-      {type:'move', r:7, c:5},
-      {type:'move', r:8, c:5}
-    ], botMoves:[{type:'move', r:1, c:4}, {type:'move', r:2, c:4}] },
+      {type:'move', r:6, c:3},
+      {type:'move', r:6, c:2},
+      {type:'move', r:7, c:2},
+      {type:'move', r:8, c:2}
+    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4}] },
 
   // ⭐⭐
   { id:6, stars:2, title:'Блокада',
@@ -6259,15 +6262,14 @@ const PUZZLES = [
     ], botMoves:[{type:'move', r:2, c:5},{type:'move', r:1, c:5},{type:'move', r:0, c:5}] },
 
   { id:8, stars:2, title:'Лабиринт',
-    task:'Найди правильный путь через стены!',
+    task:'Стены справа — найди открытый проход к финишу!',
     board:{ p0:[7,0], p1:[0,8], walls:[{r:7,c:1,dir:'h'},{r:5,c:3,dir:'h'}], wallsLeft:[5,5] },
     solution:[
-      {type:'move', r:7, c:1},
-      {type:'move', r:8, c:1}
-    ], botMoves:[{type:'move', r:1, c:8}] },
+      {type:'move', r:8, c:0}
+    ], botMoves:[] },
 
   { id:9, stars:2, title:'Двойной барьер',
-    task:'Закрой соперника с двух сторон!',
+    task:'Закрой соперника стеной и рви к финишу!',
     board:{ p0:[4,4], p1:[4,7], walls:[], wallsLeft:[5,3] },
     solution:[
       {type:'wall', r:4, c:5, dir:'v'},
@@ -6278,19 +6280,20 @@ const PUZZLES = [
     ], botMoves:[{type:'move', r:3, c:7},{type:'move', r:2, c:7},{type:'move', r:1, c:7},{type:'move', r:0, c:7}] },
 
   { id:10, stars:2, title:'Быстрый финиш',
-    task:'Соперник далеко — рви к финишу!',
+    task:'Стены перекрыли центр — найди путь через левый фланг!',
     board:{ p0:[5,4], p1:[0,4], walls:[{r:6,c:3,dir:'h'},{r:6,c:5,dir:'h'}], wallsLeft:[5,5] },
     solution:[
-      {type:'move', r:5, c:5},
-      {type:'move', r:6, c:5},
-      {type:'move', r:7, c:5},
-      {type:'move', r:8, c:5}
-    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4}] },
+      {type:'move', r:5, c:3},
+      {type:'move', r:5, c:2},
+      {type:'move', r:6, c:2},
+      {type:'move', r:7, c:2},
+      {type:'move', r:8, c:2}
+    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4},{type:'move', r:4, c:4}] },
 
   // ⭐⭐⭐
   { id:11, stars:3, title:'Стена и рывок',
     task:'Сначала поставь стену, потом финишируй за 3 хода!',
-    board:{ p0:[5,4], p1:[3,4], walls:[{r:6,c:3,dir:'h'}], wallsLeft:[4,4] },
+    board:{ p0:[5,4], p1:[3,4], walls:[{r:6,c:1,dir:'h'}], wallsLeft:[4,4] },
     solution:[
       {type:'wall', r:4, c:3, dir:'h'},
       {type:'move', r:6, c:4},
@@ -6310,23 +6313,23 @@ const PUZZLES = [
     ], botMoves:[{type:'move', r:2, c:3},{type:'move', r:1, c:3},{type:'move', r:1, c:4},{type:'move', r:0, c:4}] },
 
   { id:13, stars:3, title:'Контрудар',
-    task:'Соперник близко к цели — останови его и победи!',
+    task:'Соперник близко к твоей линии — останови его и победи!',
     board:{ p0:[4,4], p1:[6,4], walls:[], wallsLeft:[5,2] },
     solution:[
-      {type:'wall', r:7, c:3, dir:'h'},
+      {type:'wall', r:5, c:3, dir:'v'},
       {type:'move', r:5, c:4},
       {type:'move', r:6, c:4},
       {type:'move', r:7, c:4},
       {type:'move', r:8, c:4}
-    ], botMoves:[{type:'move', r:6, c:3},{type:'move', r:5, c:3},{type:'move', r:4, c:3},{type:'move', r:3, c:3}] },
+    ], botMoves:[{type:'move', r:5, c:4},{type:'move', r:4, c:4},{type:'move', r:3, c:4},{type:'move', r:2, c:4}] },
 
   { id:14, stars:3, title:'Зигзаг',
     task:'Прямой путь закрыт — найди зигзаг к победе!',
     board:{ p0:[6,2], p1:[0,6], walls:[{r:7,c:2,dir:'h'},{r:5,c:4,dir:'h'}], wallsLeft:[4,4] },
     solution:[
-      {type:'move', r:6, c:3},
-      {type:'move', r:7, c:3},
-      {type:'move', r:8, c:3}
+      {type:'move', r:6, c:1},
+      {type:'move', r:7, c:1},
+      {type:'move', r:8, c:1}
     ], botMoves:[{type:'move', r:1, c:6},{type:'move', r:2, c:6}] },
 
   { id:15, stars:3, title:'Точный удар',
@@ -6341,15 +6344,15 @@ const PUZZLES = [
 
   // ⭐⭐⭐⭐
   { id:16, stars:4, title:'Крепость',
-    task:'Прорвись через укреплённую оборону!',
-    board:{ p0:[7,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:4,c:3,dir:'h'},{r:4,c:5,dir:'h'}], wallsLeft:[3,3] },
+    task:'Прорвись через укреплённую оборону — обойди стены сбоку!',
+    board:{ p0:[5,4], p1:[0,6], walls:[{r:6,c:3,dir:'h'},{r:6,c:5,dir:'h'}], wallsLeft:[3,3] },
     solution:[
-      {type:'move', r:7, c:5},
-      {type:'move', r:6, c:5},
-      {type:'move', r:5, c:5},
-      {type:'move', r:4, c:5},
-      {type:'move', r:3, c:5}
-    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4},{type:'move', r:4, c:4}] },
+      {type:'move', r:5, c:3},
+      {type:'move', r:5, c:2},
+      {type:'move', r:6, c:2},
+      {type:'move', r:7, c:2},
+      {type:'move', r:8, c:2}
+    ], botMoves:[{type:'move', r:1, c:6},{type:'move', r:2, c:6},{type:'move', r:3, c:6},{type:'move', r:4, c:6}] },
 
   { id:17, stars:4, title:'Цугцванг',
     task:'Любой ход соперника проигрышный — поставь его в тупик!',
@@ -6382,24 +6385,25 @@ const PUZZLES = [
     ], botMoves:[{type:'move', r:2, c:3},{type:'move', r:2, c:4},{type:'move', r:1, c:4}] },
 
   { id:20, stars:4, title:'Мастер стен',
-    task:'Правильная комбинация двух стен открывает путь к победе!',
+    task:'Правильная стена открывает единственный путь к победе!',
     board:{ p0:[7,4], p1:[1,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'}], wallsLeft:[2,2] },
     solution:[
       {type:'wall', r:2, c:3, dir:'h'},
-      {type:'move', r:7, c:5},
-      {type:'move', r:8, c:5}
+      {type:'move', r:7, c:3},
+      {type:'move', r:7, c:2},
+      {type:'move', r:8, c:2}
     ], botMoves:[{type:'move', r:1, c:5},{type:'move', r:0, c:5}] },
 
   // ⭐⭐⭐⭐⭐
   { id:21, stars:5, title:'Гроссмейстер',
     task:'Только один маршрут к победе — найди его среди стен!',
-    board:{ p0:[8,0], p1:[0,8], walls:[{r:7,c:1,dir:'v'},{r:5,c:3,dir:'h'},{r:3,c:5,dir:'v'},{r:6,c:2,dir:'h'}], wallsLeft:[2,2] },
+    board:{ p0:[3,1], p1:[0,8], walls:[{r:4,c:2,dir:'h'},{r:6,c:2,dir:'h'},{r:7,c:2,dir:'h'}], wallsLeft:[2,2] },
     solution:[
-      {type:'move', r:8, c:1},
-      {type:'move', r:7, c:1},
-      {type:'move', r:6, c:1},
+      {type:'move', r:4, c:1},
       {type:'move', r:5, c:1},
-      {type:'move', r:4, c:1}
+      {type:'move', r:6, c:1},
+      {type:'move', r:7, c:1},
+      {type:'move', r:8, c:1}
     ], botMoves:[{type:'move', r:1, c:8},{type:'move', r:2, c:8},{type:'move', r:3, c:8},{type:'move', r:4, c:8}] },
 
   { id:22, stars:5, title:'Эндшпиль',
@@ -6412,35 +6416,41 @@ const PUZZLES = [
 
   { id:23, stars:5, title:'Невозможное возможно',
     task:'Все пути кажутся закрытыми — найди единственный выход!',
-    board:{ p0:[8,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'},{r:5,c:2,dir:'h'},{r:5,c:6,dir:'h'}], wallsLeft:[1,1] },
+    board:{ p0:[4,4], p1:[0,4], walls:[{r:7,c:3,dir:'h'},{r:7,c:5,dir:'h'}], wallsLeft:[1,1] },
     solution:[
-      {type:'move', r:8, c:5},
-      {type:'move', r:7, c:5},
-      {type:'move', r:6, c:5},
-      {type:'move', r:5, c:5},
-      {type:'move', r:4, c:5}
-    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4},{type:'move', r:4, c:4}] },
+      {type:'move', r:5, c:4},
+      {type:'move', r:6, c:4},
+      {type:'move', r:7, c:4},
+      {type:'move', r:7, c:3},
+      {type:'move', r:7, c:2},
+      {type:'move', r:8, c:2}
+    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4},{type:'move', r:4, c:4},{type:'move', r:5, c:4}] },
 
   { id:24, stars:5, title:'Легенда',
-    task:'Финальное испытание. Только для лучших.',
-    board:{ p0:[8,4], p1:[0,4], walls:[{r:6,c:3,dir:'v'},{r:6,c:5,dir:'v'},{r:4,c:2,dir:'h'},{r:4,c:6,dir:'h'}], wallsLeft:[1,1] },
+    task:'Финальное испытание — прорвись сквозь двойную блокаду!',
+    board:{ p0:[3,4], p1:[0,7], walls:[{r:5,c:3,dir:'v'},{r:5,c:5,dir:'v'},{r:7,c:3,dir:'h'}], wallsLeft:[1,1] },
     solution:[
-      {type:'wall', r:5, c:4, dir:'h'},
-      {type:'move', r:8, c:3},
-      {type:'move', r:7, c:3},
-      {type:'move', r:6, c:3}
-    ], botMoves:[{type:'move', r:1, c:4},{type:'move', r:2, c:4},{type:'move', r:3, c:4}] },
+      {type:'wall', r:2, c:3, dir:'h'},
+      {type:'move', r:4, c:4},
+      {type:'move', r:5, c:4},
+      {type:'move', r:6, c:4},
+      {type:'move', r:7, c:4},
+      {type:'move', r:7, c:5},
+      {type:'move', r:8, c:5}
+    ], botMoves:[{type:'move', r:1, c:7},{type:'move', r:2, c:7},{type:'move', r:3, c:7},{type:'move', r:4, c:7},{type:'move', r:5, c:7},{type:'move', r:6, c:7}] },
 
   { id:25, stars:5, title:'Чемпион',
     task:'Идеальная комбинация. Ни одной ошибки.',
-    board:{ p0:[7,4], p1:[1,4], walls:[{r:6,c:3,dir:'h'},{r:6,c:5,dir:'h'},{r:3,c:3,dir:'h'},{r:3,c:5,dir:'h'}], wallsLeft:[1,1] },
+    board:{ p0:[4,4], p1:[2,6], walls:[{r:5,c:3,dir:'h'},{r:5,c:5,dir:'h'},{r:7,c:3,dir:'h'}], wallsLeft:[1,1] },
     solution:[
-      {type:'move', r:7, c:5},
-      {type:'move', r:6, c:5},
-      {type:'move', r:5, c:5},
-      {type:'move', r:4, c:5},
-      {type:'move', r:3, c:5}
-    ], botMoves:[{type:'move', r:1, c:5},{type:'move', r:2, c:5},{type:'move', r:3, c:5},{type:'move', r:4, c:5}] },
+      {type:'wall', r:3, c:5, dir:'h'},
+      {type:'move', r:4, c:3},
+      {type:'move', r:4, c:2},
+      {type:'move', r:5, c:2},
+      {type:'move', r:6, c:2},
+      {type:'move', r:7, c:2},
+      {type:'move', r:8, c:2}
+    ], botMoves:[{type:'move', r:2, c:5},{type:'move', r:1, c:5},{type:'move', r:0, c:5},{type:'move', r:0, c:4},{type:'move', r:0, c:3},{type:'move', r:0, c:2}] },
 ];
 
 const DAILY_IDS = [3,7,12,18,24,5,10,15,20,25,1,6,11,16,21,4,9,14,19,23,2,8,13,17,22];
