@@ -2272,6 +2272,7 @@ function setOnlineStatus(panel, html, cls) {
 // ── MATCHMAKING ──────────────────────────────────────────────────
 let searchInterval = null;
 let searchSeconds = 0;
+let searchCancelled = false;
 
 function startSearch() {
   if (!socket) initSocket();
@@ -2294,16 +2295,36 @@ function startSearch() {
   };
   socket.emit('find_match', { username: currentUser || 'Гость', stats });
 
+  // Client-side 5s timeout — if no real player found, launch bot substitute
+  let matchFound = false;
+  searchCancelled = false;
+  const botFallbackTimer = setTimeout(() => {
+    if (matchFound || searchCancelled) return;
+    matchFound = true;
+    clearInterval(searchInterval);
+    if (socket) socket.emit('cancel_search');
+    document.getElementById('search-active').style.display = 'none';
+    document.getElementById('search-idle').style.display = 'flex';
+    const botNames = ['BlockerX','WallRunner','GridSniper','FastBlock','QuickWall','CenterBot'];
+    const botName = botNames[Math.floor(Math.random() * botNames.length)];
+    const botStats = { points: Math.floor(Math.random()*500)+100, wins: Math.floor(Math.random()*30)+5, games: Math.floor(Math.random()*60)+10 };
+    showOpponentCard(botName, botStats, true);
+    setTimeout(() => startBotSubstitute(botName), 1500);
+  }, 5000);
+
   socket.once('match_found', (data) => {
+    if (matchFound) return; // bot already launched
+    matchFound = true;
+    clearTimeout(botFallbackTimer);
     clearInterval(searchInterval);
     document.getElementById('search-active').style.display = 'none';
     document.getElementById('search-idle').style.display = 'flex';
 
     if (data.isBot) {
-      // Bot substitute — disconnect socket immediately, play vs AI
+      // Bot substitute from server
       showOpponentCard(data.opponentName, data.opponentStats, true);
       if (socket) { socket.disconnect(); socket = null; }
-      setTimeout(() => startBotSubstitute(data.opponentName), 2000);
+      setTimeout(() => startBotSubstitute(data.opponentName), 1500);
     } else {
       showOpponentCard(data.opponentName, data.opponentStats, false);
       myPlayerIndex = data.playerIndex;
@@ -2315,6 +2336,7 @@ function startSearch() {
 }
 
 function cancelSearch() {
+  searchCancelled = true;
   if (socket) socket.emit('cancel_search');
   clearInterval(searchInterval);
   document.getElementById('search-active').style.display = 'none';
