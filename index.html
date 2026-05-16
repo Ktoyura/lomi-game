@@ -497,7 +497,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       padding:1rem 2rem;border-radius:16px;border:1.5px solid rgba(120,75,255,0.4);
       cursor:pointer;background:transparent;color:#a78bfa;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    ">Уже есть аккаунт? Войти</button>
+    ">Войти</button>
   </div>
 </div>
 
@@ -2925,12 +2925,14 @@ function startSlotSpin() {
   } else {
     winIdx = SLOT_ITEMS.findIndex(i => i.type === 'skin');
     // Pick a random unowned skin
-    const allSkins = SHOP_ITEMS ? SHOP_ITEMS.filter(s => (s.type === 'piece' || s.type === 'flag') && !ownedItems.has(s.id)) : [];
+    const allSkins = SHOP_ITEMS ? SHOP_ITEMS.filter(s => (s.type === 'piece' || s.type === 'flag' || s.type === 'wall') && !ownedItems.has(s.id)) : [];
     const randomSkin = allSkins.length > 0
       ? allSkins[Math.floor(Math.random() * allSkins.length)]
       : null;
+    // Store chosen skin in slotResult directly
+    window._pendingSkin = randomSkin;
     if (randomSkin) {
-      SLOT_ITEMS[winIdx] = { ...SLOT_ITEMS[winIdx], _skin: randomSkin, label: randomSkin.name, icon: randomSkin.emoji || '🎰' };
+      SLOT_ITEMS[winIdx] = { ...SLOT_ITEMS[winIdx], _skin: randomSkin, label: randomSkin.name, icon: '🎰' };
     }
   }
   slotResult = SLOT_ITEMS[winIdx];
@@ -3012,12 +3014,15 @@ async function claimDailyReward() {
     savePoints(); saveAchievements(); updateRatingUI();
     earned = `+${result.amount} 🏆`;
   } else {
-    if (result._skin) {
-      ownedItems.add(result._skin.id); saveShop();
-      earned = `Скин: ${result._skin.name}`;
+    const skinToAdd = result._skin || window._pendingSkin;
+    if (skinToAdd) {
+      ownedItems.add(skinToAdd.id);
+      saveShop();
+      earned = `🎰 Скин: ${skinToAdd.name}`;
+      window._pendingSkin = null;
     } else {
       totalPoints += 500; savePoints(); updatePointsUI();
-      earned = '+500 🪙';
+      earned = '+500 🪙 (все скины куплены)';
     }
   }
 
@@ -3935,6 +3940,7 @@ async function saveProgressToServer() {
       equippedPiece,
       equippedWall,
       ownedItems: [...ownedItems],
+      lastDailyClaim: dailyState.lastClaim,
     });
   } catch(e) { console.log('Save to server failed:', e); }
   window._savingProgress = false;
@@ -3996,6 +4002,11 @@ function loadUser() {
           if (data.equippedPiece) equippedPiece = data.equippedPiece;
           if (data.equippedWall)  equippedWall  = data.equippedWall;
           if (data.ownedItems)    ownedItems    = new Set(data.ownedItems);
+          // Restore daily claim time from server
+          if (data.lastDailyClaim && data.lastDailyClaim > dailyState.lastClaim) {
+            dailyState.lastClaim = data.lastDailyClaim;
+            saveDailyState();
+          }
           savePoints(); saveShop();
           updatePointsUI(); updateRatingUI();
         }

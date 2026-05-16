@@ -1,0 +1,375 @@
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] }
+});
+
+// CORS for HTTP routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
+app.use(express.json());
+
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'lomi_secret_key_2026';
+const MONGO_URI = process.env.MONGO_URI || '';
+
+// ── MongoDB ───────────────────────────────────────────────────────
+mongoose.connect(MONGO_URI).then(() => console.log('MongoDB connected')).catch(e => console.error('MongoDB error:', e));
+
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, minlength: 2, maxlength: 16 },
+  password: { type: String, required: true },
+  secretQuestion: { type: String, default: '' },
+  secretAnswer:   { type: String, default: '' },
+  points:   { type: Number, default: 0 },
+  coins:    { type: Number, default: 0 },
+  stats: {
+    totalGames: { type: Number, default: 0 },
+    totalWins:  { type: Number, default: 0 },
+    winStreak:  { type: Number, default: 0 },
+    bestStreak: { type: Number, default: 0 },
+    botWins:    { type: Number, default: 0 },
+    hardBotWins:{ type: Number, default: 0 },
+    totalWalls: { type: Number, default: 0 },
+  },
+  unlockedAch: { type: [String], default: [] },
+  equippedPiece: { type: String, default: 'default' },
+  equippedWall:  { type: String, default: 'default' },
+  ownedItems:    { type: [String], default: [] },
+  lastDailyClaim: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const User = mongoose.model('User', userSchema);
+
+// ── Auth middleware ───────────────────────────────────────────────
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Нет токена' });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Токен недействителен' });
+  }
+}
+
+// ── Auth routes ───────────────────────────────────────────────────
+// Register
+app.post('/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Заполни все поля' });
+    if (username.length < 2 || username.length > 16) return res.status(400).json({ error: 'Имя: 2–16 символов' });
+    if (!/^[a-zA-Zа-яА-ЯёЁ0-9_]+$/.test(username)) return res.status(400).json({ error: 'Только буквы, цифры и _' });
+    if (password.length < 4) return res.status(400).json({ error: 'Пароль минимум 4 символа' });
+
+    const exists = await User.findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } });
+    if (exists) return res.status(409).json({ error: 'Имя уже занято' });
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, password: hash });
+    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, username: user.username, user: sanitize(user) });
+  } catch (e) {
+    console.error('Register error:', e.message);
+    res.status(500).json({ error: 'Ошибка сервера: ' + e.message });
+  }
+});
+
+// Login
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } });
+    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ error: 'Неверный пароль' });
+    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, username: user.username, user: sanitize(user) });
+  } catch (e) {
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Get profile
+app.get('/profile', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Не найден' });
+    res.json(sanitize(user));
+  } catch {
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Save progress
+app.post('/progress', authMiddleware, async (req, res) => {
+  try {
+    const { points, coins, stats, unlockedAch, equippedPiece, equippedWall, ownedItems, lastDailyClaim } = req.body;
+    await User.findByIdAndUpdate(req.user.id, {
+      $set: { points, coins, stats, unlockedAch, equippedPiece, equippedWall, ownedItems, lastDailyClaim }
+    });
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Ошибка сохранения' });
+  }
+});
+
+// Leaderboard (accounts only — guests submit via /guest-score)
+app.get('/leaderboard', async (req, res) => {
+  try {
+    const top = await User.find({}, 'username points stats.totalWins stats.totalGames')
+      .sort({ points: -1 }).limit(50);
+    res.json(top.map(u => ({
+      username: u.username,
+      points: u.points,
+      wins: u.stats?.totalWins || 0,
+      games: u.stats?.totalGames || 0,
+      isGuest: false,
+    })));
+  } catch(e) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
+// Guest score submission (no auth, just name+points)
+const guestScores = {}; // in-memory: username -> {points, wins, games, updatedAt}
+
+app.post('/guest-score', (req, res) => {
+  try {
+    const { username, points, wins, games } = req.body;
+    if (!username || points === undefined) return res.status(400).json({ error: 'Bad data' });
+    guestScores[username] = { username, points, wins: wins||0, games: games||0, isGuest: true, updatedAt: Date.now() };
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
+// Combined leaderboard (accounts + guests)
+app.get('/leaderboard/all', async (req, res) => {
+  try {
+    const accounts = await User.find({}, 'username points stats.totalWins stats.totalGames')
+      .sort({ points: -1 }).limit(100);
+
+    const accountList = accounts.map(u => ({
+      username: u.username,
+      points: u.points || 0,
+      wins: u.stats?.totalWins || 0,
+      games: u.stats?.totalGames || 0,
+      isGuest: false,
+    }));
+
+    // Clean stale guests (older than 24h)
+    const now = Date.now();
+    Object.keys(guestScores).forEach(k => {
+      if (now - guestScores[k].updatedAt > 86400000) delete guestScores[k];
+    });
+
+    const guestList = Object.values(guestScores);
+
+    // Merge and sort
+    const combined = [...accountList, ...guestList]
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 50);
+
+    res.json(combined);
+  } catch(e) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
+// Set secret question (after registration)
+app.post('/auth/set-secret', authMiddleware, async (req, res) => {
+  try {
+    const { question, answer } = req.body;
+    if (!question || !answer) return res.status(400).json({ error: 'Заполни все поля' });
+    const hash = await bcrypt.hash(answer.toLowerCase().trim(), 10);
+    await User.findByIdAndUpdate(req.user.id, { secretQuestion: question, secretAnswer: hash });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: 'Ошибка' }); }
+});
+
+// Get secret question by username
+app.post('/auth/get-question', async (req, res) => {
+  try {
+    const { username } = req.body;
+    const user = await User.findOne({ username: { $regex: new RegExp('^'+username+'$','i') } });
+    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    if (!user.secretQuestion) return res.status(400).json({ error: 'Секретный вопрос не задан' });
+    res.json({ question: user.secretQuestion });
+  } catch(e) { res.status(500).json({ error: 'Ошибка' }); }
+});
+
+// Reset password with secret answer
+app.post('/auth/reset-password', async (req, res) => {
+  try {
+    const { username, answer, newPassword } = req.body;
+    if (!answer || !newPassword) return res.status(400).json({ error: 'Заполни все поля' });
+    if (newPassword.length < 4) return res.status(400).json({ error: 'Пароль минимум 4 символа' });
+    const user = await User.findOne({ username: { $regex: new RegExp('^'+username+'$','i') } });
+    if (!user || !user.secretAnswer) return res.status(404).json({ error: 'Пользователь не найден' });
+    const match = await bcrypt.compare(answer.toLowerCase().trim(), user.secretAnswer);
+    if (!match) return res.status(401).json({ error: 'Неверный ответ' });
+    const hash = await bcrypt.hash(newPassword, 10);
+    await User.findByIdAndUpdate(user._id, { password: hash });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: 'Ошибка' }); }
+});
+
+function sanitize(u) {
+  return {
+    username: u.username,
+    points: u.points,
+    coins: u.coins,
+    hasSecretQuestion: !!u.secretQuestion,
+    stats: u.stats,
+    unlockedAch: u.unlockedAch,
+    equippedPiece: u.equippedPiece,
+    equippedWall: u.equippedWall,
+    ownedItems: u.ownedItems,
+    lastDailyClaim: u.lastDailyClaim || 0,
+  };
+}
+
+// ── Socket.io rooms ───────────────────────────────────────────────
+const rooms = {};
+let matchQueue = null; // один игрок в очереди
+
+function makeCode() { return Math.random().toString(36).substring(2,8).toUpperCase(); }
+function makeRoom(code) { return { code, players:[], started:false, createdAt:Date.now() }; }
+
+setInterval(()=>{ const now=Date.now(); for(const c in rooms) if(now-rooms[c].createdAt>3600000) delete rooms[c]; },600000);
+
+// Fake bot names for bot substitute
+const BOT_NAMES = ['Alex_Pro','GameMaster','QuoriBot','WallKing','StrategyX','NightOwl','FastMover'];
+
+io.on('connection', socket => {
+
+  // ── MATCHMAKING ────────────────────────────────────────────────
+  socket.on('find_match', ({username, stats}) => {
+    socket.matchUsername = username;
+    socket.matchStats = stats || {};
+
+    if (matchQueue && matchQueue.id !== socket.id) {
+      // Found opponent!
+      const opponent = matchQueue;
+      matchQueue = null;
+
+      let code = makeCode(); while(rooms[code]) code = makeCode();
+      const room = makeRoom(code);
+      room.players.push({id: opponent.id, username: opponent.matchUsername, stats: opponent.matchStats, ready: false});
+      room.players.push({id: socket.id, username, stats: stats||{}, ready: false});
+      rooms[code] = room;
+
+      opponent.join(code); opponent.roomCode = code;
+      socket.join(code); socket.roomCode = code;
+
+      // Send match found with opponent stats
+      opponent.emit('match_found', {
+        code, playerIndex: 0,
+        opponentName: username,
+        opponentStats: stats || {}
+      });
+      socket.emit('match_found', {
+        code, playerIndex: 1,
+        opponentName: opponent.matchUsername,
+        opponentStats: opponent.matchStats || {}
+      });
+
+    } else {
+      // Add to queue
+      matchQueue = socket;
+      socket.emit('searching', {});
+
+      // Bot fallback after 20 seconds
+      socket._botTimeout = setTimeout(() => {
+        if (matchQueue && matchQueue.id === socket.id) {
+          matchQueue = null;
+          const botName = BOT_NAMES[Math.floor(Math.random()*BOT_NAMES.length)];
+          socket.emit('match_found', {
+            code: 'BOT',
+            playerIndex: 0,
+            opponentName: botName,
+            opponentStats: { points: Math.floor(Math.random()*500)+100, wins: Math.floor(Math.random()*50), games: Math.floor(Math.random()*100)+50 },
+            isBot: true
+          });
+        }
+      }, 5000);
+    }
+  });
+
+  socket.on('cancel_search', () => {
+    if (matchQueue && matchQueue.id === socket.id) matchQueue = null;
+    if (socket._botTimeout) { clearTimeout(socket._botTimeout); socket._botTimeout = null; }
+  });
+
+  // ── ROOMS (по коду) ───────────────────────────────────────────
+  socket.on('create_room', ({username, stats}) => {
+    let code=makeCode(); while(rooms[code]) code=makeCode();
+    const room=makeRoom(code);
+    room.players.push({id:socket.id, username, stats:stats||{}, ready:false});
+    rooms[code]=room; socket.join(code); socket.roomCode=code;
+    socket.emit('room_created',{code,playerIndex:0});
+  });
+
+  socket.on('join_room', ({code, username, stats}) => {
+    const room=rooms[code];
+    if(!room) return socket.emit('error',{message:'Комната не найдена'});
+    if(room.players.length>=2) return socket.emit('error',{message:'Комната полная'});
+    if(room.started) return socket.emit('error',{message:'Игра уже началась'});
+    room.players.push({id:socket.id, username, stats:stats||{}, ready:false});
+    socket.join(code); socket.roomCode=code;
+    socket.emit('room_joined',{code, playerIndex:1, opponentName:room.players[0].username, opponentStats:room.players[0].stats||{}});
+    io.to(room.players[0].id).emit('opponent_joined',{opponentName:username, opponentStats:stats||{}});
+  });
+
+  socket.on('player_ready', ()=>{
+    const room=rooms[socket.roomCode]; if(!room) return;
+    const p=room.players.find(p=>p.id===socket.id); if(p) p.ready=true;
+    if(room.players.length===2&&room.players.every(p=>p.ready)){
+      room.started=true;
+      io.to(room.code).emit('game_start',{player0:room.players[0].username,player1:room.players[1].username});
+    }
+  });
+
+  socket.on('move',({r,c})=>{ const room=rooms[socket.roomCode]; if(room) socket.to(room.code).emit('opponent_move',{r,c}); });
+  socket.on('place_wall',({r,c,dir})=>{ const room=rooms[socket.roomCode]; if(room) socket.to(room.code).emit('opponent_wall',{r,c,dir}); });
+  socket.on('surrender',()=>{ const room=rooms[socket.roomCode]; if(room) socket.to(room.code).emit('opponent_surrendered'); });
+  socket.on('timeout',()=>{ const room=rooms[socket.roomCode]; if(room) socket.to(room.code).emit('opponent_timeout'); });
+  socket.on('chat',({message})=>{
+    const room=rooms[socket.roomCode]; if(!room) return;
+    const player=room.players.find(p=>p.id===socket.id); if(!player) return;
+    io.to(room.code).emit('chat_message',{username:player.username,message});
+  });
+  socket.on('rematch_request',()=>{ const room=rooms[socket.roomCode]; if(room) socket.to(room.code).emit('rematch_requested'); });
+  socket.on('rematch_accept',()=>{
+    const room=rooms[socket.roomCode]; if(!room) return;
+    room.players.forEach(p=>p.ready=false); room.started=false;
+    io.to(room.code).emit('rematch_start',{player0:room.players[0].username,player1:room.players[1].username});
+  });
+  socket.on('disconnect',()=>{
+    if (matchQueue && matchQueue.id === socket.id) matchQueue = null;
+    if (socket._botTimeout) { clearTimeout(socket._botTimeout); socket._botTimeout = null; }
+    const room=rooms[socket.roomCode]; if(!room) return;
+    socket.to(room.code).emit('opponent_disconnected');
+    delete rooms[socket.roomCode];
+  });
+});
+
+app.get('/', (req,res) => res.send('Lomi Server OK'));
+server.listen(PORT, () => console.log(`Lomi server on port ${PORT}`));
