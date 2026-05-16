@@ -482,14 +482,18 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 
   <!-- Buttons -->
   <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;">
-    <button id="intro-new-btn" style="
+    <button id="intro-new-btn"
+      onclick="(function(){var s=document.getElementById('intro-screen');s.style.display='none';localStorage.getItem('lomi_tutorial_done')?showScreen('register'):startTutorial();})()"
+      style="
       font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
       padding:1.1rem 2rem;border-radius:16px;border:none;cursor:pointer;
       background:linear-gradient(135deg,#784BFF,#00F5C4);color:#fff;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     ">Первый раз</button>
-    <button id="intro-login-btn" style="
+    <button id="intro-login-btn"
+      onclick="(function(){var s=document.getElementById('intro-screen');s.style.display='none';showScreen('login');})()"
+      style="
       font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
       padding:1rem 2rem;border-radius:16px;border:1.5px solid rgba(120,75,255,0.4);
@@ -6146,7 +6150,6 @@ function runIntro() {
   const screen = document.getElementById('intro-screen');
   if (!screen) { loadUser(); return; }
 
-  // Существующий пользователь — интро не нужно, сразу в игру
   const hasToken = localStorage.getItem('lomi_token');
   const hasGuest = localStorage.getItem('lomi_guest_name');
   if (hasToken || hasGuest) {
@@ -6155,24 +6158,22 @@ function runIntro() {
     return;
   }
 
-  // Новый пользователь — показываем интро, вешаем кнопки
+  // Кнопки уже имеют onclick из HTML — дополнительно дублируем через JS
   const newBtn = document.getElementById('intro-new-btn');
   const loginBtn = document.getElementById('intro-login-btn');
-
-  if (newBtn) {
+  if (newBtn && !newBtn._bound) {
+    newBtn._bound = true;
     newBtn.onclick = function() {
       screen.style.display = 'none';
-      // tutorialDone хранится в lomi_tutorial_done
-      const tutDone = localStorage.getItem('lomi_tutorial_done');
-      if (!tutDone) {
+      if (!localStorage.getItem('lomi_tutorial_done')) {
         startTutorial();
       } else {
         showScreen('register');
       }
     };
   }
-
-  if (loginBtn) {
+  if (loginBtn && !loginBtn._bound) {
+    loginBtn._bound = true;
     loginBtn.onclick = function() {
       screen.style.display = 'none';
       showScreen('login');
@@ -6180,6 +6181,8 @@ function runIntro() {
   }
 }
 
+// Запускаем максимально рано — через DOMContentLoaded и load
+document.addEventListener('DOMContentLoaded', runIntro);
 window.addEventListener('load', runIntro);
 
 
