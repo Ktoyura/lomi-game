@@ -732,7 +732,7 @@ const INTRO_AUDIO_B64 = '';</script>
     <button class="score-reset" onclick="resetScore()" title="Сбросить счёт">↺</button>
   </div>
   <div class="btn-group">
-    <button class="btn btn-primary" onclick="startGame(false)">Играть вдвоём</button>
+    <button class="btn btn-secondary" onclick="startGame(false)">Играть вдвоём</button>
     <button class="btn btn-secondary" onclick="showScreenSafe('online')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">🌐 Онлайн</button>
     <button class="btn btn-secondary" onclick="showScreen('difficulty')" style="border-color:rgba(0,245,196,0.3);color:var(--p2)">Против ktoyura</button>
     <button class="btn btn-secondary" onclick="showScreen('shop')">🛒 Магазин</button>
@@ -5287,8 +5287,12 @@ function draw() {
 
     // Get skin for player 1; player 2 always default
     const skinItem = pi===0 ? SHOP_ITEMS.find(i=>i.id===equippedPiece) : null;
-    const pieceColor = skinItem ? skinItem.pieceColor : (pi===0 ? '#FFFFFF' : '#4488FF');
-    const glowColor  = skinItem ? skinItem.borderColor+'44' : (pi===0 ? 'rgba(255,255,255,0.25)' : 'rgba(68,136,255,0.3)');
+    const pieceColor = skinItem
+      ? (skinItem.pieceColor || skinItem.color || '#CC2200')
+      : (pi===0 ? '#CC2200' : '#4488FF');
+    const glowColor = skinItem
+      ? (skinItem.borderColor ? skinItem.borderColor+'44' : 'rgba(204,34,0,0.2)')
+      : (pi===0 ? 'rgba(204,34,0,0.3)' : 'rgba(68,136,255,0.3)');
 
     // Glow ring
     ctx.fillStyle = glowColor;
@@ -5306,6 +5310,7 @@ function draw() {
     } else {
       ctx.fillStyle = pieceColor;
       ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+
       ctx.fillStyle = '#fff';
       ctx.font = `900 ${Math.floor(r*1.1)}px 'Unbounded', sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
