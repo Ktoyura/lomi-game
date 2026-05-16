@@ -483,7 +483,6 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
   <!-- Buttons -->
   <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:300px;">
     <button id="intro-new-btn"
-      onclick="(function(){var s=document.getElementById('intro-screen');s.style.display='none';localStorage.getItem('lomi_tutorial_done')?showScreen('register'):startTutorial();})()"
       style="
       font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
@@ -492,7 +491,6 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     ">Первый раз</button>
     <button id="intro-login-btn"
-      onclick="(function(){var s=document.getElementById('intro-screen');s.style.display='none';showScreen('login');})()"
       style="
       font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;
@@ -3758,7 +3756,7 @@ function loadAuthToken() {
   authToken = localStorage.getItem('lomi_token');
 }
 
-async async function apiCall(method, path, body) {
+async function apiCall(method, path, body) {
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
   const res = await fetch(SERVER_URL + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
@@ -6158,31 +6156,40 @@ function runIntro() {
     return;
   }
 
-  // Кнопки уже имеют onclick из HTML — дополнительно дублируем через JS
+  let loginTapped = false;
+
+  // "Первый раз" button
   const newBtn = document.getElementById('intro-new-btn');
-  const loginBtn = document.getElementById('intro-login-btn');
-  if (newBtn && !newBtn._bound) {
-    newBtn._bound = true;
-    newBtn.onclick = function() {
+  if (newBtn) {
+    const onNew = function(e) {
+      if (loginTapped) return;
+      e.stopPropagation();
       screen.style.display = 'none';
-      if (!localStorage.getItem('lomi_tutorial_done')) {
+      if (isTutorialNeeded()) {
         startTutorial();
       } else {
-        showScreen('register');
+        loadUser();
       }
     };
+    newBtn.addEventListener('click', onNew);
+    newBtn.addEventListener('touchend', onNew);
   }
-  if (loginBtn && !loginBtn._bound) {
-    loginBtn._bound = true;
-    loginBtn.onclick = function() {
+
+  // "Уже есть аккаунт? Войти" button
+  const loginBtn = document.getElementById('intro-login-btn');
+  if (loginBtn) {
+    const onLogin = function(e) {
+      loginTapped = true;
+      e.stopPropagation();
+      e.preventDefault();
       screen.style.display = 'none';
       showScreen('login');
     };
+    loginBtn.addEventListener('click', onLogin);
+    loginBtn.addEventListener('touchend', onLogin);
   }
 }
 
-// Запускаем максимально рано — через DOMContentLoaded и load
-document.addEventListener('DOMContentLoaded', runIntro);
 window.addEventListener('load', runIntro);
 
 
