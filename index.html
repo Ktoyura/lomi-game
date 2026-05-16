@@ -1275,10 +1275,10 @@ function loadShop() {
 function applyBoardTheme() {
   const item = SHOP_ITEMS.find(i => i.id === equippedBoard);
   if (!item || item.type !== 'board') {
-    // Summer default theme
-    document.documentElement.style.setProperty('--board-bg', '#071a0c');
-    document.documentElement.style.setProperty('--cell-bg', 'rgba(77,204,106,0.09)');
-    document.documentElement.style.setProperty('--grid-color', 'rgba(77,204,106,0.7)');
+    // Default warm wood theme
+    document.documentElement.style.setProperty('--board-bg', '#c8a96e');
+    document.documentElement.style.setProperty('--cell-bg', '#f5e6c8');
+    document.documentElement.style.setProperty('--grid-color', '#a07840');
   } else {
     document.documentElement.style.setProperty('--board-bg', item.bg);
     document.documentElement.style.setProperty('--cell-bg', item.cellBg);
@@ -4547,7 +4547,7 @@ function tutHidePulse() {
 
 function tutPulseCell(r, c) {
   tutHidePulse();
-  const cv = document.getElementById('game-canvas');
+  const cv = document.getElementById('c');
   const el = $t('tut-pulse');
   if (!cv || !el) return;
   const rect = cv.getBoundingClientRect();
@@ -4561,7 +4561,7 @@ function tutPulseCell(r, c) {
 
 function tutPulseGoalRow() {
   tutHidePulse();
-  const cv = document.getElementById('game-canvas');
+  const cv = document.getElementById('c');
   const el = $t('tut-goal');
   if (!cv || !el) return;
   const rect = cv.getBoundingClientRect();
@@ -4587,7 +4587,7 @@ function tutPulseBtn(id) {
 // Подсвечивает клетку рядом с ботом для постановки стены
 function tutPulseWallNearBot(dir) {
   tutHidePulse();
-  const cv = document.getElementById('game-canvas');
+  const cv = document.getElementById('c');
   const el = $t('tut-pulse');
   if (!cv || !el) return;
   const rect = cv.getBoundingClientRect();
@@ -4854,7 +4854,7 @@ function tutHidePulse() {
 
 function tutPulseCell(r, c) {
   tutHidePulse();
-  const cv = document.getElementById('game-canvas');
+  const cv = document.getElementById('c');
   const el = $t('tut-pulse');
   if (!cv || !el) return;
   const rect = cv.getBoundingClientRect();
@@ -4868,7 +4868,7 @@ function tutPulseCell(r, c) {
 
 function tutPulseGoalRow() {
   tutHidePulse();
-  const cv = document.getElementById('game-canvas');
+  const cv = document.getElementById('c');
   const el = $t('tut-goal');
   if (!cv || !el) return;
   const rect = cv.getBoundingClientRect();
@@ -5234,10 +5234,10 @@ function draw() {
   // Goal rows
   for (let c=0;c<N;c++) {
     const {x,y} = cellPos(0,c);
-    ctx.fillStyle = 'rgba(0,245,196,0.06)';
+    ctx.fillStyle = 'rgba(0,200,160,0.22)';
     ctx.beginPath(); roundRect(ctx,x,y,CELL,CELL,6); ctx.fill();
     const {x:x2,y:y2} = cellPos(N-1,c);
-    ctx.fillStyle = 'rgba(255,60,172,0.06)';
+    ctx.fillStyle = 'rgba(204,34,0,0.15)';
     ctx.beginPath(); roundRect(ctx,x2,y2,CELL,CELL,6); ctx.fill();
   }
 
@@ -5246,10 +5246,10 @@ function draw() {
       const {x,y} = cellPos(r,c);
       const isValid = mode==='move' && validMoves.includes(r*N+c);
       if (isValid) {
-        ctx.fillStyle = 'rgba(0,245,196,0.15)';
+        ctx.fillStyle = 'rgba(0,180,120,0.35)';
         ctx.beginPath(); roundRect(ctx,x,y,CELL,CELL,6); ctx.fill();
-        ctx.strokeStyle = 'rgba(0,245,196,0.5)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(0,160,100,0.8)';
+        ctx.lineWidth = 2;
         ctx.beginPath(); roundRect(ctx,x,y,CELL,CELL,6); ctx.stroke();
       } else {
         ctx.fillStyle = cellBg;
@@ -6690,7 +6690,7 @@ function highlightPuzzleCell(r, c) {
     el.style.cssText = 'position:fixed;border-radius:8px;pointer-events:none;z-index:600;transition:all 0.2s;animation:tutPulse 0.8s ease-in-out infinite';
     document.body.appendChild(el);
   }
-  const cv = document.getElementById('game-canvas');
+  const cv = document.getElementById('c');
   if (!cv) return;
   const rect = cv.getBoundingClientRect();
   const cs = rect.width / N;
@@ -6700,8 +6700,8 @@ function highlightPuzzleCell(r, c) {
   el.style.width  = (cs*0.84) + 'px';
   el.style.height = (cs*0.84) + 'px';
   el.style.border = '3px solid #a78bfa';
-  el.style.background = 'rgba(120,75,255,0.2)';
-  el.style.boxShadow = '0 0 15px rgba(120,75,255,0.6)';
+  el.style.background = 'rgba(120,75,255,0.35)';
+  el.style.boxShadow = '0 0 18px rgba(120,75,255,0.8)';
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.style.display='none'; }, 4000);
 }
@@ -6714,7 +6714,7 @@ function highlightPuzzleWall(r, c, dir) {
     el.style.cssText = 'position:fixed;pointer-events:none;z-index:600;border-radius:4px;animation:tutPulse 0.8s ease-in-out infinite';
     document.body.appendChild(el);
   }
-  const cv = document.getElementById('game-canvas');
+  const cv = document.getElementById('c');
   if (!cv) return;
   const rect = cv.getBoundingClientRect();
   const cs = rect.width / N;
