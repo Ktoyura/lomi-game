@@ -6512,14 +6512,14 @@ function getDailyPuzzle() {
 }
 
 // ── OPEN PUZZLE — loads into MAIN game engine ─────────────────────
-function openPuzzle(idOrDaily) {
+function openPuzzle(idOrDaily, forceRetry) {
   puzzleIsDaily = idOrDaily === 'daily';
   currentPuzzle = puzzleIsDaily ? getDailyPuzzle() : PUZZLES.find(p => p.id === idOrDaily);
   if (!currentPuzzle) return;
 
-  // Блокируем повторное прохождение уже решённых пазлов
+  // Block replay of solved puzzles UNLESS it's a retry
   const alreadyDone = solvedPuzzles.has(puzzleIsDaily ? 'daily' : currentPuzzle.id);
-  if (alreadyDone && !puzzleIsDaily) {
+  if (alreadyDone && !puzzleIsDaily && !forceRetry) {
     showToast('✅ Уже пройден', 'Этот пазл уже решён! Попробуй следующий.');
     return;
   }
@@ -6739,7 +6739,7 @@ function retryPuzzle() {
   const el = document.getElementById('puzzle-win');
   if (el) el.style.display = 'none';
   const id = puzzleIsDaily ? 'daily' : (currentPuzzle ? currentPuzzle.id : null);
-  if (id) openPuzzle(id);
+  if (id) openPuzzle(id, true); // forceRetry = true
 }
 
 // ── HINT ──────────────────────────────────────────────────────────
