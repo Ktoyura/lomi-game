@@ -6164,7 +6164,8 @@ function runIntro() {
     const onNew = function(e) {
       if (loginTapped) return;
       e.stopPropagation();
-      screen.style.display = 'none';
+      e.preventDefault();
+      screen.remove();
       if (isTutorialNeeded()) {
         startTutorial();
       } else {
@@ -6182,7 +6183,7 @@ function runIntro() {
       loginTapped = true;
       e.stopPropagation();
       e.preventDefault();
-      screen.style.display = 'none';
+      screen.remove();
       showScreen('login');
     };
     loginBtn.addEventListener('click', onLogin);
@@ -6711,7 +6712,7 @@ function onPuzzleSolved() {
     reward = 0;
   }
   playWin();
-  aiDifficulty = false;
+  // Don't reset aiDifficulty here — retryPuzzle needs it
 
   // Show win overlay
   document.getElementById('puzzle-win-title').textContent =
@@ -6725,14 +6726,20 @@ function onPuzzleSolved() {
 }
 
 function closePuzzleWin() {
-  document.getElementById('puzzle-win').style.display = 'none';
+  const el = document.getElementById('puzzle-win');
+  if (el) el.style.display = 'none';
+  puzzleActive = false;
+  aiDifficulty = false;
+  hidePuzzleOverlay();
   showScreen('puzzles');
   renderPuzzleGrid();
 }
 
 function retryPuzzle() {
-  document.getElementById('puzzle-win').style.display = 'none';
-  openPuzzle(puzzleIsDaily ? 'daily' : currentPuzzle.id);
+  const el = document.getElementById('puzzle-win');
+  if (el) el.style.display = 'none';
+  const id = puzzleIsDaily ? 'daily' : (currentPuzzle ? currentPuzzle.id : null);
+  if (id) openPuzzle(id);
 }
 
 // ── HINT ──────────────────────────────────────────────────────────
