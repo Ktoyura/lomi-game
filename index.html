@@ -3921,7 +3921,11 @@ async function loginSuccess(username, userData) {
     if (userData.unlockedAch) unlockedAch = new Set(userData.unlockedAch);
     if (userData.equippedPiece) equippedPiece = userData.equippedPiece;
     if (userData.equippedWall)  equippedWall  = userData.equippedWall;
-    if (userData.ownedItems)    ownedItems    = new Set(userData.ownedItems);
+    if (userData.ownedItems) {
+      // Merge server items with local — never lose locally earned items
+      userData.ownedItems.forEach(id => ownedItems.add(id));
+      saveShop();
+    }
     // Reload daily state with user-specific key AFTER setting username
     loadDailyState();
     // Restore daily claim from server if newer
@@ -3949,7 +3953,7 @@ async function loginSuccess(username, userData) {
     unlockedAch = new Set(userData.unlockedAch || []);
     if (userData.equippedPiece) equippedPiece = userData.equippedPiece;
     if (userData.equippedWall) equippedWall = userData.equippedWall;
-    if (userData.ownedItems) ownedItems = new Set(userData.ownedItems);
+    if (userData.ownedItems) userData.ownedItems.forEach(id => ownedItems.add(id));
     savePoints(); saveAchievements(); saveShop();
   }
   updatePointsUI();
@@ -4041,7 +4045,9 @@ function loadUser() {
           if (data.equippedPiece) equippedPiece = data.equippedPiece;
           if (data.equippedWall)  equippedWall  = data.equippedWall;
           if (data.ownedItems) {
+            // Merge: add server items but never remove locally earned ones
             data.ownedItems.forEach(id => ownedItems.add(id));
+            saveShop(); // save merged result
           }
           if (data.lastDailyClaim && data.lastDailyClaim > dailyState.lastClaim) {
             dailyState.lastClaim = data.lastDailyClaim;
@@ -4127,12 +4133,7 @@ function saveUsername() {
     localStorage.setItem('lomi_guest_bonus', '1');
     updateUserUI();
     showScreen('menu');
-    setTimeout(() => {
-      totalPoints += 1000;
-      ratingPoints += 10;
-      savePoints(); updatePointsUI(); updateRatingUI();
-      showWelcomeBonus();
-    }, 300);
+    setTimeout(() => showWelcomeBonus(), 300);
     return;
   }
   showScreen('menu');
