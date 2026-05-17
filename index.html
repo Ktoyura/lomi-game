@@ -2780,15 +2780,26 @@ let dailyState = { lastClaim: 0 };
 let slotResult = null;
 let slotRunning = false;
 
+function getDailyKey() {
+  // Key tied to username — survives logout/login
+  const user = localStorage.getItem('lomi_username') || localStorage.getItem('lomi_guest_name') || 'guest';
+  return 'lomi_daily_' + user;
+}
+
 function loadDailyState() {
   try {
-    const s = localStorage.getItem('lomi_daily');
+    // Try user-specific key first
+    const key = getDailyKey();
+    const s = localStorage.getItem(key) || localStorage.getItem('lomi_daily');
     if (s) dailyState = { ...dailyState, ...JSON.parse(s) };
   } catch(e) {}
 }
 
 function saveDailyState() {
-  localStorage.setItem('lomi_daily', JSON.stringify(dailyState));
+  const key = getDailyKey();
+  const data = JSON.stringify(dailyState);
+  localStorage.setItem(key, data);
+  localStorage.setItem('lomi_daily', data); // backup
 }
 
 function canClaimDaily() {
@@ -3035,6 +3046,9 @@ async function claimDailyReward() {
   const snapCoins = totalPoints;
   const snapRating = ratingPoints;
 
+  // Update UI immediately
+  updatePointsUI();
+  updateRatingUI();
   // Save to server immediately — don't wait
   saveProgressToServer().catch(() => {});
 
@@ -3870,7 +3884,7 @@ async function doLogin() {
 
 async function loginSuccess(username, userData) {
   setUser(username);
-  // Existing users never need tutorial
+  localStorage.setItem('lomi_username', username); // for daily key
   localStorage.setItem('lomi_tutorial_done', '1');
   isGuest = false;
   // Analytics: account registered
@@ -3893,11 +3907,14 @@ async function loginSuccess(username, userData) {
     if (userData.equippedPiece) equippedPiece = userData.equippedPiece;
     if (userData.equippedWall)  equippedWall  = userData.equippedWall;
     if (userData.ownedItems)    ownedItems    = new Set(userData.ownedItems);
-    // Restore daily claim from server
+    // Reload daily state with user-specific key AFTER setting username
+    loadDailyState();
+    // Restore daily claim from server if newer
     if (userData.lastDailyClaim && userData.lastDailyClaim > dailyState.lastClaim) {
       dailyState.lastClaim = userData.lastDailyClaim;
       saveDailyState();
     }
+    updateDailyBox();
     savePoints(); saveAchievements(); saveShop();
     updatePointsUI(); updateRatingUI();
 
