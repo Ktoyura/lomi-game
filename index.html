@@ -2895,7 +2895,6 @@ function spinReel(reelEl, items, finalIdx, extraCruise, onDone) {
 }
 
 function openDailyReward() {
-  // Если таймер идёт — не открывать попап, просто показать тост
   if (!canClaimDaily()) {
     const timeLeft = getTimeUntilNextClaim();
     showToast('⏳ Уже получено', `Следующий бонус через ${timeLeft}`);
@@ -2908,13 +2907,16 @@ function openDailyReward() {
   document.getElementById('daily-claim-btn').style.display = 'none';
   document.getElementById('daily-popup').style.display = 'flex';
 
-  // Init static reels
   for (let i = 0; i < 3; i++) {
     const reel = document.getElementById(`reel${i}`);
     if (reel) buildReel(reel, SLOT_ITEMS);
   }
 
   document.getElementById('daily-day-label').textContent = 'Крутится... 🎰';
+
+  // Save lastClaim immediately to prevent re-spin on refresh
+  dailyState.lastClaim = Date.now();
+  saveDailyState();
 
   slotRunning = true;
   startSlotSpin();
@@ -3045,10 +3047,7 @@ function claimDailyReward() {
     }
   }
 
-  // Save everything locally
-  localStorage.setItem('lomi_points', totalPoints);
-  localStorage.setItem('lomi_rating', ratingPoints);
-  localStorage.setItem('lomi_coins', totalPoints);
+  // Save and update UI
   savePoints();
   saveAchievements();
   saveShop();
@@ -4920,18 +4919,13 @@ function goToRegister() {
 
 // Called after successful registration from tutorial
 function afterTutorialRegister() {
-  // Give welcome bonus and show screen first
+  // Show welcome bonus screen — claimWelcomeBonus will add coins
   if (!localStorage.getItem(getWelcomeKey())) {
-    totalPoints += 1000;
-    ratingPoints += 10;
-    savePoints(); updatePointsUI(); updateRatingUI();
-    saveProgressToServer();
-    // Show bonus screen, then start match
-    showWelcomeBonus();
-    // Override the menu redirect — after claiming bonus go to match
+    // After claiming bonus → go to match
     window._afterBonusAction = () => {
-      startSecondGame();
+      _launchSecondGameFlow();
     };
+    showWelcomeBonus();
     return;
   }
   // Already got bonus — go straight to match
