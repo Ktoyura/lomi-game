@@ -3002,87 +3002,85 @@ function closeDailyPopup() {
   slotRunning = false; slotResult = null;
 }
 
-async function claimDailyReward() {
+function claimDailyReward() {
+  // Get result before anything else
   const result = slotResult;
-  if (!result) return;
+  if (!result) { console.log('No slot result!'); return; }
 
-  window._claimingReward = true; // block background sync
-
-  // Close popup immediately
-  document.getElementById('daily-popup').style.display = 'none';
+  // Close popup
+  const popup = document.getElementById('daily-popup');
+  if (popup) popup.style.display = 'none';
   if (slotInterval) { clearInterval(slotInterval); slotInterval = null; }
   slotRunning = false;
   slotResult = null;
+  window._claimingReward = true;
 
-  // Apply reward locally FIRST
-  let earned = '';
+  console.log('Claiming reward:', result.type, result.amount, result._skin);
+
+  // Apply reward
   if (result.type === 'coins') {
-    totalPoints += result.amount;
-    achStats.totalCoinsEarned = (achStats.totalCoinsEarned||0) + result.amount;
-    savePoints(); saveAchievements(); updatePointsUI();
-    earned = `+${result.amount} 🪙`;
+    totalPoints += result.amount || 0;
+    achStats.totalCoinsEarned = (achStats.totalCoinsEarned || 0) + (result.amount || 0);
+    showToast('🪙 Награда!', `+${result.amount} монет зачислено!`);
+
   } else if (result.type === 'rating') {
-    ratingPoints = Math.max(0, ratingPoints + result.amount);
-    achStats.totalRatingEarned = (achStats.totalRatingEarned||0) + result.amount;
-    savePoints(); saveAchievements(); updateRatingUI();
-    earned = `+${result.amount} 🏆`;
-  } else {
-    const skinToAdd = result._skin || window._pendingSkin;
-    if (skinToAdd) {
-      ownedItems.add(skinToAdd.id);
-      saveShop();
-      earned = `🎰 Скин: ${skinToAdd.name}`;
+    ratingPoints += result.amount || 0;
+    achStats.totalRatingEarned = (achStats.totalRatingEarned || 0) + (result.amount || 0);
+    showToast('🏆 Награда!', `+${result.amount} рейтинга зачислено!`);
+
+  } else if (result.type === 'skin') {
+    const skin = result._skin || window._pendingSkin;
+    if (skin && skin.id) {
+      ownedItems.add(skin.id);
+      localStorage.setItem('lomi_owned', JSON.stringify([...ownedItems]));
+      showToast('🎰 Скин получен!', `${skin.name} добавлен в магазин!`);
       window._pendingSkin = null;
     } else {
-      totalPoints += 500; savePoints(); updatePointsUI();
-      earned = '+500 🪙 (все скины куплены)';
+      // No skin available — give coins instead
+      totalPoints += 500;
+      showToast('🪙 Бонус!', '+500 монет (все скины уже есть)');
     }
   }
 
-  // Save daily state IMMEDIATELY
+  // Save everything locally
+  localStorage.setItem('lomi_points', totalPoints);
+  localStorage.setItem('lomi_rating', ratingPoints);
+  localStorage.setItem('lomi_coins', totalPoints);
+  savePoints();
+  saveAchievements();
+  saveShop();
+  updatePointsUI();
+  updateRatingUI();
+
+  // Save daily state
   dailyState.lastClaim = Date.now();
   saveDailyState();
   updateDailyBox();
 
-  // Snapshot AFTER applying reward
-  const snapCoins = totalPoints;
-  const snapRating = ratingPoints;
-
-  // Update UI immediately
-  updatePointsUI();
-  updateRatingUI();
-  // Save to server immediately — don't wait
-  saveProgressToServer().catch(() => {});
-  window._claimingReward = false;
-
-  // Re-assert after 3s in case background sync overwrote
-  setTimeout(() => {
-    let changed = false;
-    if (totalPoints < snapCoins) { totalPoints = snapCoins; savePoints(); updatePointsUI(); changed = true; }
-    if (ratingPoints < snapRating) { ratingPoints = snapRating; savePoints(); updateRatingUI(); changed = true; }
-    if (changed) saveProgressToServer().catch(() => {});
-  }, 3000);
-
-  // Show notification via toast element directly
-  const toast = document.getElementById('toast');
-  if (toast) {
-    const icon = document.getElementById('toast-icon');
-    const name = document.getElementById('toast-name');
-    const desc = document.getElementById('toast-desc');
-    if (icon) icon.textContent = result.type === 'coins' ? '🪙' : result.type === 'rating' ? '🏆' : '🎰';
-    if (name) name.textContent = '🎁 Ежедневная награда!';
-    if (desc) desc.textContent = earned;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3500);
+  // Save to server
+  if (!isGuest && authToken) {
+    apiCall('POST', '/progress', {
+      points: ratingPoints,
+      coins: totalPoints,
+      stats: achStats,
+      unlockedAch: [...unlockedAch],
+      equippedPiece,
+      equippedWall,
+      ownedItems: [...ownedItems],
+      lastDailyClaim: dailyState.lastClaim,
+    }).catch(e => console.log('Save error:', e));
   }
 
-  // Sound
+  // Play sound
   playTone(523,'sine',0.12,0.15);
   setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
   setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
   setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
+
+  window._claimingReward = false;
 }
 window.claimDailyReward = claimDailyReward;
+
 window.closeDailyPopup = closeDailyPopup;
 window.openDailyReward = openDailyReward;
 
