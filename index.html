@@ -3006,6 +3006,8 @@ async function claimDailyReward() {
   const result = slotResult;
   if (!result) return;
 
+  window._claimingReward = true; // block background sync
+
   // Close popup immediately
   document.getElementById('daily-popup').style.display = 'none';
   if (slotInterval) { clearInterval(slotInterval); slotInterval = null; }
@@ -3051,6 +3053,7 @@ async function claimDailyReward() {
   updateRatingUI();
   // Save to server immediately — don't wait
   saveProgressToServer().catch(() => {});
+  window._claimingReward = false;
 
   // Re-assert after 3s in case background sync overwrote
   setTimeout(() => {
@@ -3747,20 +3750,24 @@ function updatePointsUI() {
 }
 
 // ── WELCOME BONUS ────────────────────────────────────────────────
+function getWelcomeKey() {
+  const user = currentUser || localStorage.getItem('lomi_username') || 'guest';
+  return 'lomi_welcome_' + user;
+}
+
 function showWelcomeBonus() {
-  if (localStorage.getItem('lomi_welcome_claimed')) { showScreen('menu'); return; }
+  if (localStorage.getItem(getWelcomeKey())) { showScreen('menu'); return; }
   showScreen('welcome-bonus');
 }
 
 function claimWelcomeBonus() {
-  localStorage.setItem('lomi_welcome_claimed', '1'); // никогда больше не показывать
+  localStorage.setItem(getWelcomeKey(), '1');
   totalPoints += 1000;
   ratingPoints += 10;
   savePoints();
   updatePointsUI();
   updateRatingUI();
   saveProgressToServer();
-  // Play reward sound
   playTone(523,'sine',0.12,0.15);
   setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
   setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
@@ -4017,19 +4024,17 @@ function loadUser() {
       showScreen('menu');
       // Sync from server in background — don't block UI
       apiCall('GET', '/profile').then(data => {
-        if (data && !data.error && !window._savingProgress) {
-          // Only sync if server has MORE data (don't overwrite local earned rewards)
-          if (data.points !== undefined) ratingPoints = Math.max(ratingPoints, data.points);
-          if (data.coins  !== undefined) totalPoints  = Math.max(totalPoints,  data.coins);
+        if (data && !data.error && !window._savingProgress && !window._claimingReward) {
+          // Only update if server value is higher — never decrease local earned rewards
+          if (data.points !== undefined && data.points > ratingPoints) ratingPoints = data.points;
+          if (data.coins  !== undefined && data.coins  > totalPoints)  totalPoints  = data.coins;
           if (data.stats)       achStats    = { ...achStats, ...data.stats };
           if (data.unlockedAch) unlockedAch = new Set(data.unlockedAch);
           if (data.equippedPiece) equippedPiece = data.equippedPiece;
           if (data.equippedWall)  equippedWall  = data.equippedWall;
           if (data.ownedItems) {
-            // Merge owned items — never remove locally owned
             data.ownedItems.forEach(id => ownedItems.add(id));
           }
-          // Restore daily claim time from server
           if (data.lastDailyClaim && data.lastDailyClaim > dailyState.lastClaim) {
             dailyState.lastClaim = data.lastDailyClaim;
             saveDailyState();
@@ -4112,6 +4117,7 @@ function saveUsername() {
   const isFirst = !localStorage.getItem('lomi_guest_bonus');
   if (isFirst) {
     localStorage.setItem('lomi_guest_bonus', '1');
+    localStorage.setItem(getWelcomeKey(), '1');
     setTimeout(()=>showWelcomeBonus(), 300);
     return;
   }
@@ -4899,6 +4905,15 @@ function goToRegister() {
 
 // Called after successful registration from tutorial
 function afterTutorialRegister() {
+  // Give welcome bonus first if not already claimed
+  if (!localStorage.getItem(getWelcomeKey())) {
+    localStorage.setItem(getWelcomeKey(), '1');
+    totalPoints += 1000;
+    ratingPoints += 10;
+    savePoints(); updatePointsUI(); updateRatingUI();
+    saveProgressToServer();
+    showToast('🎁 Приветственный бонус!', '+1000 🪙 и +10 🏆 зачислены!');
+  }
   // Show "opponent found" effect then start match
   const msg = document.createElement('div');
   msg.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
