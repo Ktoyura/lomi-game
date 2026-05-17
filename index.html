@@ -2916,9 +2916,6 @@ function openDailyReward() {
 
   document.getElementById('daily-day-label').textContent = 'Крутится... 🎰';
 
-  // Блокируем сразу — чтобы закрытие попапа и повторное открытие не давало крутить снова
-  dailyState.lastClaim = Date.now();
-  saveDailyState();
   slotRunning = true;
   startSlotSpin();
 }
@@ -2997,9 +2994,15 @@ function onSlotDone() {
 }
 
 function closeDailyPopup() {
+  // If reward is ready but not claimed — claim it automatically
+  if (slotResult && !slotRunning) {
+    claimDailyReward();
+    return;
+  }
   document.getElementById('daily-popup').style.display = 'none';
   if (slotInterval) { clearInterval(slotInterval); slotInterval = null; }
-  slotRunning = false; slotResult = null;
+  slotRunning = false;
+  slotResult = null;
 }
 
 function claimDailyReward() {
@@ -3770,8 +3773,16 @@ function claimWelcomeBonus() {
   setTimeout(()=>playTone(659,'sine',0.14,0.15),120);
   setTimeout(()=>playTone(784,'sine',0.16,0.2),240);
   setTimeout(()=>playTone(1047,'sine',0.18,0.3),380);
-  showScreen('menu');
-  setTimeout(()=>showToast('🎁 Бонус получен!', '+1000 🪙 и +10 🏆 на счету!'), 500);
+  // Check if there's a post-bonus action (e.g. after tutorial)
+  if (window._afterBonusAction) {
+    const action = window._afterBonusAction;
+    window._afterBonusAction = null;
+    showScreen('menu');
+    setTimeout(action, 300);
+  } else {
+    showScreen('menu');
+    setTimeout(()=>showToast('🎁 Бонус получен!', '+1000 🪙 и +10 🏆 на счету!'), 500);
+  }
 }
 
 // ── AUTH SYSTEM ───────────────────────────────────────────────────
@@ -4115,8 +4126,14 @@ function saveUsername() {
   const isFirst = !localStorage.getItem('lomi_guest_bonus');
   if (isFirst) {
     localStorage.setItem('lomi_guest_bonus', '1');
-    localStorage.setItem(getWelcomeKey(), '1');
-    setTimeout(()=>showWelcomeBonus(), 300);
+    updateUserUI();
+    showScreen('menu');
+    setTimeout(() => {
+      totalPoints += 1000;
+      ratingPoints += 10;
+      savePoints(); updatePointsUI(); updateRatingUI();
+      showWelcomeBonus();
+    }, 300);
     return;
   }
   showScreen('menu');
@@ -4903,17 +4920,25 @@ function goToRegister() {
 
 // Called after successful registration from tutorial
 function afterTutorialRegister() {
-  // Give welcome bonus first if not already claimed
+  // Give welcome bonus and show screen first
   if (!localStorage.getItem(getWelcomeKey())) {
-    localStorage.setItem(getWelcomeKey(), '1');
     totalPoints += 1000;
     ratingPoints += 10;
     savePoints(); updatePointsUI(); updateRatingUI();
     saveProgressToServer();
-    showToast('🎁 Приветственный бонус!', '+1000 🪙 и +10 🏆 зачислены!');
+    // Show bonus screen, then start match
+    showWelcomeBonus();
+    // Override the menu redirect — after claiming bonus go to match
+    window._afterBonusAction = () => {
+      startSecondGame();
+    };
+    return;
   }
-  // Show "opponent found" effect then start match
-  const msg = document.createElement('div');
+  // Already got bonus — go straight to match
+  _launchSecondGameFlow();
+}
+
+function _launchSecondGameFlow() {
   msg.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
   msg.innerHTML = `
     <div style="font-size:2rem">🌐</div>
