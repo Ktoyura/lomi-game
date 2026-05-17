@@ -489,7 +489,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       padding:1.1rem 2rem;border-radius:16px;border:none;cursor:pointer;
       background:linear-gradient(135deg,#784BFF,#00F5C4);color:#fff;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    ">Первый раз</button>
+    " data-lang="btn_first_time">Первый раз</button>
     <button id="intro-login-btn"
       style="
       font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;
@@ -497,7 +497,7 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
       padding:1rem 2rem;border-radius:16px;border:1.5px solid rgba(120,75,255,0.4);
       cursor:pointer;background:transparent;color:#a78bfa;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-    ">Войти</button>
+     data-lang="btn_login data-lang="btn_login_short">Войти</button>
   </div>
 </div>
 
@@ -531,9 +531,9 @@ const INTRO_AUDIO_B64 = '';</script>
   <div class="logo">LOMI</div>
   <div class="tagline">Стратегическая игра стен</div>
   <div class="btn-group" style="max-width:320px;width:100%">
-    <button class="btn btn-primary" onclick="showScreenSafe('register')" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)">Создать аккаунт</button>
+    <button class="btn btn-primary" onclick="showScreenSafe('register')" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)" data-lang="btn_register">Создать аккаунт</button>
     <button class="btn btn-secondary" onclick="showScreenSafe('login')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">Войти</button>
-    <button class="btn btn-secondary" onclick="playAsGuest()">Играть как гость</button>
+    <button class="btn btn-secondary" onclick="playAsGuest()" data-lang="btn_guest">Играть как гость</button>
   </div>
   <div style="font-size:0.72rem;color:var(--muted);text-align:center;max-width:280px">
     Аккаунт сохраняет очки и достижения на любом устройстве
@@ -702,9 +702,12 @@ const INTRO_AUDIO_B64 = '';</script>
 <div id="menu" class="screen">
   <div class="logo">LOMI</div>
   <div class="tagline">Стратегическая игра стен</div>
-  <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.65rem;color:rgba(255,255,255,0.45);font-family:'Unbounded',sans-serif;margin-top:-6px">
-    <span style="width:7px;height:7px;border-radius:50%;background:#00F5C4;display:inline-block;animation:onlinePulse 2s ease-in-out infinite;flex-shrink:0"></span>
-    <span id="online-count">--</span> онлайн
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;font-size:0.65rem;color:rgba(255,255,255,0.45);font-family:'Unbounded',sans-serif;margin-top:-6px">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="width:7px;height:7px;border-radius:50%;background:#00F5C4;display:inline-block;animation:onlinePulse 2s ease-in-out infinite;flex-shrink:0"></span>
+      <span id="online-count">--</span> онлайн
+    </div>
+    <button id="lang-toggle" onclick="toggleLang()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-family:'Unbounded',sans-serif;font-size:0.6rem;padding:3px 8px;border-radius:20px;cursor:pointer">🇬🇧 EN</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <!-- Daily reward box -->
@@ -737,14 +740,14 @@ const INTRO_AUDIO_B64 = '';</script>
     <button class="score-reset" onclick="resetScore()" title="Сбросить счёт">↺</button>
   </div>
   <div class="btn-group">
-    <button class="btn btn-secondary" onclick="startGame(false)">Играть вдвоём</button>
-    <button class="btn btn-secondary" onclick="showScreenSafe('online')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa">🌐 Онлайн</button>
+    <button class="btn btn-secondary" onclick="startGame(false)" data-lang="btn_play2">Играть вдвоём</button>
+    <button class="btn btn-secondary" onclick="showScreenSafe('online')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa" data-lang="btn_online">🌐 Онлайн</button>
     <button class="btn btn-secondary" onclick="showScreen('difficulty')" style="border-color:rgba(0,245,196,0.3);color:var(--p2)">Против ktoyura</button>
-    <button class="btn btn-secondary" onclick="showScreen('shop')">🛒 Магазин</button>
-    <button class="btn btn-secondary" onclick="showScreenSafe('leaderboard')">🏆 Таблица лидеров</button>
-    <button class="btn btn-secondary" onclick="showScreen('puzzles')" style="border-color:rgba(255,211,61,0.4);color:#FFD93D">🧩 Пазлы</button>
-    <button class="btn btn-secondary" onclick="showScreen('achievements')">🏅 Достижения</button>
-    <button class="btn btn-secondary" onclick="showScreen('rules')">Как играть</button>
+    <button class="btn btn-secondary" onclick="showScreen('shop')" data-lang="btn_shop">🛒 Магазин</button>
+    <button class="btn btn-secondary" onclick="showScreenSafe('leaderboard')" data-lang="btn_leaderboard">🏆 Таблица лидеров</button>
+    <button class="btn btn-secondary" onclick="showScreen('puzzles')" style="border-color:rgba(255,211,61,0.4);color:#FFD93D" data-lang="btn_puzzles">🧩 Пазлы</button>
+    <button class="btn btn-secondary" onclick="showScreen('achievements')" data-lang="btn_achievements">🏅 Достижения</button>
+    <button class="btn btn-secondary" onclick="showScreen('rules')" data-lang="btn_rules">Как играть</button>
   </div>
   <div class="how-to">
     <p>Два игрока. Одна цель — добраться первым.<br><strong>Строй стены. Блокируй соперника.</strong></p>
@@ -4886,6 +4889,7 @@ function startTutorial() {
   loadAchievements();
   loadShop();
   loadPuzzlePoints();
+  initLang();
   applyBoardTheme();
   updatePointsUI();
   updateRatingUI();
@@ -6941,6 +6945,134 @@ function initPuzzleScreen() {
   }
   renderPuzzleGrid();
 }
+
+
+// ── LANGUAGE SYSTEM ───────────────────────────────────────────────
+const STRINGS = {
+  ru: {
+    // Menu
+    menu_title: 'LOMI',
+    menu_sub: 'Стратегическая игра стен',
+    btn_play2: 'Играть вдвоём',
+    btn_online: '🌐 Онлайн',
+    btn_vs_ktoyura: 'Против KTOYURA',
+    btn_shop: '🛒 Магазин',
+    btn_leaderboard: '🏆 Таблица лидеров',
+    btn_puzzles: '🧩 Пазлы',
+    btn_achievements: '🏅 Достижения',
+    btn_rules: 'Как играть',
+    // Auth
+    auth_title: 'Добро пожаловать!',
+    btn_register: 'Создать аккаунт',
+    btn_login: 'Войти',
+    btn_guest: 'Играть как гость',
+    // Game
+    btn_move: 'ХОД',
+    btn_wall: 'СТЕНА',
+    btn_surrender: '🏳',
+    // Online
+    online_title: '🌐 Онлайн',
+    searching: 'Ищем соперника...',
+    btn_back: 'Назад',
+    btn_cancel: 'Отмена',
+    // Win
+    victory: 'Победа!',
+    defeat: 'Поражение',
+    btn_rematch: '⚔️ Реванш',
+    btn_menu: '🚪 Выйти в меню',
+    // Intro
+    btn_first_time: 'Первый раз',
+    btn_login_short: 'Войти',
+    // Daily
+    daily_title: 'Ежедневная награда',
+    btn_spin: '🎰 Крутить!',
+    btn_claim: '🎁 Забрать!',
+    // Puzzles
+    puzzles_title: '🧩 Пазлы',
+    daily_puzzle: 'Пазл дня',
+    double_reward: 'Двойная награда!',
+  },
+  en: {
+    // Menu
+    menu_title: 'LOMI',
+    menu_sub: 'Strategic Wall Game',
+    btn_play2: 'Play 2 Players',
+    btn_online: '🌐 Online',
+    btn_vs_ktoyura: 'vs KTOYURA',
+    btn_shop: '🛒 Shop',
+    btn_leaderboard: '🏆 Leaderboard',
+    btn_puzzles: '🧩 Puzzles',
+    btn_achievements: '🏅 Achievements',
+    btn_rules: 'How to Play',
+    // Auth
+    auth_title: 'Welcome!',
+    btn_register: 'Create Account',
+    btn_login: 'Log In',
+    btn_guest: 'Play as Guest',
+    // Game
+    btn_move: 'MOVE',
+    btn_wall: 'WALL',
+    btn_surrender: '🏳',
+    // Online
+    online_title: '🌐 Online',
+    searching: 'Finding opponent...',
+    btn_back: 'Back',
+    btn_cancel: 'Cancel',
+    // Win
+    victory: 'Victory!',
+    defeat: 'Defeat',
+    btn_rematch: '⚔️ Rematch',
+    btn_menu: '🚪 Back to Menu',
+    // Intro
+    btn_first_time: 'New Player',
+    btn_login_short: 'Log In',
+    // Daily
+    daily_title: 'Daily Reward',
+    btn_spin: '🎰 Spin!',
+    btn_claim: '🎁 Claim!',
+    // Puzzles
+    puzzles_title: '🧩 Puzzles',
+    daily_puzzle: 'Daily Puzzle',
+    double_reward: 'Double reward!',
+  }
+};
+
+let currentLang = 'ru';
+
+function detectLang() {
+  const saved = localStorage.getItem('lomi_lang');
+  if (saved) return saved;
+  const browser = navigator.language || navigator.userLanguage || 'ru';
+  return browser.startsWith('ru') ? 'ru' : 'en';
+}
+
+function t(key) {
+  return STRINGS[currentLang][key] || STRINGS.ru[key] || key;
+}
+
+function applyLang() {
+  document.documentElement.lang = currentLang;
+  // Apply to all elements with data-lang attribute
+  document.querySelectorAll('[data-lang]').forEach(el => {
+    const key = el.getAttribute('data-lang');
+    el.textContent = t(key);
+  });
+  // Update lang toggle button
+  const btn = document.getElementById('lang-toggle');
+  if (btn) btn.textContent = currentLang === 'ru' ? '🇬🇧 EN' : '🇷🇺 RU';
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'ru' ? 'en' : 'ru';
+  localStorage.setItem('lomi_lang', currentLang);
+  applyLang();
+}
+
+function initLang() {
+  currentLang = detectLang();
+  applyLang();
+}
+
 
 </script>
 <!-- PUZZLE SCREEN -->
