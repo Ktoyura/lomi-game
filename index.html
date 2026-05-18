@@ -897,6 +897,7 @@ const INTRO_AUDIO_B64 = '';</script>
     <button class="shop-tab active" id="tab-piece" onclick="switchShopTab('piece')">Фишки</button>
     <button class="shop-tab" id="tab-wall" onclick="switchShopTab('wall')">Стенки</button>
     <button class="shop-tab" id="tab-board-main" onclick="switchShopTab('board')">🏟️ Поле</button>
+    <button class="shop-tab" id="tab-bot" onclick="switchShopTab('bot')">🤖 Бот</button>
   </div>
   <div class="shop-tabs" id="shop-sub-tabs" style="max-width:480px;width:100%">
     <button class="shop-tab active" id="tab-flags" onclick="switchShopFilter('flag')" style="font-size:0.55rem">🌍 Флаги</button>
@@ -1265,6 +1266,8 @@ const TIER_STARS  = { 1:'⭐⭐⭐', 2:'⭐⭐', 3:'⭐' };
 let ownedItems   = new Set(['default']);
 let equippedPiece = 'default';
 let equippedWall  = 'default';
+let equippedBotPiece = 'default';
+let equippedBotWall  = 'default';
 let shopTab = 'piece';
 let shopFilter = 'flag';
 let equippedBoard = 'default';
@@ -1273,8 +1276,10 @@ function loadShop() {
   try {
     const o = localStorage.getItem('lomi_owned');
     if (o) ownedItems = new Set(JSON.parse(o));
-    equippedPiece = localStorage.getItem('lomi_piece') || 'default';
-    equippedWall  = localStorage.getItem('lomi_wall')  || 'default';
+    equippedPiece    = localStorage.getItem('lomi_piece')     || 'default';
+    equippedWall     = localStorage.getItem('lomi_wall')      || 'default';
+    equippedBotPiece = localStorage.getItem('lomi_bot_piece') || 'default';
+    equippedBotWall  = localStorage.getItem('lomi_bot_wall')  || 'default';
     equippedBoard = localStorage.getItem('lomi_board') || 'default';
   } catch(e) {}
   applyBoardTheme();
@@ -1296,8 +1301,10 @@ function applyBoardTheme() {
 
 function saveShop() {
   localStorage.setItem('lomi_owned',  JSON.stringify([...ownedItems]));
-  localStorage.setItem('lomi_piece',  equippedPiece);
-  localStorage.setItem('lomi_wall',   equippedWall);
+  localStorage.setItem('lomi_piece',     equippedPiece);
+  localStorage.setItem('lomi_wall',      equippedWall);
+  localStorage.setItem('lomi_bot_piece', equippedBotPiece);
+  localStorage.setItem('lomi_bot_wall',  equippedBotWall);
   localStorage.setItem('lomi_board',  equippedBoard);
 }
 
@@ -1314,6 +1321,7 @@ function switchShopTab(tab) {
   document.getElementById('tab-piece').classList.toggle('active', tab==='piece');
   document.getElementById('tab-wall').classList.toggle('active', tab==='wall');
   if(document.getElementById('tab-board-main')) document.getElementById('tab-board-main').classList.toggle('active', tab==='board');
+  if(document.getElementById('tab-bot')) document.getElementById('tab-bot').classList.toggle('active', tab==='bot');
 
   // Board tab uses board filter, others use flag by default
   if (tab === 'board') {
@@ -1332,7 +1340,98 @@ function switchShopTab(tab) {
   renderShop();
 }
 
+function renderBotShop() {
+  const container = document.getElementById('shop-grid');
+  if (!container) return;
+  container.innerHTML = '';
+  document.getElementById('shop-balance').textContent = totalPoints.toLocaleString();
+
+  // Bot piece section
+  const pieceTitle = document.createElement('div');
+  pieceTitle.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);width:100%;margin-bottom:4px;margin-top:8px';
+  pieceTitle.textContent = '🔵 Фишка бота';
+  container.appendChild(pieceTitle);
+
+  const pieceSkins = SHOP_ITEMS.filter(i => i.type === 'piece' || i.type === 'flag' || i.type === 'color');
+  pieceSkins.forEach(item => {
+    const owned = ownedItems.has(item.id);
+    if (!owned) return; // only show owned skins for bot
+    const card = document.createElement('div');
+    const isEquipped = equippedBotPiece === item.id;
+    card.className = 'shop-card' + (isEquipped ? ' equipped' : '');
+    card.innerHTML = `
+      <div class="shop-icon">${item.emoji || '⚽'}</div>
+      <div class="shop-name">${item.name}</div>
+      <button class="btn btn-sm ${isEquipped ? 'btn-primary' : 'btn-secondary'}"
+        onclick="equipBotSkin('piece','${item.id}')" style="font-size:0.6rem;padding:4px 8px">
+        ${isEquipped ? '✅ Надет' : 'Надеть'}
+      </button>`;
+    container.appendChild(card);
+  });
+
+  // Default bot piece
+  const defCard = document.createElement('div');
+  const defEquipped = equippedBotPiece === 'default';
+  defCard.className = 'shop-card' + (defEquipped ? ' equipped' : '');
+  defCard.innerHTML = `
+    <div class="shop-icon">🔵</div>
+    <div class="shop-name">По умолчанию</div>
+    <button class="btn btn-sm ${defEquipped ? 'btn-primary' : 'btn-secondary'}"
+      onclick="equipBotSkin('piece','default')" style="font-size:0.6rem;padding:4px 8px">
+      ${defEquipped ? '✅ Надет' : 'Надеть'}
+    </button>`;
+  container.insertBefore(defCard, container.children[1]);
+
+  // Bot wall section
+  const wallTitle = document.createElement('div');
+  wallTitle.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);width:100%;margin-bottom:4px;margin-top:16px';
+  wallTitle.textContent = '🧱 Стенки бота';
+  container.appendChild(wallTitle);
+
+  const wallSkins = SHOP_ITEMS.filter(i => i.type === 'wall');
+  wallSkins.forEach(item => {
+    const owned = ownedItems.has(item.id);
+    if (!owned) return;
+    const card = document.createElement('div');
+    const isEquipped = equippedBotWall === item.id;
+    card.className = 'shop-card' + (isEquipped ? ' equipped' : '');
+    card.innerHTML = `
+      <div class="shop-icon">${item.emoji || '🧱'}</div>
+      <div class="shop-name">${item.name}</div>
+      <button class="btn btn-sm ${isEquipped ? 'btn-primary' : 'btn-secondary'}"
+        onclick="equipBotSkin('wall','${item.id}')" style="font-size:0.6rem;padding:4px 8px">
+        ${isEquipped ? '✅ Надет' : 'Надеть'}
+      </button>`;
+    container.appendChild(card);
+  });
+
+  // Default bot wall
+  const defWall = document.createElement('div');
+  const defWallEquipped = equippedBotWall === 'default';
+  defWall.className = 'shop-card' + (defWallEquipped ? ' equipped' : '');
+  defWall.innerHTML = `
+    <div class="shop-icon">🔴</div>
+    <div class="shop-name">По умолчанию</div>
+    <button class="btn btn-sm ${defWallEquipped ? 'btn-primary' : 'btn-secondary'}"
+      onclick="equipBotSkin('wall','default')" style="font-size:0.6rem;padding:4px 8px">
+      ${defWallEquipped ? '✅ Надет' : 'Надеть'}
+    </button>`;
+  container.insertBefore(defWall, wallTitle.nextSibling);
+}
+
+function equipBotSkin(type, id) {
+  if (type === 'piece') {
+    equippedBotPiece = id;
+  } else {
+    equippedBotWall = id;
+  }
+  saveShop();
+  renderBotShop();
+  showToast('✅ Готово!', 'Скин бота изменён');
+}
+
 function renderShop() {
+  if (shopTab === 'bot') { renderBotShop(); return; }
   const grid = document.getElementById('shop-grid');
   document.getElementById('shop-balance').textContent = totalPoints.toLocaleString();
   grid.innerHTML = '';
@@ -5424,12 +5523,13 @@ function draw() {
     const r = CELL * 0.34;
 
     // Get skin for player 1; player 2 always default
-    const skinItem = pi===0 ? SHOP_ITEMS.find(i=>i.id===equippedPiece) : null;
+    const skinId = pi===0 ? equippedPiece : equippedBotPiece;
+    const skinItem = SHOP_ITEMS.find(i=>i.id===skinId);
     const pieceColor = skinItem
-      ? (skinItem.pieceColor || skinItem.color || '#CC2200')
+      ? (skinItem.pieceColor || skinItem.color || (pi===0 ? '#CC2200' : '#4488FF'))
       : (pi===0 ? '#CC2200' : '#4488FF');
     const glowColor = skinItem
-      ? (skinItem.borderColor ? skinItem.borderColor+'44' : 'rgba(204,34,0,0.2)')
+      ? (skinItem.borderColor ? skinItem.borderColor+'44' : 'rgba(100,100,255,0.2)')
       : (pi===0 ? 'rgba(204,34,0,0.3)' : 'rgba(68,136,255,0.3)');
 
     // Glow ring
@@ -5474,8 +5574,13 @@ function drawWall(r, c, dir, invalid, alpha, owner) {
     ctx.fillStyle = 'rgba(255,80,80,0.7)';
     ctx.beginPath(); roundRect(ctx,wx,wy,ww,wh,WALL_T/2); ctx.fill();
   } else if (owner === 1) {
-    // Bot wall — always teal
-    ctx.fillStyle = BOT_WALL_COLOR;
+    // Bot wall — use equipped bot wall skin
+    const botWallItem = equippedBotWall !== 'default' ? SHOP_ITEMS.find(i=>i.id===equippedBotWall) : null;
+    if (botWallItem && botWallItem.color) {
+      ctx.fillStyle = botWallItem.color;
+    } else {
+      ctx.fillStyle = BOT_WALL_COLOR;
+    }
     ctx.beginPath(); roundRect(ctx,wx,wy,ww,wh,WALL_T/2); ctx.fill();
   } else {
     const wallItem = SHOP_ITEMS.find(i=>i.id===equippedWall);
