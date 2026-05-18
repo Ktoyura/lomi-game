@@ -1346,85 +1346,75 @@ function renderBotShop() {
   container.innerHTML = '';
   document.getElementById('shop-balance').textContent = totalPoints.toLocaleString();
 
-  // Bot piece section
-  const pieceTitle = document.createElement('div');
-  pieceTitle.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);width:100%;margin-bottom:4px;margin-top:8px';
-  pieceTitle.textContent = '🔵 Фишка бота';
-  container.appendChild(pieceTitle);
-
-  const pieceSkins = SHOP_ITEMS.filter(i => i.type === 'piece' || i.type === 'flag' || i.type === 'color');
-  pieceSkins.forEach(item => {
-    const owned = ownedItems.has(item.id);
-    if (!owned) return; // only show owned skins for bot
+  // Helper to make bot card
+  function makeBotCard(type, id, name, icon, color) {
+    const botOwned = id === 'default' || ownedItems.has('bot_' + id);
+    const isEquipped = type === 'piece' ? equippedBotPiece === id : equippedBotWall === id;
     const card = document.createElement('div');
-    const isEquipped = equippedBotPiece === item.id;
-    card.className = 'shop-card' + (isEquipped ? ' equipped' : '');
-    card.innerHTML = `
-      <div class="shop-icon">${item.emoji || '⚽'}</div>
-      <div class="shop-name">${item.name}</div>
-      <button class="btn btn-sm ${isEquipped ? 'btn-primary' : 'btn-secondary'}"
-        onclick="equipBotSkin('piece','${item.id}')" style="font-size:0.6rem;padding:4px 8px">
-        ${isEquipped ? '✅ Надет' : 'Надеть'}
-      </button>`;
-    container.appendChild(card);
+    card.className = 'shop-card' + (isEquipped ? ' equipped' : '') + (botOwned && !isEquipped ? ' owned' : '');
+
+    let preview = '';
+    if (color) {
+      preview = `<div style="width:44px;height:44px;border-radius:${type==='piece'?'50%':'8px'};background:${color};flex-shrink:0;box-shadow:0 0 10px ${color}66"></div>`;
+    } else {
+      preview = `<div style="font-size:1.8rem">${icon}</div>`;
+    }
+
+    let actionBtn = '';
+    if (isEquipped) {
+      actionBtn = `<button class="btn btn-sm btn-primary" style="font-size:0.6rem;padding:4px 8px">✅ Надет</button>`;
+    } else if (botOwned) {
+      actionBtn = `<button class="btn btn-sm btn-secondary" onclick="equipBotSkin('${type}','${id}')" style="font-size:0.6rem;padding:4px 8px">Надеть</button>`;
+    } else {
+      actionBtn = `<button class="btn btn-sm btn-secondary" onclick="buyBotSkin('${type}','${id}')" style="font-size:0.6rem;padding:4px 8px;color:#FFD700">1 🪙</button>`;
+    }
+
+    card.innerHTML = `${preview}<div class="shop-name" style="font-size:0.6rem">${name}</div>${actionBtn}`;
+    if (isEquipped || botOwned) card.onclick = () => equipBotSkin(type, id);
+    return card;
+  }
+
+  // ── ФИШКА БОТА ──
+  const pt = document.createElement('div');
+  pt.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.72rem;font-weight:700;color:var(--muted);width:100%;margin:8px 0 4px';
+  pt.textContent = '🔵 Фишка бота';
+  container.appendChild(pt);
+
+  // Default
+  container.appendChild(makeBotCard('piece','default','По умолчанию','🔵','#4488FF'));
+
+  // All piece/flag/color skins
+  SHOP_ITEMS.filter(i => i.type==='piece'||i.type==='flag'||i.type==='color').forEach(item => {
+    container.appendChild(makeBotCard('piece', item.id, item.name, item.emoji||'⚽', item.color||item.pieceColor||null));
   });
 
-  // Default bot piece
-  const defCard = document.createElement('div');
-  const defEquipped = equippedBotPiece === 'default';
-  defCard.className = 'shop-card' + (defEquipped ? ' equipped' : '');
-  defCard.innerHTML = `
-    <div class="shop-icon">🔵</div>
-    <div class="shop-name">По умолчанию</div>
-    <button class="btn btn-sm ${defEquipped ? 'btn-primary' : 'btn-secondary'}"
-      onclick="equipBotSkin('piece','default')" style="font-size:0.6rem;padding:4px 8px">
-      ${defEquipped ? '✅ Надет' : 'Надеть'}
-    </button>`;
-  container.insertBefore(defCard, container.children[1]);
+  // ── СТЕНКИ БОТА ──
+  const wt = document.createElement('div');
+  wt.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.72rem;font-weight:700;color:var(--muted);width:100%;margin:16px 0 4px';
+  wt.textContent = '🧱 Стенки бота';
+  container.appendChild(wt);
 
-  // Bot wall section
-  const wallTitle = document.createElement('div');
-  wallTitle.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);width:100%;margin-bottom:4px;margin-top:16px';
-  wallTitle.textContent = '🧱 Стенки бота';
-  container.appendChild(wallTitle);
+  // Default
+  container.appendChild(makeBotCard('wall','default','По умолчанию','🔴','#FF3333'));
 
-  const wallSkins = SHOP_ITEMS.filter(i => i.type === 'wall');
-  wallSkins.forEach(item => {
-    const owned = ownedItems.has(item.id);
-    if (!owned) return;
-    const card = document.createElement('div');
-    const isEquipped = equippedBotWall === item.id;
-    card.className = 'shop-card' + (isEquipped ? ' equipped' : '');
-    card.innerHTML = `
-      <div class="shop-icon">${item.emoji || '🧱'}</div>
-      <div class="shop-name">${item.name}</div>
-      <button class="btn btn-sm ${isEquipped ? 'btn-primary' : 'btn-secondary'}"
-        onclick="equipBotSkin('wall','${item.id}')" style="font-size:0.6rem;padding:4px 8px">
-        ${isEquipped ? '✅ Надет' : 'Надеть'}
-      </button>`;
-    container.appendChild(card);
+  // All wall skins
+  SHOP_ITEMS.filter(i => i.type==='wall').forEach(item => {
+    container.appendChild(makeBotCard('wall', item.id, item.name, item.emoji||'🧱', item.color||null));
   });
+}
 
-  // Default bot wall
-  const defWall = document.createElement('div');
-  const defWallEquipped = equippedBotWall === 'default';
-  defWall.className = 'shop-card' + (defWallEquipped ? ' equipped' : '');
-  defWall.innerHTML = `
-    <div class="shop-icon">🔴</div>
-    <div class="shop-name">По умолчанию</div>
-    <button class="btn btn-sm ${defWallEquipped ? 'btn-primary' : 'btn-secondary'}"
-      onclick="equipBotSkin('wall','default')" style="font-size:0.6rem;padding:4px 8px">
-      ${defWallEquipped ? '✅ Надет' : 'Надеть'}
-    </button>`;
-  container.insertBefore(defWall, wallTitle.nextSibling);
+function buyBotSkin(type, id) {
+  if (totalPoints < 1) { showToast('❌ Мало монет', 'Нужна 1 монета'); return; }
+  totalPoints -= 1;
+  ownedItems.add('bot_' + id);
+  savePoints(); saveShop(); updatePointsUI();
+  equipBotSkin(type, id);
+  showToast('✅ Куплено!', 'Скин бота разблокирован за 1 🪙');
 }
 
 function equipBotSkin(type, id) {
-  if (type === 'piece') {
-    equippedBotPiece = id;
-  } else {
-    equippedBotWall = id;
-  }
+  if (type === 'piece') equippedBotPiece = id;
+  else equippedBotWall = id;
   saveShop();
   renderBotShop();
   showToast('✅ Готово!', 'Скин бота изменён');
