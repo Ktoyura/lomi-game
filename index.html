@@ -1377,7 +1377,13 @@ function renderBotShop() {
     }
 
     card.innerHTML = `${previewHTML}<div class="shop-name">${name}</div>${actionBtn}`;
-    if (botOwned) card.onclick = () => equipBotSkin(type, id);
+    // Only set card click if owned (to equip) — don't override buy button
+    if (botOwned && !isEquipped) {
+      card.onclick = (e) => {
+        if (e.target.tagName === 'DIV' && e.target.className.includes('shop-price')) return;
+        equipBotSkin(type, id);
+      };
+    }
 
     // Draw flag after DOM insert
     if (item && item.type === 'flag') {
