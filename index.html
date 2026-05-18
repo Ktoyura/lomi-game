@@ -1340,53 +1340,56 @@ function switchShopTab(tab) {
   renderShop();
 }
 
+function onBotCardClick(type, id) {
+  const botOwned = id === 'default' || ownedItems.has('bot_' + id);
+  if (botOwned) {
+    if (type === 'piece') equippedBotPiece = id;
+    else equippedBotWall = id;
+    saveShop();
+    renderBotShop();
+    playTone(660,'sine',0.1,0.15);
+    playTone(880,'sine',0.12,0.12,0.08);
+  } else {
+    if (totalPoints < 1) {
+      showToast('Недостаточно монет 😔', 'Нужна 1 🪙');
+      return;
+    }
+    totalPoints -= 1;
+    savePoints();
+    ownedItems.add('bot_' + id);
+    if (type === 'piece') equippedBotPiece = id;
+    else equippedBotWall = id;
+    saveShop();
+    updatePointsUI();
+    renderBotShop();
+    showToast('Куплено! 🎉', 'Скин бота разблокирован');
+    playTone(523,'sine',0.1,0.2);
+    playTone(659,'sine',0.12,0.2,0.1);
+    playTone(784,'sine',0.15,0.2,0.2);
+  }
+}
+window.onBotCardClick = onBotCardClick;
+
 function renderBotShop() {
-  const container = document.getElementById('shop-grid');
-  if (!container) return;
-  container.innerHTML = '';
+  const grid = document.getElementById('shop-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
   document.getElementById('shop-balance').textContent = totalPoints.toLocaleString();
 
-  // Helper to make bot card
-  function makeBotCard(type, id, name, item) {
+  function makeBotSkinCard(type, id, name, item) {
     const botOwned = id === 'default' || ownedItems.has('bot_' + id);
     const isEquipped = type === 'piece' ? equippedBotPiece === id : equippedBotWall === id;
-    const card = document.createElement('div');
-    card.className = 'shop-card' + (isEquipped ? ' equipped' : '') + (botOwned && !isEquipped ? ' owned' : '');
-
-    // Preview — same as makeShopCard
-    const cid = 'bot_prev_' + type + '_' + id;
-    let previewHTML = '';
-    if (id === 'default') {
-      if (type === 'piece') previewHTML = `<div style="width:58px;height:58px;border-radius:50%;background:#4488FF;flex-shrink:0;box-shadow:0 0 16px rgba(68,136,255,0.4)"></div>`;
-      else previewHTML = `<div style="width:58px;height:12px;border-radius:4px;background:#FF3333;flex-shrink:0"></div>`;
-    } else if (item && item.type === 'flag') {
-      if (type === 'piece') previewHTML = `<canvas id="${cid}" width="58" height="58" style="border-radius:50%;flex-shrink:0"></canvas>`;
-      else previewHTML = `<canvas id="${cid}" width="116" height="32" style="border-radius:4px;flex-shrink:0"></canvas>`;
-    } else if (item && item.type === 'color') {
-      if (type === 'piece') previewHTML = `<div style="width:58px;height:58px;border-radius:50%;background:${item.color};flex-shrink:0;box-shadow:0 0 12px ${item.color}88"></div>`;
-      else previewHTML = `<div style="width:58px;height:12px;border-radius:4px;background:${item.color};flex-shrink:0"></div>`;
-    }
-
-    let actionBtn = '';
-    if (isEquipped) {
-      actionBtn = `<div class="shop-price owned-price">✅ Одето</div>`;
-    } else if (botOwned) {
-      actionBtn = `<div class="shop-price owned-price" style="cursor:pointer" onclick="window.equipBotSkin('${type}','${id}')">Одеть</div>`;
-    } else {
-      actionBtn = `<div class="shop-price can-buy" style="cursor:pointer" onclick="window.buyBotSkin('${type}','${id}')">1 🪙</div>`;
-    }
-
-    card.innerHTML = `${previewHTML}<div class="shop-name">${name}</div>${actionBtn}`;
-
-    // Draw flag after DOM insert
-    if (item && item.type === 'flag') {
-      setTimeout(() => {
-        const cv = document.getElementById(cid);
-        if (!cv) return;
-        const c2 = cv.getContext('2d');
-        if (type === 'piece') { c2.clearRect(0,0,58,58); drawFlag(c2, id, 0, 0, 58, 58, true); }
-        else { c2.clearRect(0,0,116,32); drawFlag(c2, id, 0, 0, 116, 32, false); }
-      }, 0);
+    // Reuse makeShopCard visuals — just change click and price
+    const equipped = isEquipped ? id : '__none__';
+    const card = makeShopCard(id, name, 0, 1, equipped, false, item);
+    // Override onclick to use bot logic
+    card.onclick = () => onBotCardClick(type, id);
+    // Override price text
+    const priceEl = card.querySelector('.shop-price');
+    if (priceEl) {
+      if (isEquipped) priceEl.textContent = 'Одето';
+      else if (botOwned) priceEl.textContent = 'Одеть';
+      else { priceEl.textContent = '1 🪙'; priceEl.className = 'shop-price can-buy'; }
     }
     return card;
   }
@@ -1395,28 +1398,22 @@ function renderBotShop() {
   const pt = document.createElement('div');
   pt.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.72rem;font-weight:700;color:var(--muted);width:100%;margin:8px 0 4px';
   pt.textContent = '🔵 Фишка бота';
-  container.appendChild(pt);
+  grid.appendChild(pt);
 
-  // Default piece
-  container.appendChild(makeBotCard('piece', 'default', 'По умолчанию', null));
-
-  // All piece/flag/color skins
+  grid.appendChild(makeBotSkinCard('piece', 'default', 'По умолчанию', null));
   SHOP_ITEMS.filter(i => i.type==='piece'||i.type==='flag'||i.type==='color').forEach(item => {
-    container.appendChild(makeBotCard('piece', item.id, item.name, item));
+    grid.appendChild(makeBotSkinCard('piece', item.id, item.name, item));
   });
 
   // ── СТЕНКИ БОТА ──
   const wt = document.createElement('div');
   wt.style.cssText = 'font-family:"Unbounded",sans-serif;font-size:0.72rem;font-weight:700;color:var(--muted);width:100%;margin:16px 0 4px';
   wt.textContent = '🧱 Стенки бота';
-  container.appendChild(wt);
+  grid.appendChild(wt);
 
-  // Default wall
-  container.appendChild(makeBotCard('wall', 'default', 'По умолчанию', null));
-
-  // All wall skins
+  grid.appendChild(makeBotSkinCard('wall', 'default', 'По умолчанию', null));
   SHOP_ITEMS.filter(i => i.type==='wall').forEach(item => {
-    container.appendChild(makeBotCard('wall', item.id, item.name, item));
+    grid.appendChild(makeBotSkinCard('wall', item.id, item.name, item));
   });
 }
 
