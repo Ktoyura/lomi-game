@@ -1371,19 +1371,12 @@ function renderBotShop() {
     if (isEquipped) {
       actionBtn = `<div class="shop-price owned-price">✅ Одето</div>`;
     } else if (botOwned) {
-      actionBtn = `<div class="shop-price owned-price bot-equip-btn">Одеть</div>`;
+      actionBtn = `<div class="shop-price owned-price" style="cursor:pointer" onclick="window.equipBotSkin('${type}','${id}')">Одеть</div>`;
     } else {
-      actionBtn = `<div class="shop-price can-buy bot-buy-btn">1 🪙</div>`;
+      actionBtn = `<div class="shop-price can-buy" style="cursor:pointer" onclick="window.buyBotSkin('${type}','${id}')">1 🪙</div>`;
     }
 
     card.innerHTML = `${previewHTML}<div class="shop-name">${name}</div>${actionBtn}`;
-
-    // Event listeners — no inline onclick
-    const buyBtn = card.querySelector('.bot-buy-btn');
-    const equipBtn = card.querySelector('.bot-equip-btn');
-    if (buyBtn) buyBtn.addEventListener('click', (e) => { e.stopPropagation(); buyBotSkin(type, id); });
-    if (equipBtn) equipBtn.addEventListener('click', (e) => { e.stopPropagation(); equipBotSkin(type, id); });
-    if (botOwned && !isEquipped) card.addEventListener('click', () => equipBotSkin(type, id));
 
     // Draw flag after DOM insert
     if (item && item.type === 'flag') {
@@ -1428,6 +1421,7 @@ function renderBotShop() {
 }
 
 function buyBotSkin(type, id) {
+  console.log('buyBotSkin called:', type, id, 'coins:', totalPoints);
   if (totalPoints < 1) { showToast('❌ Мало монет', 'Нужна 1 монета'); return; }
   totalPoints -= 1;
   ownedItems.add('bot_' + id);
@@ -1435,6 +1429,7 @@ function buyBotSkin(type, id) {
   equipBotSkin(type, id);
   showToast('✅ Куплено!', 'Скин бота разблокирован за 1 🪙');
 }
+window.buyBotSkin = buyBotSkin;
 
 function equipBotSkin(type, id) {
   if (type === 'piece') equippedBotPiece = id;
@@ -1443,6 +1438,7 @@ function equipBotSkin(type, id) {
   renderBotShop();
   showToast('✅ Готово!', 'Скин бота изменён');
 }
+window.equipBotSkin = equipBotSkin;
 
 function renderShop() {
   if (shopTab === 'bot') { renderBotShop(); return; }
