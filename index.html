@@ -1369,21 +1369,21 @@ function renderBotShop() {
 
     let actionBtn = '';
     if (isEquipped) {
-      actionBtn = `<div class="shop-badge badge-equipped">Одето</div><div class="shop-price owned-price">Одето</div>`;
+      actionBtn = `<div class="shop-price owned-price">✅ Одето</div>`;
     } else if (botOwned) {
-      actionBtn = `<div class="shop-badge badge-owned">Есть</div><div class="shop-price owned-price" onclick="equipBotSkin('${type}','${id}')" style="cursor:pointer">Одеть</div>`;
+      actionBtn = `<div class="shop-price owned-price bot-equip-btn">Одеть</div>`;
     } else {
-      actionBtn = `<div class="shop-price can-buy" onclick="buyBotSkin('${type}','${id}')">1 🪙</div>`;
+      actionBtn = `<div class="shop-price can-buy bot-buy-btn">1 🪙</div>`;
     }
 
     card.innerHTML = `${previewHTML}<div class="shop-name">${name}</div>${actionBtn}`;
-    // Only set card click if owned (to equip) — don't override buy button
-    if (botOwned && !isEquipped) {
-      card.onclick = (e) => {
-        if (e.target.tagName === 'DIV' && e.target.className.includes('shop-price')) return;
-        equipBotSkin(type, id);
-      };
-    }
+
+    // Event listeners — no inline onclick
+    const buyBtn = card.querySelector('.bot-buy-btn');
+    const equipBtn = card.querySelector('.bot-equip-btn');
+    if (buyBtn) buyBtn.addEventListener('click', (e) => { e.stopPropagation(); buyBotSkin(type, id); });
+    if (equipBtn) equipBtn.addEventListener('click', (e) => { e.stopPropagation(); equipBotSkin(type, id); });
+    if (botOwned && !isEquipped) card.addEventListener('click', () => equipBotSkin(type, id));
 
     // Draw flag after DOM insert
     if (item && item.type === 'flag') {
