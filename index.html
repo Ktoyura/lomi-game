@@ -1353,11 +1353,15 @@ function renderBotShop() {
     const card = document.createElement('div');
     card.className = 'shop-card' + (isEquipped ? ' equipped' : '') + (botOwned && !isEquipped ? ' owned' : '');
 
+    // Preview — use emoji for flags, color circle for colors
     let preview = '';
-    if (color) {
+    if (icon && icon.length > 2) {
+      // Flag emoji — show as large emoji
+      preview = `<div style="font-size:2rem;line-height:1">${icon}</div>`;
+    } else if (color) {
       preview = `<div style="width:44px;height:44px;border-radius:${type==='piece'?'50%':'8px'};background:${color};flex-shrink:0;box-shadow:0 0 10px ${color}66"></div>`;
     } else {
-      preview = `<div style="font-size:1.8rem">${icon}</div>`;
+      preview = `<div style="font-size:1.8rem">${icon||'⚽'}</div>`;
     }
 
     let actionBtn = '';
@@ -1385,7 +1389,9 @@ function renderBotShop() {
 
   // All piece/flag/color skins
   SHOP_ITEMS.filter(i => i.type==='piece'||i.type==='flag'||i.type==='color').forEach(item => {
-    container.appendChild(makeBotCard('piece', item.id, item.name, item.emoji||'⚽', item.color||item.pieceColor||null));
+    const icon = item.flag || item.emoji || '⚽';
+    const color = item.type === 'color' ? (item.color || item.pieceColor) : null;
+    container.appendChild(makeBotCard('piece', item.id, item.name, icon, color));
   });
 
   // ── СТЕНКИ БОТА ──
