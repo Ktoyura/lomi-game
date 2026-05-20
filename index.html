@@ -771,15 +771,15 @@ const INTRO_AUDIO_B64 = '';</script>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:480px">
     <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
       <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:var(--p2)" id="profile-wins">0</div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">Побед</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px" data-lang="profile_wins">Побед</div>
     </div>
     <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
       <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#ff6b6b" id="profile-losses">0</div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">Поражений</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px" data-lang="profile_losses">Поражений</div>
     </div>
     <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
       <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#FFD93D" id="profile-games">0</div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">Всего игр</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px" data-lang="profile_games">Всего игр</div>
     </div>
   </div>
 
@@ -787,11 +787,11 @@ const INTRO_AUDIO_B64 = '';</script>
   <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:480px">
     <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,211,61,0.2)">
       <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#FFD93D" id="profile-puzzles">0</div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">🧩 Пазлов решено</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px" data-lang="profile_puzzles">🧩 Пазлов решено</div>
     </div>
     <div style="background:var(--surface2);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,211,61,0.2)">
       <div style="font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;color:#FFD93D" id="profile-puzzle-pts">0</div>
-      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">🧩 Пазл-очков</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:2px" data-lang="profile_puzzle_pts">🧩 Пазл-очков</div>
     </div>
   </div>
 
@@ -866,7 +866,7 @@ const INTRO_AUDIO_B64 = '';</script>
 <!-- ACHIEVEMENTS -->
 <div id="achievements" class="screen">
   <div class="ach-header">
-    <div class="ach-title">🏅 Достижения</div>
+    <div class="ach-title" data-lang="ach_title">🏅 Достижения</div>
     <div class="ach-count" id="ach-count">0 / 11</div>
   </div>
   <div class="ach-grid" id="ach-grid"></div>
@@ -894,8 +894,8 @@ const INTRO_AUDIO_B64 = '';</script>
     </div>
   </div>
   <div class="shop-tabs">
-    <button class="shop-tab active" id="tab-piece" onclick="switchShopTab('piece')">Фишки</button>
-    <button class="shop-tab" id="tab-wall" onclick="switchShopTab('wall')">Стенки</button>
+    <button class="shop-tab active" id="tab-piece" onclick="switchShopTab('piece')" data-lang="shop_tab_piece">Фишки</button>
+    <button class="shop-tab" id="tab-wall" onclick="switchShopTab('wall')" data-lang="shop_tab_wall">Стенки</button>
     <button class="shop-tab" id="tab-board-main" onclick="switchShopTab('board')">🏟️ Поле</button>
     <button class="shop-tab" id="tab-bot" onclick="switchShopTab('bot')">🤖 Бот</button>
   </div>
@@ -922,13 +922,13 @@ const INTRO_AUDIO_B64 = '';</script>
   <div class="online-panel" id="opanel-search">
     <div style="font-size:0.82rem;color:var(--muted);text-align:center">Автоматический поиск соперника</div>
     <div id="search-idle">
-      <button class="btn btn-primary" onclick="startSearch()" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)">🔍 Найти соперника</button>
+      <button class="btn btn-primary" onclick="startSearch()" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)" data-lang="online_find">🔍 Найти соперника</button>
     </div>
     <div id="search-active" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%">
       <div style="font-size:2.5rem">🔍</div>
-      <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700">Ищем соперника...</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700" data-lang="online_searching">Ищем соперника...</div>
       <div id="search-timer" style="font-family:'Unbounded',sans-serif;font-size:1.5rem;font-weight:900;color:#784BFF">0с</div>
-      <button class="btn btn-secondary" onclick="cancelSearch()" style="max-width:200px">Отмена</button>
+      <button class="btn btn-secondary" onclick="cancelSearch()" style="max-width:200px" data-lang="btn_cancel">Отмена</button>
     </div>
     <div class="online-status" id="search-status"></div>
   </div>
@@ -1035,7 +1035,7 @@ const INTRO_AUDIO_B64 = '';</script>
   <div class="mode-bar">
     <button class="mode-btn active" id="btn-move" onclick="setMode('move')">▶ Ход</button>
     <button class="mode-btn" id="btn-wall" onclick="setMode('wall')">⊞ Стена</button>
-    <button class="mode-btn wall-dir-btn" id="btn-dir" onclick="toggleDir()" title="Повернуть стену">↔ Горизонт.</button>
+    <button class="mode-btn wall-dir-btn" id="btn-dir" onclick="toggleDir()" title="Повернуть стену" data-lang="btn_horiz">↔ Горизонт.</button>
     <button class="mode-btn btn-sm" id="btn-chat" onclick="toggleChat()" style="margin-left:4px" title="Чат">💬</button>
     <button class="mode-btn btn-sm" onclick="confirmSurrender()" id="btn-surrender-tut" style="margin-left:2px;color:#ff6b6b;" title="Сдаться">🏳</button>
     <button class="mode-btn btn-sm" onclick="showScreen('menu')" style="margin-left:2px">✕</button>
@@ -1112,7 +1112,7 @@ const INTRO_AUDIO_B64 = '';</script>
     </div>
   </div>
   <div class="btn-group" style="max-width:280px" id="win-buttons-normal">
-    <button class="btn btn-primary" onclick="startGame(aiDifficulty)">⚔️ Реванш</button>
+    <button class="btn btn-primary" onclick="startGame(aiDifficulty)" data-lang="btn_rematch">⚔️ Реванш</button>
     <button class="btn btn-secondary" onclick="showScreen('menu')">🚪 Выйти в меню</button>
   </div>
   <button id="share-btn" onclick="shareResult()" style="
@@ -1140,7 +1140,7 @@ const INTRO_AUDIO_B64 = '';</script>
   <div style="font-size:0.85rem;color:var(--muted);text-align:center;max-width:280px">Текущая игра засчитается как поражение</div>
   <div id="surrender-penalty" style="background:var(--surface2);border:1.5px solid rgba(255,107,107,0.3);border-radius:14px;padding:12px 18px;text-align:center;max-width:280px;width:100%;font-size:0.8rem;color:#ff6b6b;display:none"></div>
   <div class="btn-group" style="max-width:260px">
-    <button class="btn btn-primary" style="background:linear-gradient(135deg,#ff4444,#cc0000)" onclick="doSurrender()">Да, сдаюсь</button>
+    <button class="btn btn-primary" style="background:linear-gradient(135deg,#ff4444,#cc0000)" onclick="doSurrender()" data-lang="surrender_yes">Да, сдаюсь</button>
     <button class="btn btn-secondary" onclick="showScreen('game')">Продолжить игру</button>
   </div>
 </div>
@@ -6295,8 +6295,8 @@ function showOfflineToast() {
   const t = document.getElementById('toast');
   if (!t) return;
   document.getElementById('toast-icon').textContent = '📶';
-  document.getElementById('toast-name').textContent = 'Нет интернета';
-  document.getElementById('toast-desc').textContent = 'Онлайн функции недоступны';
+  document.getElementById('toast-name').textContent = currentLang === 'en' ? 'No Internet' : 'Нет интернета';
+  document.getElementById('toast-desc').textContent = currentLang === 'en' ? 'Online features unavailable' : 'Онлайн функции недоступны';
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
@@ -6314,7 +6314,7 @@ function showScreenSafe(id) {
 
 // Listen for connection changes
 window.addEventListener('online',  () => {
-  showToast('📶 Подключение восстановлено', 'Онлайн функции доступны!');
+  showToast(currentLang === 'en' ? '📶 Connection restored' : '📶 Подключение восстановлено', currentLang === 'en' ? 'Online features available!' : 'Онлайн функции доступны!');
   updateOnlineCounter();
 });
 window.addEventListener('offline', () => {
@@ -6801,15 +6801,15 @@ function showPuzzleOverlay() {
   ov.innerHTML = `
     <div style="background:rgba(0,0,0,0.9);border:1.5px solid rgba(255,211,61,0.5);border-radius:12px;padding:10px 14px;pointer-events:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <button onclick="exitPuzzle()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.7rem;cursor:pointer;font-family:'Unbounded',sans-serif">← Пазлы</button>
+        <button onclick="exitPuzzle()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.7rem;cursor:pointer;font-family:'Unbounded',sans-serif" data-lang="puzzle_exit">← Пазлы</button>
         <div style="font-family:'Unbounded',sans-serif;font-size:0.72rem;font-weight:900;color:#FFD93D">${(puzzleIsDaily?'📅 ':'')+currentPuzzle.title}</div>
         <div style="font-size:0.65rem;color:var(--muted)">⏱ <span id="puzzle-timer-val">0с</span></div>
       </div>
       <div style="font-size:0.72rem;color:#FFD93D;text-align:center;font-family:'Unbounded',sans-serif;margin-bottom:4px">${currentPuzzle.task}</div>
       <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted)">
-        <span>Ходов: <b id="pz-moves" style="color:#fff">0</b> / ${currentPuzzle.solution.length}</span>
+        <span data-lang="puzzle_moves">Ходов</span>: <b id="pz-moves" style="color:#fff">0</b> / ${currentPuzzle.solution.length}</span>
         <span>${'⭐'.repeat(currentPuzzle.stars)}</span>
-        <span onclick="usePuzzleHint()" style="cursor:pointer;color:#a78bfa;pointer-events:auto">💡 Подсказка (5🧩)</span>
+        <span onclick="usePuzzleHint()" style="cursor:pointer;color:#a78bfa;pointer-events:auto" data-lang="puzzle_hint">💡 Подсказка (5🧩)</span>
       </div>
       <div id="pz-feedback" style="display:none;text-align:center;font-size:0.72rem;margin-top:6px;padding:4px;border-radius:6px"></div>
     </div>`;
@@ -6848,7 +6848,7 @@ function puzzleInterceptMove(r, c, type, dir) {
     puzzleMoveCount++;
     const el = document.getElementById('pz-moves');
     if (el) el.textContent = puzzleMoveCount;
-    showPzFeedback('✅ Правильно!', '#00F5C4', 'rgba(0,245,196,0.1)');
+    showPzFeedback(t('puzzle_correct'), '#00F5C4', 'rgba(0,245,196,0.1)');
     hidePuzzleHighlight();
     if (navigator.vibrate) navigator.vibrate(30);
     puzzleSolutionStep++;
@@ -6862,7 +6862,7 @@ function puzzleInterceptMove(r, c, type, dir) {
     }
     return true; // allow move
   } else {
-    showPzFeedback('❌ Не то! Попробуй ещё раз.', '#FF3333', 'rgba(255,51,51,0.1)');
+    showPzFeedback(t('puzzle_wrong'), '#FF3333', 'rgba(255,51,51,0.1)');
     if (navigator.vibrate) navigator.vibrate([50,30,50]);
     return false; // block move
   }
@@ -7107,27 +7107,89 @@ const STRINGS = {
     btn_move: 'ХОД',
     btn_wall: 'СТЕНА',
     btn_surrender: '🏳',
+    btn_horiz: '↔ Горизонт.',
+    btn_vert: '↕ Вертикаль',
+    walls_left: 'стен',
     // Online
     online_title: '🌐 Онлайн',
-    searching: 'Ищем соперника...',
-    btn_back: 'Назад',
+    online_find: '🔍 Найти соперника',
+    online_searching: 'Ищем соперника...',
+    online_or: 'или',
+    online_create_room: 'Создать комнату',
+    online_join_room: 'Войти в комнату',
+    btn_back: '← Назад',
     btn_cancel: 'Отмена',
-    // Win
-    victory: 'Победа!',
-    defeat: 'Поражение',
+    online_chat: 'Чат...',
+    // Win/Lose
+    victory: '🏆 Победа!',
+    defeat: '😔 Поражение',
+    win_coins: 'монет заработано',
+    win_rating: 'рейтинг',
     btn_rematch: '⚔️ Реванш',
-    btn_menu: '🚪 Выйти в меню',
+    btn_menu: '🚪 В меню',
+    btn_share: '📤 Поделиться',
     // Intro
     btn_first_time: 'Первый раз',
     btn_login_short: 'Войти',
     // Daily
-    daily_title: 'Ежедневная награда',
+    daily_title: '🎰 Ежедневная награда',
     btn_spin: '🎰 Крутить!',
     btn_claim: '🎁 Забрать!',
+    daily_timer: 'Следующий бонус через',
     // Puzzles
     puzzles_title: '🧩 Пазлы',
     daily_puzzle: 'Пазл дня',
     double_reward: 'Двойная награда!',
+    puzzle_solved: '✅ Решён сегодня',
+    puzzle_moves: 'Ходов',
+    puzzle_optimal: 'Цель',
+    puzzle_hint: '💡 Подсказка (5🧩)',
+    puzzle_correct: '✅ Правильно!',
+    puzzle_wrong: '❌ Не то! Попробуй ещё раз.',
+    puzzle_exit: '← Пазлы',
+    // Shop
+    shop_title: '🛒 Магазин',
+    shop_balance: 'монет',
+    shop_tab_piece: 'Фишки',
+    shop_tab_wall: 'Стенки',
+    shop_tab_board: '🏟️ Поле',
+    shop_tab_bot: '🤖 Бот',
+    shop_owned: 'Есть',
+    shop_equipped: 'Одето',
+    shop_equip: 'Одеть',
+    shop_buy: 'Купить',
+    shop_free: 'Бесплатно',
+    shop_no_money: 'Мало монет',
+    // Achievements
+    ach_title: '🏅 Достижения',
+    // Profile
+    profile_wins: 'Побед',
+    profile_losses: 'Поражений',
+    profile_games: 'Всего игр',
+    profile_puzzles: '🧩 Пазлов решено',
+    profile_puzzle_pts: '🧩 Пазл-очков',
+    welcome_title: '🎁 Приветственный бонус!',
+    welcome_desc: 'Добро пожаловать в LOMI!',
+    welcome_claim: '🎁 Забрать бонус',
+    // Rules
+    rules_title: 'Как играть',
+    // Tutorial
+    tut_goal: '🎯 Цель: дойти до нижнего ряда первым!',
+    tut_move: '👆 Нажми на подсвеченную клетку чтобы пойти',
+    tut_wall_h: '🧱 Теперь поставь горизонтальную стену!',
+    tut_wall_v: '🧱 Поставь вертикальную стену!',
+    tut_free: '🎮 Отлично! Теперь дойди до победы!',
+    tut_correct: '✅ Правильно!',
+    // Surrender
+    surrender_title: 'Сдаться?',
+    surrender_yes: 'Да, сдаюсь',
+    surrender_no: 'Продолжить',
+    // Leaderboard
+    lb_title: '🏆 Таблица лидеров',
+    lb_rank: '#',
+    lb_player: 'Игрок',
+    lb_rating: 'Рейтинг',
+    lb_wins: 'Победы',
   },
   en: {
     // Menu
@@ -7150,27 +7212,102 @@ const STRINGS = {
     btn_move: 'MOVE',
     btn_wall: 'WALL',
     btn_surrender: '🏳',
+    btn_horiz: '↔ Horiz.',
+    btn_vert: '↕ Vert.',
+    walls_left: 'walls',
     // Online
     online_title: '🌐 Online',
-    searching: 'Finding opponent...',
-    btn_back: 'Back',
+    online_find: '🔍 Find Opponent',
+    online_searching: 'Finding opponent...',
+    online_or: 'or',
+    online_create_room: 'Create Room',
+    online_join_room: 'Join Room',
+    btn_back: '← Back',
     btn_cancel: 'Cancel',
-    // Win
-    victory: 'Victory!',
-    defeat: 'Defeat',
+    online_chat: 'Chat...',
+    // Win/Lose
+    victory: '🏆 Victory!',
+    defeat: '😔 Defeat',
+    win_coins: 'coins earned',
+    win_rating: 'rating',
     btn_rematch: '⚔️ Rematch',
-    btn_menu: '🚪 Back to Menu',
+    btn_menu: '🚪 Menu',
+    btn_share: '📤 Share',
     // Intro
     btn_first_time: 'New Player',
     btn_login_short: 'Log In',
     // Daily
-    daily_title: 'Daily Reward',
+    daily_title: '🎰 Daily Reward',
     btn_spin: '🎰 Spin!',
     btn_claim: '🎁 Claim!',
+    daily_timer: 'Next reward in',
     // Puzzles
     puzzles_title: '🧩 Puzzles',
     daily_puzzle: 'Daily Puzzle',
     double_reward: 'Double reward!',
+    puzzle_solved: '✅ Solved today',
+    puzzle_moves: 'Moves',
+    puzzle_optimal: 'Target',
+    puzzle_hint: '💡 Hint (5🧩)',
+    puzzle_correct: '✅ Correct!',
+    puzzle_wrong: '❌ Wrong! Try again.',
+    puzzle_exit: '← Puzzles',
+    // Shop
+    shop_title: '🛒 Shop',
+    shop_balance: 'coins',
+    shop_tab_piece: 'Pieces',
+    shop_tab_wall: 'Walls',
+    shop_tab_board: '🏟️ Board',
+    shop_tab_bot: '🤖 Bot',
+    shop_owned: 'Owned',
+    shop_equipped: 'Equipped',
+    shop_equip: 'Equip',
+    shop_buy: 'Buy',
+    shop_free: 'Free',
+    shop_no_money: 'Not enough coins',
+    // Achievements
+    ach_title: '🏅 Achievements',
+    // Profile
+    profile_wins: 'Wins',
+    profile_losses: 'Losses',
+    profile_games: 'Total Games',
+    profile_puzzles: '🧩 Puzzles Solved',
+    profile_puzzle_pts: '🧩 Puzzle Points',
+    welcome_title: '🎁 Welcome Bonus!',
+    welcome_desc: 'Welcome to LOMI!',
+    welcome_claim: '🎁 Claim Bonus',
+    // Rules
+    rules_title: 'How to Play',
+    // Tutorial
+    tut_goal: '🎯 Goal: reach the bottom row first!',
+    tut_move: '👆 Tap the highlighted cell to move',
+    tut_wall_h: '🧱 Now place a horizontal wall!',
+    tut_wall_v: '🧱 Place a vertical wall!',
+    tut_free: '🎮 Great! Now go for the win!',
+    tut_correct: '✅ Correct!',
+    // Surrender
+    surrender_title: 'Surrender?',
+    surrender_yes: 'Yes, surrender',
+    surrender_no: 'Continue',
+    // Leaderboard
+    lb_title: '🏆 Leaderboard',
+    lb_rank: '#',
+    lb_player: 'Player',
+    lb_rating: 'Rating',
+    lb_wins: 'Wins',
+    // Rules content
+    rules_p1_title: 'Goal',
+    rules_p1: 'Be the first to reach the opposite side of the board.',
+    rules_p2_title: 'Movement',
+    rules_p2: 'Each turn, either move your piece one square OR place a wall.',
+    rules_p3_title: 'Walls',
+    rules_p3: 'Walls block movement. Each player has 10 walls. You cannot completely block a path.',
+    rules_p4_title: 'Winning',
+    rules_p4: 'Player 1 (red) wins by reaching row 9. Player 2 (blue) wins by reaching row 1.',
+    // Leaderboard
+    lb_you: 'You',
+    lb_guest: 'Guest',
+    lb_empty: 'No players yet',
   }
 };
 
@@ -7189,14 +7326,30 @@ function t(key) {
 
 function applyLang() {
   document.documentElement.lang = currentLang;
-  // Apply to all elements with data-lang attribute
   document.querySelectorAll('[data-lang]').forEach(el => {
     const key = el.getAttribute('data-lang');
-    el.textContent = t(key);
+    if (el.placeholder !== undefined && el.tagName === 'INPUT') {
+      el.placeholder = t(key);
+    } else {
+      el.textContent = t(key);
+    }
   });
-  // Update lang toggle button
   const btn = document.getElementById('lang-toggle');
   if (btn) btn.textContent = currentLang === 'ru' ? '🇬🇧 EN' : '🇷🇺 RU';
+
+  // Update dynamic elements
+  const menuSub = document.getElementById('menu-subtitle');
+  if (menuSub) menuSub.textContent = t('menu_sub');
+  const dailyTitle = document.getElementById('daily-day-label');
+  // Update shop tabs text
+  const tabPiece = document.getElementById('tab-piece');
+  if (tabPiece) tabPiece.textContent = t('shop_tab_piece');
+  const tabWall = document.getElementById('tab-wall');
+  if (tabWall) tabWall.textContent = t('shop_tab_wall');
+  const tabBot = document.getElementById('tab-bot');
+  if (tabBot) tabBot.textContent = t('shop_tab_bot');
+  const tabBoard = document.getElementById('tab-board-main');
+  if (tabBoard) tabBoard.textContent = t('shop_tab_board');
 }
 
 function toggleLang() {
@@ -7215,8 +7368,8 @@ function initLang() {
 <!-- PUZZLE SCREEN -->
 <div id="puzzles" class="screen" style="justify-content:flex-start;padding:1rem;gap:0.8rem;overflow-y:auto;-webkit-overflow-scrolling:touch">
   <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:480px">
-    <button class="btn btn-secondary btn-sm" onclick="showScreen('menu')">← Назад</button>
-    <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900">🧩 Пазлы</div>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('menu')"> data-lang="btn_back">← Назад</button>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900" data-lang="puzzles_title">🧩 Пазлы</div>
     <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;color:#FFD93D" id="puzzle-points-display">0 🧩</div>
   </div>
 
@@ -7225,7 +7378,7 @@ function initLang() {
     <div style="display:flex;align-items:center;gap:10px">
       <div style="font-size:2rem">📅</div>
       <div>
-        <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:900;color:#FFD93D">Пазл дня</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:900;color:#FFD93D" data-lang="daily_puzzle">Пазл дня</div>
         <div style="font-size:0.72rem;color:var(--muted)" id="daily-puzzle-status">Двойная награда!</div>
       </div>
       <div style="margin-left:auto;font-size:0.75rem;color:#FFD93D" id="daily-puzzle-reward">×2 🧩</div>
@@ -7289,7 +7442,7 @@ function initLang() {
     <div style="font-family:'Unbounded',sans-serif;font-size:1.5rem;font-weight:900;color:#FFD93D" id="puzzle-win-reward">+50 🧩</div>
     <div id="puzzle-win-stars" style="font-size:1.2rem;margin-top:4px"></div>
   </div>
-  <button class="btn btn-primary" onclick="closePuzzleWin()" style="max-width:280px;width:100%">Продолжить</button>
+  <button class="btn btn-primary" onclick="closePuzzleWin()" style="max-width:280px;width:100%" data-lang="surrender_no">Продолжить</button>
   <button class="btn btn-secondary" onclick="retryPuzzle()" style="max-width:280px;width:100%;font-size:0.75rem">↺ Попробовать лучше</button>
 </div>
 </body>
