@@ -739,15 +739,38 @@ const INTRO_AUDIO_B64 = '';</script>
     </div>
     <button class="score-reset" onclick="resetScore()" title="Сбросить счёт">↺</button>
   </div>
-  <div class="btn-group">
-    <button class="btn btn-secondary" onclick="startGame(false)" data-lang="btn_play2">Играть вдвоём</button>
-    <button class="btn btn-secondary" onclick="showScreenSafe('online')" style="border-color:rgba(120,75,255,0.4);color:#a78bfa" data-lang="btn_online">🌐 Онлайн</button>
-    <button class="btn btn-secondary" onclick="showScreen('difficulty')" style="border-color:rgba(0,245,196,0.3);color:var(--p2)">Против ktoyura</button>
-    <button class="btn btn-secondary" onclick="showScreen('shop')" data-lang="btn_shop">🛒 Магазин</button>
-    <button class="btn btn-secondary" onclick="showScreenSafe('leaderboard')" data-lang="btn_leaderboard">🏆 Таблица лидеров</button>
-    <button class="btn btn-secondary" onclick="showScreen('puzzles')" style="border-color:rgba(255,211,61,0.4);color:#FFD93D" data-lang="btn_puzzles">🧩 Пазлы</button>
-    <button class="btn btn-secondary" onclick="showScreen('achievements')" data-lang="btn_achievements">🏅 Достижения</button>
-    <button class="btn btn-secondary" onclick="showScreen('rules')" data-lang="btn_rules">Как играть</button>
+  <div class="btn-group" style="gap:10px">
+    <!-- Main action buttons -->
+    <button class="btn btn-primary" onclick="showScreenSafe('online')" style="background:linear-gradient(135deg,#784BFF,#FF3CAC);font-size:1rem" data-lang="btn_online">🌐 Онлайн</button>
+    <button class="btn btn-secondary" onclick="showScreen('difficulty')" style="border-color:rgba(0,245,196,0.3);color:var(--p2);font-size:0.9rem" data-lang="btn_vs_ktoyura">⚔️ Против KTOYURA</button>
+
+    <!-- Icon grid -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin-top:4px">
+      <button onclick="startGame(false)" style="background:var(--surface2);border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+        <span style="font-size:1.5rem">🎮</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:rgba(255,255,255,0.6)" data-lang="btn_play2">Вдвоём</span>
+      </button>
+      <button onclick="showScreen('puzzles')" style="background:var(--surface2);border:1.5px solid rgba(255,211,61,0.25);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+        <span style="font-size:1.5rem">🧩</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:#FFD93D" data-lang="btn_puzzles">Пазлы</span>
+      </button>
+      <button onclick="showScreen('shop')" style="background:var(--surface2);border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+        <span style="font-size:1.5rem">🛒</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:rgba(255,255,255,0.6)" data-lang="btn_shop">Магазин</span>
+      </button>
+      <button onclick="showScreenSafe('leaderboard')" style="background:var(--surface2);border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+        <span style="font-size:1.5rem">🏆</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:rgba(255,255,255,0.6)" data-lang="btn_leaderboard">Лидеры</span>
+      </button>
+      <button onclick="showScreen('achievements')" style="background:var(--surface2);border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+        <span style="font-size:1.5rem">🏅</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:rgba(255,255,255,0.6)" data-lang="btn_achievements">Ачивки</span>
+      </button>
+      <button onclick="showScreen('rules')" style="background:var(--surface2);border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+        <span style="font-size:1.5rem">❓</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:rgba(255,255,255,0.6)" data-lang="btn_rules">Правила</span>
+      </button>
+    </div>
   </div>
   <div class="how-to">
     <p>Два игрока. Одна цель — добраться первым.<br><strong>Строй стены. Блокируй соперника.</strong></p>
