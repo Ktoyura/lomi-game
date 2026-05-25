@@ -1069,35 +1069,20 @@ function closeLangModal() {
 }
 window.closeLangModal = closeLangModal;
 
-// Bind lang modal events after DOM ready — iOS compatible
-window.addEventListener('load', function() {
+// Bind lang buttons after full page load
+function bindLangButtons() {
+  const t = document.getElementById('lang-toggle');
+  const ru = document.getElementById('lang-btn-ru');
+  const en = document.getElementById('lang-btn-en');
+  const cl = document.getElementById('lang-modal-close');
   const modal = document.getElementById('lang-modal');
-  const btnRu = document.getElementById('lang-btn-ru');
-  const btnEn = document.getElementById('lang-btn-en');
-  const btnClose = document.getElementById('lang-modal-close');
-  const langToggle = document.getElementById('lang-toggle');
-
-  if (langToggle) {
-    langToggle.addEventListener('touchend', function(e) { e.preventDefault(); alert('touch!'); openLangModal(); });
-    langToggle.addEventListener('click', function() { alert('click!'); openLangModal(); });
-  }
-  if (btnRu) {
-    btnRu.addEventListener('touchend', function(e) { e.preventDefault(); setLang('ru'); });
-    btnRu.addEventListener('click', function() { setLang('ru'); });
-  }
-  if (btnEn) {
-    btnEn.addEventListener('touchend', function(e) { e.preventDefault(); setLang('en'); });
-    btnEn.addEventListener('click', function() { setLang('en'); });
-  }
-  if (btnClose) {
-    btnClose.addEventListener('touchend', function(e) { e.preventDefault(); closeLangModal(); });
-    btnClose.addEventListener('click', closeLangModal);
-  }
-  if (modal) {
-    modal.addEventListener('touchend', function(e) { if (e.target === modal) closeLangModal(); });
-    modal.addEventListener('click', function(e) { if (e.target === modal) closeLangModal(); });
-  }
-});
+  if (t) { t.onclick = openLangModal; t.ontouchend = function(e){e.preventDefault();openLangModal();}; }
+  if (ru) { ru.onclick = function(){setLang('ru');}; ru.ontouchend = function(e){e.preventDefault();setLang('ru');}; }
+  if (en) { en.onclick = function(){setLang('en');}; en.ontouchend = function(e){e.preventDefault();setLang('en');}; }
+  if (cl) { cl.onclick = closeLangModal; cl.ontouchend = function(e){e.preventDefault();closeLangModal();}; }
+  if (modal) { modal.onclick = function(e){if(e.target===modal)closeLangModal();}; }
+}
+window.addEventListener('load', bindLangButtons);
 
 function setLang(lang) {
   console.log('setLang called:', lang);
@@ -1370,7 +1355,7 @@ const INTRO_AUDIO_B64 = '';</script>
         <span style="font-size:1.5rem">❓</span>
         <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:rgba(255,255,255,0.6)" data-lang="btn_rules">Правила</span>
       </button>
-      <button id="lang-toggle" onclick="window.openLangModal()" style="background:var(--surface2);border:1.5px solid rgba(120,75,255,0.3);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s;-webkit-tap-highlight-color:transparent" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+      <button id="lang-toggle" style="background:var(--surface2);border:1.5px solid rgba(120,75,255,0.3);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
         <span style="font-size:1.5rem">🌐</span>
         <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:#a78bfa" id="lang-label">RU</span>
       </button>
@@ -6092,6 +6077,7 @@ function showScreen(id) {
     setTimeout(()=>document.getElementById('login-username').focus(),100);
     stopMenuMusic();
   } else if (id === 'menu') {
+    setTimeout(bindLangButtons, 100);
     updateOnlineCounter();
     stopTimer();
     if (onlineMode) { if (socket) socket.disconnect(); socket=null; onlineMode=false; }
