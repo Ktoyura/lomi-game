@@ -1078,8 +1078,8 @@ window.addEventListener('load', function() {
   const langToggle = document.getElementById('lang-toggle');
 
   if (langToggle) {
-    langToggle.addEventListener('touchend', function(e) { e.preventDefault(); openLangModal(); });
-    langToggle.addEventListener('click', openLangModal);
+    langToggle.addEventListener('touchend', function(e) { e.preventDefault(); alert('touch!'); openLangModal(); });
+    langToggle.addEventListener('click', function() { alert('click!'); openLangModal(); });
   }
   if (btnRu) {
     btnRu.addEventListener('touchend', function(e) { e.preventDefault(); setLang('ru'); });
