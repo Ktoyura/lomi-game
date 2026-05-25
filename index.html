@@ -522,6 +522,568 @@ canvas { border-radius: 20px; cursor: pointer; display: block; max-width: 100%; 
 </style>
 
 <script>
+const STRINGS = {
+  ru: {
+    // Menu
+    menu_title: 'LOMI',
+    menu_sub: 'Стратегическая игра стен',
+    btn_play2: 'Играть вдвоём',
+    btn_online: '🌐 Онлайн',
+    btn_vs_ktoyura: 'Против KTOYURA',
+    btn_shop: '🛒 Магазин',
+    btn_leaderboard: '🏆 Таблица лидеров',
+    btn_puzzles: '🧩 Пазлы',
+    btn_achievements: '🏅 Достижения',
+    btn_rules: 'Как играть',
+    // Auth
+    auth_title: 'Добро пожаловать!',
+    btn_register: 'Создать аккаунт',
+    btn_login: 'Войти',
+    btn_guest: 'Играть как гость',
+    // Game
+    btn_move: 'ХОД',
+    btn_wall: 'СТЕНА',
+    btn_surrender: '🏳',
+    btn_horiz: '↔ Горизонт.',
+    btn_vert: '↕ Вертикаль',
+    walls_left: 'стен',
+    // Online
+    online_title: '🌐 Онлайн',
+    online_find: '🔍 Найти соперника',
+    online_searching: t('online_searching'),
+    online_or: 'или',
+    online_create_room: 'Создать комнату',
+    online_join_room: 'Войти в комнату',
+    btn_back: '← Назад',
+    btn_cancel: 'Отмена',
+    online_chat: 'Чат...',
+    // Win/Lose
+    victory: t('victory'),
+    defeat: t('defeat'),
+    win_coins: 'монет заработано',
+    win_rating: 'рейтинг',
+    btn_rematch: '⚔️ Реванш',
+    btn_menu: '🚪 В меню',
+    btn_share: '📤 Поделиться',
+    // Intro
+    btn_first_time: 'Первый раз',
+    btn_login_short: 'Войти',
+    // Daily
+    daily_title: '🎰 Ежедневная награда',
+    btn_spin: '🎰 Крутить!',
+    btn_claim: '🎁 Забрать!',
+    daily_timer: 'Следующий бонус через',
+    // Puzzles
+    puzzles_title: '🧩 Пазлы',
+    daily_puzzle: 'Пазл дня',
+    double_reward: t('double_reward'),
+    puzzle_solved: currentLang==='en'?'✅ Solved today':t('puzzle_solved'),
+    puzzle_moves: 'Ходов',
+    puzzle_optimal: 'Цель',
+    puzzle_hint: t('puzzle_hint'),
+    puzzle_correct: '✅ Правильно!',
+    puzzle_wrong: '❌ Не то! Попробуй ещё раз.',
+    puzzle_exit: t('puzzle_exit'),
+    // Shop
+    shop_title: '🛒 Магазин',
+    shop_balance: 'монет',
+    shop_tab_piece: 'Фишки',
+    shop_tab_wall: 'Стенки',
+    shop_tab_board: '🏟️ Поле',
+    shop_tab_bot: '🤖 Бот',
+    shop_owned: 'Есть',
+    shop_equipped: 'Одето',
+    shop_equip: 'Одеть',
+    shop_buy: 'Купить',
+    shop_free: 'Бесплатно',
+    shop_no_money: 'Мало монет',
+    // Achievements
+    ach_title: '🏅 Достижения',
+    // Profile
+    profile_wins: 'Побед',
+    profile_losses: 'Поражений',
+    profile_games: 'Всего игр',
+    profile_puzzles: '🧩 Пазлов решено',
+    profile_puzzle_pts: '🧩 Пазл-очков',
+    welcome_title: '🎁 Приветственный бонус!',
+    welcome_desc: 'Добро пожаловать в LOMI!',
+    welcome_claim: '🎁 Забрать бонус',
+    // Rules
+    rules_title: 'Как играть',
+    // Tutorial
+    tut_goal: '🎯 Цель: дойти до нижнего ряда первым!',
+    tut_move: '👆 Нажми на подсвеченную клетку чтобы пойти',
+    tut_wall_h: '🧱 Теперь поставь горизонтальную стену!',
+    tut_wall_v: '🧱 Поставь вертикальную стену!',
+    tut_free: '🎮 Отлично! Теперь дойди до победы!',
+    tut_correct: '✅ Правильно!',
+    // Surrender
+    surrender_title: 'Сдаться?',
+    surrender_yes: 'Да, сдаюсь',
+    surrender_no: t('puzzle_continue'),
+    // Leaderboard
+    lb_title: '🏆 Таблица лидеров',
+    lb_rank: '#',
+    lb_player: 'Игрок',
+    lb_rating: 'Рейтинг',
+    lb_wins: 'Победы',
+    // Auth
+    auth_welcome: 'Добро пожаловать!',
+    auth_bonus_desc: 'Ты получаешь приветственный бонус за первый вход в игру',
+    auth_coins_shop: 'монет для магазина',
+    auth_rating_start: 'стартовых очков рейтинга',
+    auth_claim_bonus: 'Забрать бонус!',
+    auth_username: 'Юзернейм...',
+    auth_password: 'Пароль',
+    auth_min: 'мин.',
+    auth_chars: 'символа',
+    auth_secret_q: 'Секретный вопрос',
+    auth_pet: 'Кличка первого питомца?',
+    auth_mom: 'Девичья фамилия мамы?',
+    auth_movie: 'Любимый фильм?',
+    auth_city: 'Город где родился?',
+    auth_game: 'Любимая игра в детстве?',
+    auth_answer: 'Ответ на вопрос...',
+    auth_create: 'Создать',
+    auth_back: 'Назад',
+    auth_forgot: 'Забыл пароль?',
+    auth_next: 'Далее',
+    auth_your_answer: 'Твой ответ...',
+    auth_new_pass: 'Новый пароль...',
+    auth_change_pass: 'Сменить пароль',
+    auth_guest_name: 'Придумай имя гостя',
+    auth_your_name: 'Твоё имя...',
+    daily_spinning: 'Крутится...',
+    daily_coins: 'монет',
+    profile_player: 'Игрок',
+    profile_logout: 'Выйти',
+    profile_reset: 'Сбросить счёт',
+    profile_winrate: 'Винрейт',
+    profile_history: 'ИСТОРИЯ МАТЧЕЙ',
+    profile_no_matches: t('profile_no_matches'),
+    profile_change_name: 'Изменить юзернейм',
+    profile_name_cost: 'Смена имени стоит',
+    profile_you_have: 'У тебя:',
+    profile_save: 'Сохранить',
+    ach_unlocked: 'Достижение разблокировано!',
+    profile_edit: 'Изменить',
+    diff_title: 'Сложность',
+    diff_easy: t('diff_easy'),
+    diff_easy_desc: t('diff_easy_desc'),
+    diff_medium: t('diff_medium'),
+    diff_medium_desc: t('diff_medium_desc'),
+    diff_hard: t('diff_hard'),
+    diff_hard_desc: t('diff_hard_desc'),
+    shop_equipped_piece: 'Фишка',
+    shop_equipped_wall: 'Стена',
+    shop_flags: 'Флаги',
+    shop_colors: 'Цвета',
+    shop_search: 'Поиск',
+    online_auto: 'Автоматический поиск соперника',
+    online_create_desc: 'Создай комнату и поделись кодом с другом',
+    online_copy_hint: 'Нажми чтобы скопировать',
+    online_enter_code: 'Введи код комнаты от друга',
+    online_room_code: 'Код комнаты...',
+    online_join: 'Войти в комнату',
+    online_loading_lb: t('online_loading_lb'),
+    rules_goal: 'Цель:',
+    rules_goal_desc: 'добраться до противоположного края поля первым.',
+    rules_move: 'Движение:',
+    rules_move_desc: 'выбери режим «ход» и нажми на подсвеченную клетку.',
+    rules_wall_label: 'Стена:',
+    rules_wall_desc2: 'наведи между клетками и нажми. У каждого',
+    rules_walls_count: 'стен',
+    rules_no_block: 'Нельзя полностью отрезать противника',
+    rules_path: 'путь должен оставаться.',
+    rules_jump: 'Если соперник прямо перед тобой — можно',
+    rules_jump2: 'перепрыгнуть',
+    rules_jump3: 'его.',
+    rules_walls_left: 'Стен:',
+    rules_turn: 'Ход',
+    rules_thinking: t('rules_thinking'),
+    game_rotate: 'Повернуть стену',
+    game_type_msg: 'Написать сообщение...',
+    win_first: 'добрался первым',
+    win_coins_game: 'МОНЕТЫ ЗА ИГРУ',
+    win_total: 'ИТОГО',
+    win_all_coins: 'Всего монет',
+    win_penalty: 'ШТРАФ ЗА СДАЧУ',
+    win_left: 'Осталось монет',
+    win_challenge: 'Вызвать друга на матч',
+    win_create_acc: 'Создать аккаунт и продолжить',
+    win_save_progress: 'Сохрани прогресс',
+    win_takes: 'это займёт',
+    win_seconds: 'секунд',
+    surrender_desc: 'Текущая игра засчитается как поражение',
+    surrender_continue: 'Продолжить игру',
+    puzzle_win_title: 'Решено!',
+    puzzle_reward_label: 'НАГРАДА',
+    puzzle_continue: t('puzzle_continue'),
+    puzzle_retry: 'Попробовать лучше',
+    puzzle_moves_label: 'Ходов:',
+    puzzle_target_label: 'Цель:',
+    puzzle_horiz: 'Гориз.',
+    tagline: 'Два игрока. Одна цель — добраться первым.',
+    tagline2: 'Строй стены. Блокируй соперника.',
+  },
+  en: {
+    // Menu
+    menu_title: 'LOMI',
+    menu_sub: 'Strategic Wall Game',
+    btn_play2: 'Play 2 Players',
+    btn_online: '🌐 Online',
+    btn_vs_ktoyura: 'vs KTOYURA',
+    btn_shop: '🛒 Shop',
+    btn_leaderboard: '🏆 Leaderboard',
+    btn_puzzles: '🧩 Puzzles',
+    btn_achievements: '🏅 Achievements',
+    btn_rules: 'How to Play',
+    // Auth
+    auth_title: 'Welcome!',
+    btn_register: 'Create Account',
+    btn_login: 'Log In',
+    btn_guest: 'Play as Guest',
+    // Game
+    btn_move: 'MOVE',
+    btn_wall: 'WALL',
+    btn_surrender: '🏳',
+    btn_horiz: '↔ Horiz.',
+    btn_vert: '↕ Vert.',
+    walls_left: 'walls',
+    // Online
+    online_title: '🌐 Online',
+    online_find: '🔍 Find Opponent',
+    online_searching: 'Finding opponent...',
+    online_or: 'or',
+    online_create_room: 'Create Room',
+    online_join_room: 'Join Room',
+    btn_back: '← Back',
+    btn_cancel: 'Cancel',
+    online_chat: 'Chat...',
+    // Win/Lose
+    victory: '🏆 Victory!',
+    defeat: '😔 Defeat',
+    win_coins: 'coins earned',
+    win_rating: 'rating',
+    btn_rematch: '⚔️ Rematch',
+    btn_menu: '🚪 Menu',
+    btn_share: '📤 Share',
+    // Intro
+    btn_first_time: 'New Player',
+    btn_login_short: 'Log In',
+    // Daily
+    daily_title: '🎰 Daily Reward',
+    btn_spin: '🎰 Spin!',
+    btn_claim: '🎁 Claim!',
+    daily_timer: 'Next reward in',
+    // Puzzles
+    puzzles_title: '🧩 Puzzles',
+    daily_puzzle: 'Daily Puzzle',
+    double_reward: 'Double reward!',
+    puzzle_solved: '✅ Solved today',
+    puzzle_moves: 'Moves',
+    puzzle_optimal: 'Target',
+    puzzle_hint: '💡 Hint (5🧩)',
+    puzzle_correct: '✅ Correct!',
+    puzzle_wrong: '❌ Wrong! Try again.',
+    puzzle_exit: '← Puzzles',
+    // Shop
+    shop_title: '🛒 Shop',
+    shop_balance: 'coins',
+    shop_tab_piece: 'Pieces',
+    shop_tab_wall: 'Walls',
+    shop_tab_board: '🏟️ Board',
+    shop_tab_bot: '🤖 Bot',
+    shop_owned: 'Owned',
+    shop_equipped: 'Equipped',
+    shop_equip: 'Equip',
+    shop_buy: 'Buy',
+    shop_free: 'Free',
+    shop_no_money: 'Not enough coins',
+    // Achievements
+    ach_title: '🏅 Achievements',
+    // Profile
+    profile_wins: 'Wins',
+    profile_losses: 'Losses',
+    profile_games: 'Total Games',
+    profile_puzzles: '🧩 Puzzles Solved',
+    profile_puzzle_pts: '🧩 Puzzle Points',
+    welcome_title: '🎁 Welcome Bonus!',
+    welcome_desc: 'Welcome to LOMI!',
+    welcome_claim: '🎁 Claim Bonus',
+    // Rules
+    rules_title: 'How to Play',
+    // Tutorial
+    tut_goal: '🎯 Goal: reach the bottom row first!',
+    tut_move: '👆 Tap the highlighted cell to move',
+    tut_wall_h: '🧱 Now place a horizontal wall!',
+    tut_wall_v: '🧱 Place a vertical wall!',
+    tut_free: '🎮 Great! Now go for the win!',
+    tut_correct: '✅ Correct!',
+    // Surrender
+    surrender_title: 'Surrender?',
+    surrender_yes: 'Yes, surrender',
+    surrender_no: 'Continue',
+    // Leaderboard
+    lb_title: '🏆 Leaderboard',
+    lb_rank: '#',
+    lb_player: 'Player',
+    lb_rating: 'Rating',
+    lb_wins: 'Wins',
+    // Auth
+    auth_welcome: 'Welcome!',
+    auth_bonus_desc: 'You get a welcome bonus for your first login',
+    auth_coins_shop: 'coins for the shop',
+    auth_rating_start: 'starting rating points',
+    auth_claim_bonus: 'Claim Bonus!',
+    auth_username: 'Username...',
+    auth_password: 'Password',
+    auth_min: 'min.',
+    auth_chars: 'characters',
+    auth_secret_q: 'Secret question',
+    auth_pet: "First pet's name?",
+    auth_mom: "Mother's maiden name?",
+    auth_movie: 'Favourite movie?',
+    auth_city: 'City of birth?',
+    auth_game: 'Favourite childhood game?',
+    auth_answer: 'Answer...',
+    auth_create: 'Create',
+    auth_back: 'Back',
+    auth_forgot: 'Forgot password?',
+    auth_next: 'Next',
+    auth_your_answer: 'Your answer...',
+    auth_new_pass: 'New password...',
+    auth_change_pass: 'Change password',
+    auth_guest_name: 'Choose a guest name',
+    auth_your_name: 'Your name...',
+    // Daily slot
+    daily_spinning: 'Spinning...',
+    daily_coins: 'coins',
+    // Profile
+    profile_player: 'Player',
+    profile_logout: 'Log out',
+    profile_reset: 'Reset score',
+    profile_winrate: 'Winrate',
+    profile_history: 'MATCH HISTORY',
+    profile_no_matches: 'No matches yet',
+    profile_change_name: 'Change username',
+    profile_name_cost: 'Name change costs',
+    profile_you_have: 'You have:',
+    profile_save: 'Save',
+    ach_unlocked: 'Achievement unlocked!',
+    profile_edit: 'Edit',
+    // Difficulty
+    diff_title: 'Difficulty',
+    diff_easy: 'Beginner',
+    diff_easy_desc: 'Bot moves randomly, rarely places walls. Great for first game.',
+    diff_medium: 'Medium',
+    diff_medium_desc: 'Bot always takes shortest path and sometimes blocks you.',
+    diff_hard: 'Hard',
+    diff_hard_desc: 'Bot calculates all paths and places walls in the most painful spots.',
+    // Shop
+    shop_equipped_piece: 'Piece',
+    shop_equipped_wall: 'Wall',
+    shop_flags: 'Flags',
+    shop_colors: 'Colors',
+    shop_search: 'Search',
+    // Online
+    online_auto: 'Automatic opponent search',
+    online_create_desc: 'Create a room and share the code with a friend',
+    online_copy_hint: 'Click to copy',
+    online_enter_code: "Enter friend's room code",
+    online_room_code: 'Room code...',
+    online_join: 'Join room',
+    online_loading_lb: 'Loading leaderboard...',
+    // Rules
+    rules_goal: 'Goal:',
+    rules_goal_desc: 'reach the opposite side of the board first.',
+    rules_move: 'Move:',
+    rules_move_desc: 'select move mode and tap a highlighted cell.',
+    rules_wall: 'Wall:',
+    rules_wall_desc: "hover between cells and tap. Each player has",
+    rules_walls: 'walls',
+    rules_no_block: "You can't completely block the opponent",
+    rules_path: 'a path must remain.',
+    rules_jump: 'If opponent is right in front of you — you can',
+    rules_jump2: 'jump over',
+    rules_jump3: 'them.',
+    rules_walls_left: 'Walls:',
+    rules_turn: 'Turn',
+    rules_thinking: 'Bot thinking...',
+    // Game
+    game_rotate: 'Rotate wall',
+    game_chat: 'Chat...',
+    game_surrender: 'Surrender',
+    game_type_msg: 'Type a message...',
+    // Win screen
+    win_first: 'reached first',
+    win_coins_game: 'COINS FOR GAME',
+    win_total: 'TOTAL',
+    win_all_coins: 'Total coins',
+    win_penalty: 'SURRENDER PENALTY',
+    win_coins: 'Coins',
+    win_rating: 'Rating',
+    win_left: 'Coins left',
+    win_rematch2: 'Rematch',
+    win_menu2: 'Back to menu',
+    win_challenge: 'Challenge a friend',
+    win_create_acc: 'Create account & continue',
+    win_save_progress: 'Save your progress',
+    win_takes: 'it takes',
+    win_seconds: 'seconds',
+    // Surrender popup
+    surrender_desc: 'Current game will count as a loss',
+    surrender_continue: 'Continue game',
+    // Puzzle win
+    puzzle_win_title: 'Solved!',
+    puzzle_reward_label: 'REWARD',
+    puzzle_continue: 'Continue',
+    puzzle_retry: 'Try to do better',
+    puzzle_moves_label: 'Moves:',
+    puzzle_target_label: 'Target:',
+    puzzle_horiz: 'Horiz.',
+    // Menu tagline
+    tagline: 'Two players. One goal — reach first.',
+    tagline2: 'Build walls. Block your opponent.',
+    // Rules content
+    rules_p1_title: 'Goal',
+    rules_p1_title: 'Goal',
+    rules_p1: 'Be the first to reach the opposite side of the board.',
+    rules_p2_title: 'Movement',
+    rules_p2: 'Each turn, either move your piece one square OR place a wall.',
+    rules_p3_title: 'Walls',
+    rules_p3: 'Walls block movement. Each player has 10 walls. You cannot completely block a path.',
+    rules_p4_title: 'Winning',
+    rules_p4: 'Player 1 (red) wins by reaching row 9. Player 2 (blue) wins by reaching row 1.',
+    // Leaderboard
+    lb_you: 'You',
+    lb_guest: 'Guest',
+    lb_empty: 'No players yet',
+  }
+};
+
+let currentLang = 'ru';
+
+function detectLang() {
+  const saved = localStorage.getItem('lomi_lang');
+  if (saved) return saved;
+  const browser = navigator.language || navigator.userLanguage || 'ru';
+  return browser.startsWith('ru') ? 'ru' : 'en';
+}
+
+function t(key) {
+  return STRINGS[currentLang][key] || STRINGS.ru[key] || key;
+}
+
+function applyLang() {
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-lang]').forEach(el => {
+    const key = el.getAttribute('data-lang');
+    const val = t(key);
+    if (el.tagName === 'INPUT') el.placeholder = val;
+    else el.textContent = val;
+  });
+
+  // Lang toggle button stays as globe icon
+
+  // Dynamic placeholders
+  const placeholders = {
+    'reg-username': t('auth_username'),
+    'reg-password': t('auth_password'),
+    'reg-answer': t('auth_answer'),
+    'login-username': t('auth_username'),
+    'login-password': t('auth_password'),
+    'recovery-answer': t('auth_your_answer'),
+    'recovery-newpass': t('auth_new_pass'),
+    'guest-name-input': t('auth_your_name'),
+    'room-code-input': t('online_room_code'),
+    'chat-input': t('game_type_msg'),
+    'profile-input': t('auth_username'),
+  };
+  Object.entries(placeholders).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.placeholder = val;
+  });
+
+  // Shop tabs
+  const tabPiece = document.getElementById('tab-piece');
+  if (tabPiece) tabPiece.textContent = t('shop_tab_piece');
+  const tabWall = document.getElementById('tab-wall');
+  if (tabWall) tabWall.textContent = t('shop_tab_wall');
+  const tabBot = document.getElementById('tab-bot');
+  if (tabBot) tabBot.textContent = t('shop_tab_bot');
+  const tabBoard = document.getElementById('tab-board-main');
+  if (tabBoard) tabBoard.textContent = t('shop_tab_board');
+  const tabFlags = document.getElementById('tab-flags');
+  if (tabFlags) tabFlags.textContent = t('shop_flags');
+  const tabColors = document.getElementById('tab-colors');
+  if (tabColors) tabColors.textContent = t('shop_colors');
+
+  // Game buttons
+  const btnDir = document.getElementById('btn-dir');
+  if (btnDir) btnDir.textContent = t('btn_horiz');
+
+  // Walls counter label
+  const wallsLabel = document.getElementById('walls-label');
+  if (wallsLabel) wallsLabel.textContent = t('walls_left');
+
+  // Bot thinking
+  const thinkEl = document.getElementById('thinking-text');
+  if (thinkEl) thinkEl.textContent = t('rules_thinking');
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'ru' ? 'en' : 'ru';
+  localStorage.setItem('lomi_lang', currentLang);
+  console.log('Lang switched to:', currentLang);
+  applyLang();
+  // Re-render dynamic screens
+  const active = document.querySelector('.screen.active');
+  if (active) {
+    const id = active.id;
+    if (id === 'puzzles') initPuzzleScreen();
+    else if (id === 'shop') renderShop();
+    else if (id === 'achievements') renderAchievements();
+    else if (id === 'leaderboard') loadLeaderboard();
+    else if (id === 'profile') loadProfile();
+  }
+}
+window.toggleLang = toggleLang;
+
+function openLangModal() {
+  const modal = document.getElementById('lang-modal');
+  modal.style.display = 'flex';
+  // Update checkmarks
+  document.getElementById('lang-check-ru').style.display = currentLang === 'ru' ? 'block' : 'none';
+  document.getElementById('lang-check-en').style.display = currentLang === 'en' ? 'block' : 'none';
+  // Highlight active
+  document.getElementById('lang-btn-ru').style.borderColor = currentLang === 'ru' ? 'rgba(120,75,255,0.6)' : 'rgba(255,255,255,0.1)';
+  document.getElementById('lang-btn-en').style.borderColor = currentLang === 'en' ? 'rgba(120,75,255,0.6)' : 'rgba(255,255,255,0.1)';
+}
+window.openLangModal = openLangModal;
+
+function closeLangModal() {
+  document.getElementById('lang-modal').style.display = 'none';
+}
+window.closeLangModal = closeLangModal;
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lomi_lang', lang);
+  applyLang();
+  closeLangModal();
+  // Re-render active screen
+  const active = document.querySelector('.screen.active');
+  if (active) {
+    const id = active.id;
+    if (id === 'puzzles') initPuzzleScreen();
+    else if (id === 'shop') renderShop();
+    else if (id === 'achievements') renderAchievements();
+    else if (id === 'leaderboard') loadLeaderboard();
+    else if (id === 'profile') loadProfile();
+  }
+}
+window.setLang = setLang;
 const INTRO_AUDIO_B64 = '';</script>
 
 
@@ -709,7 +1271,7 @@ const INTRO_AUDIO_B64 = '';</script>
       <span style="width:7px;height:7px;border-radius:50%;background:#00F5C4;display:inline-block;animation:onlinePulse 2s ease-in-out infinite;flex-shrink:0"></span>
       <span id="online-count">--</span> онлайн
     </div>
-    <button id="lang-toggle" onclick="toggleLang()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-family:'Unbounded',sans-serif;font-size:0.6rem;padding:3px 8px;border-radius:20px;cursor:pointer">🇬🇧 EN</button>
+    <button id="lang-toggle" onclick="window.openLangModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-family:'Unbounded',sans-serif;font-size:0.75rem;padding:4px 10px;border-radius:20px;cursor:pointer;position:fixed;top:12px;right:50px;z-index:1000;-webkit-tap-highlight-color:transparent">🌐</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <!-- Daily reward box -->
@@ -1172,6 +1734,7 @@ const INTRO_AUDIO_B64 = '';</script>
 
 <script>
 const N = 9;
+
 let CELL, GAP, WALL_T, PAD, BOARD_PX;
 
 function calcSizes() {
@@ -7340,534 +7903,9 @@ function initPuzzleScreen() {
 
 
 // ── LANGUAGE SYSTEM ───────────────────────────────────────────────
-const STRINGS = {
-  ru: {
-    // Menu
-    menu_title: 'LOMI',
-    menu_sub: 'Стратегическая игра стен',
-    btn_play2: 'Играть вдвоём',
-    btn_online: '🌐 Онлайн',
-    btn_vs_ktoyura: 'Против KTOYURA',
-    btn_shop: '🛒 Магазин',
-    btn_leaderboard: '🏆 Таблица лидеров',
-    btn_puzzles: '🧩 Пазлы',
-    btn_achievements: '🏅 Достижения',
-    btn_rules: 'Как играть',
-    // Auth
-    auth_title: 'Добро пожаловать!',
-    btn_register: 'Создать аккаунт',
-    btn_login: 'Войти',
-    btn_guest: 'Играть как гость',
-    // Game
-    btn_move: 'ХОД',
-    btn_wall: 'СТЕНА',
-    btn_surrender: '🏳',
-    btn_horiz: '↔ Горизонт.',
-    btn_vert: '↕ Вертикаль',
-    walls_left: 'стен',
-    // Online
-    online_title: '🌐 Онлайн',
-    online_find: '🔍 Найти соперника',
-    online_searching: t('online_searching'),
-    online_or: 'или',
-    online_create_room: 'Создать комнату',
-    online_join_room: 'Войти в комнату',
-    btn_back: '← Назад',
-    btn_cancel: 'Отмена',
-    online_chat: 'Чат...',
-    // Win/Lose
-    victory: t('victory'),
-    defeat: t('defeat'),
-    win_coins: 'монет заработано',
-    win_rating: 'рейтинг',
-    btn_rematch: '⚔️ Реванш',
-    btn_menu: '🚪 В меню',
-    btn_share: '📤 Поделиться',
-    // Intro
-    btn_first_time: 'Первый раз',
-    btn_login_short: 'Войти',
-    // Daily
-    daily_title: '🎰 Ежедневная награда',
-    btn_spin: '🎰 Крутить!',
-    btn_claim: '🎁 Забрать!',
-    daily_timer: 'Следующий бонус через',
-    // Puzzles
-    puzzles_title: '🧩 Пазлы',
-    daily_puzzle: 'Пазл дня',
-    double_reward: t('double_reward'),
-    puzzle_solved: currentLang==='en'?'✅ Solved today':t('puzzle_solved'),
-    puzzle_moves: 'Ходов',
-    puzzle_optimal: 'Цель',
-    puzzle_hint: t('puzzle_hint'),
-    puzzle_correct: '✅ Правильно!',
-    puzzle_wrong: '❌ Не то! Попробуй ещё раз.',
-    puzzle_exit: t('puzzle_exit'),
-    // Shop
-    shop_title: '🛒 Магазин',
-    shop_balance: 'монет',
-    shop_tab_piece: 'Фишки',
-    shop_tab_wall: 'Стенки',
-    shop_tab_board: '🏟️ Поле',
-    shop_tab_bot: '🤖 Бот',
-    shop_owned: 'Есть',
-    shop_equipped: 'Одето',
-    shop_equip: 'Одеть',
-    shop_buy: 'Купить',
-    shop_free: 'Бесплатно',
-    shop_no_money: 'Мало монет',
-    // Achievements
-    ach_title: '🏅 Достижения',
-    // Profile
-    profile_wins: 'Побед',
-    profile_losses: 'Поражений',
-    profile_games: 'Всего игр',
-    profile_puzzles: '🧩 Пазлов решено',
-    profile_puzzle_pts: '🧩 Пазл-очков',
-    welcome_title: '🎁 Приветственный бонус!',
-    welcome_desc: 'Добро пожаловать в LOMI!',
-    welcome_claim: '🎁 Забрать бонус',
-    // Rules
-    rules_title: 'Как играть',
-    // Tutorial
-    tut_goal: '🎯 Цель: дойти до нижнего ряда первым!',
-    tut_move: '👆 Нажми на подсвеченную клетку чтобы пойти',
-    tut_wall_h: '🧱 Теперь поставь горизонтальную стену!',
-    tut_wall_v: '🧱 Поставь вертикальную стену!',
-    tut_free: '🎮 Отлично! Теперь дойди до победы!',
-    tut_correct: '✅ Правильно!',
-    // Surrender
-    surrender_title: 'Сдаться?',
-    surrender_yes: 'Да, сдаюсь',
-    surrender_no: t('puzzle_continue'),
-    // Leaderboard
-    lb_title: '🏆 Таблица лидеров',
-    lb_rank: '#',
-    lb_player: 'Игрок',
-    lb_rating: 'Рейтинг',
-    lb_wins: 'Победы',
-    // Auth
-    auth_welcome: 'Добро пожаловать!',
-    auth_bonus_desc: 'Ты получаешь приветственный бонус за первый вход в игру',
-    auth_coins_shop: 'монет для магазина',
-    auth_rating_start: 'стартовых очков рейтинга',
-    auth_claim_bonus: 'Забрать бонус!',
-    auth_username: 'Юзернейм...',
-    auth_password: 'Пароль',
-    auth_min: 'мин.',
-    auth_chars: 'символа',
-    auth_secret_q: 'Секретный вопрос',
-    auth_pet: 'Кличка первого питомца?',
-    auth_mom: 'Девичья фамилия мамы?',
-    auth_movie: 'Любимый фильм?',
-    auth_city: 'Город где родился?',
-    auth_game: 'Любимая игра в детстве?',
-    auth_answer: 'Ответ на вопрос...',
-    auth_create: 'Создать',
-    auth_back: 'Назад',
-    auth_forgot: 'Забыл пароль?',
-    auth_next: 'Далее',
-    auth_your_answer: 'Твой ответ...',
-    auth_new_pass: 'Новый пароль...',
-    auth_change_pass: 'Сменить пароль',
-    auth_guest_name: 'Придумай имя гостя',
-    auth_your_name: 'Твоё имя...',
-    daily_spinning: 'Крутится...',
-    daily_coins: 'монет',
-    profile_player: 'Игрок',
-    profile_logout: 'Выйти',
-    profile_reset: 'Сбросить счёт',
-    profile_winrate: 'Винрейт',
-    profile_history: 'ИСТОРИЯ МАТЧЕЙ',
-    profile_no_matches: t('profile_no_matches'),
-    profile_change_name: 'Изменить юзернейм',
-    profile_name_cost: 'Смена имени стоит',
-    profile_you_have: 'У тебя:',
-    profile_save: 'Сохранить',
-    ach_unlocked: 'Достижение разблокировано!',
-    profile_edit: 'Изменить',
-    diff_title: 'Сложность',
-    diff_easy: t('diff_easy'),
-    diff_easy_desc: t('diff_easy_desc'),
-    diff_medium: t('diff_medium'),
-    diff_medium_desc: t('diff_medium_desc'),
-    diff_hard: t('diff_hard'),
-    diff_hard_desc: t('diff_hard_desc'),
-    shop_equipped_piece: 'Фишка',
-    shop_equipped_wall: 'Стена',
-    shop_flags: 'Флаги',
-    shop_colors: 'Цвета',
-    shop_search: 'Поиск',
-    online_auto: 'Автоматический поиск соперника',
-    online_create_desc: 'Создай комнату и поделись кодом с другом',
-    online_copy_hint: 'Нажми чтобы скопировать',
-    online_enter_code: 'Введи код комнаты от друга',
-    online_room_code: 'Код комнаты...',
-    online_join: 'Войти в комнату',
-    online_loading_lb: t('online_loading_lb'),
-    rules_goal: 'Цель:',
-    rules_goal_desc: 'добраться до противоположного края поля первым.',
-    rules_move: 'Движение:',
-    rules_move_desc: 'выбери режим «ход» и нажми на подсвеченную клетку.',
-    rules_wall_label: 'Стена:',
-    rules_wall_desc2: 'наведи между клетками и нажми. У каждого',
-    rules_walls_count: 'стен',
-    rules_no_block: 'Нельзя полностью отрезать противника',
-    rules_path: 'путь должен оставаться.',
-    rules_jump: 'Если соперник прямо перед тобой — можно',
-    rules_jump2: 'перепрыгнуть',
-    rules_jump3: 'его.',
-    rules_walls_left: 'Стен:',
-    rules_turn: 'Ход',
-    rules_thinking: t('rules_thinking'),
-    game_rotate: 'Повернуть стену',
-    game_type_msg: 'Написать сообщение...',
-    win_first: 'добрался первым',
-    win_coins_game: 'МОНЕТЫ ЗА ИГРУ',
-    win_total: 'ИТОГО',
-    win_all_coins: 'Всего монет',
-    win_penalty: 'ШТРАФ ЗА СДАЧУ',
-    win_left: 'Осталось монет',
-    win_challenge: 'Вызвать друга на матч',
-    win_create_acc: 'Создать аккаунт и продолжить',
-    win_save_progress: 'Сохрани прогресс',
-    win_takes: 'это займёт',
-    win_seconds: 'секунд',
-    surrender_desc: 'Текущая игра засчитается как поражение',
-    surrender_continue: 'Продолжить игру',
-    puzzle_win_title: 'Решено!',
-    puzzle_reward_label: 'НАГРАДА',
-    puzzle_continue: t('puzzle_continue'),
-    puzzle_retry: 'Попробовать лучше',
-    puzzle_moves_label: 'Ходов:',
-    puzzle_target_label: 'Цель:',
-    puzzle_horiz: 'Гориз.',
-    tagline: 'Два игрока. Одна цель — добраться первым.',
-    tagline2: 'Строй стены. Блокируй соперника.',
-  },
-  en: {
-    // Menu
-    menu_title: 'LOMI',
-    menu_sub: 'Strategic Wall Game',
-    btn_play2: 'Play 2 Players',
-    btn_online: '🌐 Online',
-    btn_vs_ktoyura: 'vs KTOYURA',
-    btn_shop: '🛒 Shop',
-    btn_leaderboard: '🏆 Leaderboard',
-    btn_puzzles: '🧩 Puzzles',
-    btn_achievements: '🏅 Achievements',
-    btn_rules: 'How to Play',
-    // Auth
-    auth_title: 'Welcome!',
-    btn_register: 'Create Account',
-    btn_login: 'Log In',
-    btn_guest: 'Play as Guest',
-    // Game
-    btn_move: 'MOVE',
-    btn_wall: 'WALL',
-    btn_surrender: '🏳',
-    btn_horiz: '↔ Horiz.',
-    btn_vert: '↕ Vert.',
-    walls_left: 'walls',
-    // Online
-    online_title: '🌐 Online',
-    online_find: '🔍 Find Opponent',
-    online_searching: 'Finding opponent...',
-    online_or: 'or',
-    online_create_room: 'Create Room',
-    online_join_room: 'Join Room',
-    btn_back: '← Back',
-    btn_cancel: 'Cancel',
-    online_chat: 'Chat...',
-    // Win/Lose
-    victory: '🏆 Victory!',
-    defeat: '😔 Defeat',
-    win_coins: 'coins earned',
-    win_rating: 'rating',
-    btn_rematch: '⚔️ Rematch',
-    btn_menu: '🚪 Menu',
-    btn_share: '📤 Share',
-    // Intro
-    btn_first_time: 'New Player',
-    btn_login_short: 'Log In',
-    // Daily
-    daily_title: '🎰 Daily Reward',
-    btn_spin: '🎰 Spin!',
-    btn_claim: '🎁 Claim!',
-    daily_timer: 'Next reward in',
-    // Puzzles
-    puzzles_title: '🧩 Puzzles',
-    daily_puzzle: 'Daily Puzzle',
-    double_reward: 'Double reward!',
-    puzzle_solved: '✅ Solved today',
-    puzzle_moves: 'Moves',
-    puzzle_optimal: 'Target',
-    puzzle_hint: '💡 Hint (5🧩)',
-    puzzle_correct: '✅ Correct!',
-    puzzle_wrong: '❌ Wrong! Try again.',
-    puzzle_exit: '← Puzzles',
-    // Shop
-    shop_title: '🛒 Shop',
-    shop_balance: 'coins',
-    shop_tab_piece: 'Pieces',
-    shop_tab_wall: 'Walls',
-    shop_tab_board: '🏟️ Board',
-    shop_tab_bot: '🤖 Bot',
-    shop_owned: 'Owned',
-    shop_equipped: 'Equipped',
-    shop_equip: 'Equip',
-    shop_buy: 'Buy',
-    shop_free: 'Free',
-    shop_no_money: 'Not enough coins',
-    // Achievements
-    ach_title: '🏅 Achievements',
-    // Profile
-    profile_wins: 'Wins',
-    profile_losses: 'Losses',
-    profile_games: 'Total Games',
-    profile_puzzles: '🧩 Puzzles Solved',
-    profile_puzzle_pts: '🧩 Puzzle Points',
-    welcome_title: '🎁 Welcome Bonus!',
-    welcome_desc: 'Welcome to LOMI!',
-    welcome_claim: '🎁 Claim Bonus',
-    // Rules
-    rules_title: 'How to Play',
-    // Tutorial
-    tut_goal: '🎯 Goal: reach the bottom row first!',
-    tut_move: '👆 Tap the highlighted cell to move',
-    tut_wall_h: '🧱 Now place a horizontal wall!',
-    tut_wall_v: '🧱 Place a vertical wall!',
-    tut_free: '🎮 Great! Now go for the win!',
-    tut_correct: '✅ Correct!',
-    // Surrender
-    surrender_title: 'Surrender?',
-    surrender_yes: 'Yes, surrender',
-    surrender_no: 'Continue',
-    // Leaderboard
-    lb_title: '🏆 Leaderboard',
-    lb_rank: '#',
-    lb_player: 'Player',
-    lb_rating: 'Rating',
-    lb_wins: 'Wins',
-    // Auth
-    auth_welcome: 'Welcome!',
-    auth_bonus_desc: 'You get a welcome bonus for your first login',
-    auth_coins_shop: 'coins for the shop',
-    auth_rating_start: 'starting rating points',
-    auth_claim_bonus: 'Claim Bonus!',
-    auth_username: 'Username...',
-    auth_password: 'Password',
-    auth_min: 'min.',
-    auth_chars: 'characters',
-    auth_secret_q: 'Secret question',
-    auth_pet: "First pet's name?",
-    auth_mom: "Mother's maiden name?",
-    auth_movie: 'Favourite movie?',
-    auth_city: 'City of birth?',
-    auth_game: 'Favourite childhood game?',
-    auth_answer: 'Answer...',
-    auth_create: 'Create',
-    auth_back: 'Back',
-    auth_forgot: 'Forgot password?',
-    auth_next: 'Next',
-    auth_your_answer: 'Your answer...',
-    auth_new_pass: 'New password...',
-    auth_change_pass: 'Change password',
-    auth_guest_name: 'Choose a guest name',
-    auth_your_name: 'Your name...',
-    // Daily slot
-    daily_spinning: 'Spinning...',
-    daily_coins: 'coins',
-    // Profile
-    profile_player: 'Player',
-    profile_logout: 'Log out',
-    profile_reset: 'Reset score',
-    profile_winrate: 'Winrate',
-    profile_history: 'MATCH HISTORY',
-    profile_no_matches: 'No matches yet',
-    profile_change_name: 'Change username',
-    profile_name_cost: 'Name change costs',
-    profile_you_have: 'You have:',
-    profile_save: 'Save',
-    ach_unlocked: 'Achievement unlocked!',
-    profile_edit: 'Edit',
-    // Difficulty
-    diff_title: 'Difficulty',
-    diff_easy: 'Beginner',
-    diff_easy_desc: 'Bot moves randomly, rarely places walls. Great for first game.',
-    diff_medium: 'Medium',
-    diff_medium_desc: 'Bot always takes shortest path and sometimes blocks you.',
-    diff_hard: 'Hard',
-    diff_hard_desc: 'Bot calculates all paths and places walls in the most painful spots.',
-    // Shop
-    shop_equipped_piece: 'Piece',
-    shop_equipped_wall: 'Wall',
-    shop_flags: 'Flags',
-    shop_colors: 'Colors',
-    shop_search: 'Search',
-    // Online
-    online_auto: 'Automatic opponent search',
-    online_create_desc: 'Create a room and share the code with a friend',
-    online_copy_hint: 'Click to copy',
-    online_enter_code: "Enter friend's room code",
-    online_room_code: 'Room code...',
-    online_join: 'Join room',
-    online_loading_lb: 'Loading leaderboard...',
-    // Rules
-    rules_goal: 'Goal:',
-    rules_goal_desc: 'reach the opposite side of the board first.',
-    rules_move: 'Move:',
-    rules_move_desc: 'select move mode and tap a highlighted cell.',
-    rules_wall: 'Wall:',
-    rules_wall_desc: "hover between cells and tap. Each player has",
-    rules_walls: 'walls',
-    rules_no_block: "You can't completely block the opponent",
-    rules_path: 'a path must remain.',
-    rules_jump: 'If opponent is right in front of you — you can',
-    rules_jump2: 'jump over',
-    rules_jump3: 'them.',
-    rules_walls_left: 'Walls:',
-    rules_turn: 'Turn',
-    rules_thinking: 'Bot thinking...',
-    // Game
-    game_rotate: 'Rotate wall',
-    game_chat: 'Chat...',
-    game_surrender: 'Surrender',
-    game_type_msg: 'Type a message...',
-    // Win screen
-    win_first: 'reached first',
-    win_coins_game: 'COINS FOR GAME',
-    win_total: 'TOTAL',
-    win_all_coins: 'Total coins',
-    win_penalty: 'SURRENDER PENALTY',
-    win_coins: 'Coins',
-    win_rating: 'Rating',
-    win_left: 'Coins left',
-    win_rematch2: 'Rematch',
-    win_menu2: 'Back to menu',
-    win_challenge: 'Challenge a friend',
-    win_create_acc: 'Create account & continue',
-    win_save_progress: 'Save your progress',
-    win_takes: 'it takes',
-    win_seconds: 'seconds',
-    // Surrender popup
-    surrender_desc: 'Current game will count as a loss',
-    surrender_continue: 'Continue game',
-    // Puzzle win
-    puzzle_win_title: 'Solved!',
-    puzzle_reward_label: 'REWARD',
-    puzzle_continue: 'Continue',
-    puzzle_retry: 'Try to do better',
-    puzzle_moves_label: 'Moves:',
-    puzzle_target_label: 'Target:',
-    puzzle_horiz: 'Horiz.',
-    // Menu tagline
-    tagline: 'Two players. One goal — reach first.',
-    tagline2: 'Build walls. Block your opponent.',
-    // Rules content
-    rules_p1_title: 'Goal',
-    rules_p1_title: 'Goal',
-    rules_p1: 'Be the first to reach the opposite side of the board.',
-    rules_p2_title: 'Movement',
-    rules_p2: 'Each turn, either move your piece one square OR place a wall.',
-    rules_p3_title: 'Walls',
-    rules_p3: 'Walls block movement. Each player has 10 walls. You cannot completely block a path.',
-    rules_p4_title: 'Winning',
-    rules_p4: 'Player 1 (red) wins by reaching row 9. Player 2 (blue) wins by reaching row 1.',
-    // Leaderboard
-    lb_you: 'You',
-    lb_guest: 'Guest',
-    lb_empty: 'No players yet',
-  }
-};
 
-let currentLang = 'ru';
 
-function detectLang() {
-  const saved = localStorage.getItem('lomi_lang');
-  if (saved) return saved;
-  const browser = navigator.language || navigator.userLanguage || 'ru';
-  return browser.startsWith('ru') ? 'ru' : 'en';
-}
 
-function t(key) {
-  return STRINGS[currentLang][key] || STRINGS.ru[key] || key;
-}
-
-function applyLang() {
-  document.documentElement.lang = currentLang;
-  document.querySelectorAll('[data-lang]').forEach(el => {
-    const key = el.getAttribute('data-lang');
-    const val = t(key);
-    if (el.tagName === 'INPUT') el.placeholder = val;
-    else el.textContent = val;
-  });
-
-  // Lang toggle button
-  const btn = document.getElementById('lang-toggle');
-  if (btn) btn.textContent = currentLang === 'ru' ? '🇬🇧 EN' : '🇷🇺 RU';
-
-  // Dynamic placeholders
-  const placeholders = {
-    'reg-username': t('auth_username'),
-    'reg-password': t('auth_password'),
-    'reg-answer': t('auth_answer'),
-    'login-username': t('auth_username'),
-    'login-password': t('auth_password'),
-    'recovery-answer': t('auth_your_answer'),
-    'recovery-newpass': t('auth_new_pass'),
-    'guest-name-input': t('auth_your_name'),
-    'room-code-input': t('online_room_code'),
-    'chat-input': t('game_type_msg'),
-    'profile-input': t('auth_username'),
-  };
-  Object.entries(placeholders).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) el.placeholder = val;
-  });
-
-  // Shop tabs
-  const tabPiece = document.getElementById('tab-piece');
-  if (tabPiece) tabPiece.textContent = t('shop_tab_piece');
-  const tabWall = document.getElementById('tab-wall');
-  if (tabWall) tabWall.textContent = t('shop_tab_wall');
-  const tabBot = document.getElementById('tab-bot');
-  if (tabBot) tabBot.textContent = t('shop_tab_bot');
-  const tabBoard = document.getElementById('tab-board-main');
-  if (tabBoard) tabBoard.textContent = t('shop_tab_board');
-  const tabFlags = document.getElementById('tab-flags');
-  if (tabFlags) tabFlags.textContent = t('shop_flags');
-  const tabColors = document.getElementById('tab-colors');
-  if (tabColors) tabColors.textContent = t('shop_colors');
-
-  // Game buttons
-  const btnDir = document.getElementById('btn-dir');
-  if (btnDir) btnDir.textContent = t('btn_horiz');
-
-  // Walls counter label
-  const wallsLabel = document.getElementById('walls-label');
-  if (wallsLabel) wallsLabel.textContent = t('walls_left');
-
-  // Bot thinking
-  const thinkEl = document.getElementById('thinking-text');
-  if (thinkEl) thinkEl.textContent = t('rules_thinking');
-}
-
-function toggleLang() {
-  currentLang = currentLang === 'ru' ? 'en' : 'ru';
-  localStorage.setItem('lomi_lang', currentLang);
-  applyLang();
-  // Re-render dynamic screens
-  const active = document.querySelector('.screen.active');
-  if (active) {
-    const id = active.id;
-    if (id === 'puzzles') initPuzzleScreen();
-    else if (id === 'shop') renderShop();
-    else if (id === 'achievements') renderAchievements();
-    else if (id === 'leaderboard') loadLeaderboard();
-    else if (id === 'profile') loadProfile();
-    else if (id === 'difficulty') renderDifficulty && renderDifficulty();
-  }
-}
 
 function initLang() {
   currentLang = detectLang();
@@ -7956,5 +7994,31 @@ function initLang() {
   <button class="btn btn-primary" onclick="closePuzzleWin()" style="max-width:280px;width:100%" data-lang="surrender_no" data-lang="puzzle_continue">Продолжить</button>
   <button class="btn btn-secondary" onclick="retryPuzzle()" style="max-width:280px;width:100%;font-size:0.75rem" data-lang="puzzle_retry">↺ Попробовать лучше</button>
 </div>
+<!-- LANG MODAL -->
+<div id="lang-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="if(event.target===this)window.closeLangModal()">
+  <div style="background:#1a1a2e;border:1.5px solid rgba(255,255,255,0.12);border-radius:20px;padding:24px;width:280px;text-align:center">
+    <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:900;margin-bottom:16px;color:#fff">🌐 Language / Язык</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="window.setLang('ru')" id="lang-btn-ru" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">
+        <span style="font-size:1.8rem">🇷🇺</span>
+        <div style="text-align:left">
+          <div style="font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;color:#fff">Русский</div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.4)">Russian</div>
+        </div>
+        <span id="lang-check-ru" style="margin-left:auto;font-size:1.2rem;display:none">✅</span>
+      </button>
+      <button onclick="window.setLang('en')" id="lang-btn-en" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">
+        <span style="font-size:1.8rem">🇬🇧</span>
+        <div style="text-align:left">
+          <div style="font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;color:#fff">English</div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.4)">Английский</div>
+        </div>
+        <span id="lang-check-en" style="margin-left:auto;font-size:1.2rem;display:none">✅</span>
+      </button>
+    </div>
+    <button onclick="window.closeLangModal()" style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.7rem;cursor:pointer;font-family:'Unbounded',sans-serif">✕ Закрыть</button>
+  </div>
+</div>
+
 </body>
 </html>
