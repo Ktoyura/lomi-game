@@ -984,7 +984,9 @@ function applyLang() {
     else el.textContent = val;
   });
 
-  // Lang toggle button stays as globe icon
+  // Update lang label in grid
+  const langLabel = document.getElementById('lang-label');
+  if (langLabel) langLabel.textContent = currentLang.toUpperCase();
 
   // Dynamic placeholders
   const placeholders = {
@@ -1068,8 +1070,12 @@ function closeLangModal() {
 window.closeLangModal = closeLangModal;
 
 function setLang(lang) {
+  console.log('setLang called:', lang);
   currentLang = lang;
   localStorage.setItem('lomi_lang', lang);
+  // Update label in grid
+  const label = document.getElementById('lang-label');
+  if (label) label.textContent = lang.toUpperCase();
   applyLang();
   closeLangModal();
   // Re-render active screen
@@ -1271,7 +1277,7 @@ const INTRO_AUDIO_B64 = '';</script>
       <span style="width:7px;height:7px;border-radius:50%;background:#00F5C4;display:inline-block;animation:onlinePulse 2s ease-in-out infinite;flex-shrink:0"></span>
       <span id="online-count">--</span> онлайн
     </div>
-    <button id="lang-toggle" onclick="window.openLangModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-family:'Unbounded',sans-serif;font-size:0.75rem;padding:4px 10px;border-radius:20px;cursor:pointer;position:fixed;top:12px;right:50px;z-index:1000;-webkit-tap-highlight-color:transparent">🌐</button>
+
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <!-- Daily reward box -->
@@ -1333,6 +1339,10 @@ const INTRO_AUDIO_B64 = '';</script>
       <button onclick="showScreen('rules')" style="background:var(--surface2);border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
         <span style="font-size:1.5rem">❓</span>
         <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:rgba(255,255,255,0.6)" data-lang="btn_rules">Правила</span>
+      </button>
+      <button id="lang-toggle" onclick="window.openLangModal()" style="background:var(--surface2);border:1.5px solid rgba(120,75,255,0.3);border-radius:14px;padding:12px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.15s;-webkit-tap-highlight-color:transparent" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+        <span style="font-size:1.5rem">🌐</span>
+        <span style="font-family:'Unbounded',sans-serif;font-size:0.5rem;color:#a78bfa" id="lang-label">RU</span>
       </button>
     </div>
   </div>
@@ -7999,7 +8009,7 @@ function initLang() {
   <div style="background:#1a1a2e;border:1.5px solid rgba(255,255,255,0.12);border-radius:20px;padding:24px;width:280px;text-align:center">
     <div style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:900;margin-bottom:16px;color:#fff">🌐 Language / Язык</div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <button onclick="window.setLang('ru')" id="lang-btn-ru" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">
+      <button onclick="setLang('ru')" id="lang-btn-ru" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">
         <span style="font-size:1.8rem">🇷🇺</span>
         <div style="text-align:left">
           <div style="font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;color:#fff">Русский</div>
@@ -8007,7 +8017,7 @@ function initLang() {
         </div>
         <span id="lang-check-ru" style="margin-left:auto;font-size:1.2rem;display:none">✅</span>
       </button>
-      <button onclick="window.setLang('en')" id="lang-btn-en" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">
+      <button onclick="setLang('en')" id="lang-btn-en" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">
         <span style="font-size:1.8rem">🇬🇧</span>
         <div style="text-align:left">
           <div style="font-family:'Unbounded',sans-serif;font-size:0.8rem;font-weight:700;color:#fff">English</div>
@@ -8016,7 +8026,7 @@ function initLang() {
         <span id="lang-check-en" style="margin-left:auto;font-size:1.2rem;display:none">✅</span>
       </button>
     </div>
-    <button onclick="window.closeLangModal()" style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.7rem;cursor:pointer;font-family:'Unbounded',sans-serif">✕ Закрыть</button>
+    <button onclick="closeLangModal()" style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.7rem;cursor:pointer;font-family:'Unbounded',sans-serif">✕ Закрыть</button>
   </div>
 </div>
 
