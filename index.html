@@ -5445,6 +5445,8 @@ function startVsKtoyura() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Always re-apply language when switching screens
+  if (typeof applyLang === 'function') applyLang();
   // Always hide puzzle overlay when leaving game screen
   if (id !== 'game' && puzzleActive) {
     puzzleActive = false;
@@ -5527,6 +5529,7 @@ function showScreen(id) {
     document.getElementById('join-code-input').value='';
   } else if (id === 'leaderboard') {
     loadLeaderboard();
+    setTimeout(applyLang, 100);
     startLbAutoRefresh();
     stopMenuMusic();
   } else if (id === 'puzzles') {
@@ -7853,6 +7856,17 @@ function toggleLang() {
   currentLang = currentLang === 'ru' ? 'en' : 'ru';
   localStorage.setItem('lomi_lang', currentLang);
   applyLang();
+  // Re-render dynamic screens
+  const active = document.querySelector('.screen.active');
+  if (active) {
+    const id = active.id;
+    if (id === 'puzzles') initPuzzleScreen();
+    else if (id === 'shop') renderShop();
+    else if (id === 'achievements') renderAchievements();
+    else if (id === 'leaderboard') loadLeaderboard();
+    else if (id === 'profile') loadProfile();
+    else if (id === 'difficulty') renderDifficulty && renderDifficulty();
+  }
 }
 
 function initLang() {
