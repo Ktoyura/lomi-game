@@ -1,0 +1,67 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#3B0E8C"/>
+    <stop offset="100%" stop-color="#9B1FFF"/>
+  </linearGradient>
+  <linearGradient id="shield_g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#5B2BCC"/>
+    <stop offset="100%" stop-color="#2A0A6E"/>
+  </linearGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#FF3CAC"/>
+    <stop offset="100%" stop-color="#784BFF"/>
+  </linearGradient>
+</defs>
+
+<!-- Background -->
+<rect width="512" height="512" rx="80" fill="url(#bg)"/>
+
+<!-- Subtle grid -->
+<g opacity="0.07" stroke="#FFFFFF" stroke-width="0.5">
+  <line x1="0" y1="64" x2="512" y2="64"/>
+  <line x1="0" y1="128" x2="512" y2="128"/>
+  <line x1="0" y1="192" x2="512" y2="192"/>
+  <line x1="0" y1="256" x2="512" y2="256"/>
+  <line x1="0" y1="320" x2="512" y2="320"/>
+  <line x1="0" y1="384" x2="512" y2="384"/>
+  <line x1="0" y1="448" x2="512" y2="448"/>
+  <line x1="64" y1="0" x2="64" y2="512"/>
+  <line x1="128" y1="0" x2="128" y2="512"/>
+  <line x1="192" y1="0" x2="192" y2="512"/>
+  <line x1="256" y1="0" x2="256" y2="512"/>
+  <line x1="320" y1="0" x2="320" y2="512"/>
+  <line x1="384" y1="0" x2="384" y2="512"/>
+  <line x1="448" y1="0" x2="448" y2="512"/>
+</g>
+
+<!-- Shield -->
+<path d="M256,52 L380,100 L380,290 Q380,400 256,448 Q132,400 132,290 L132,100 Z"
+  fill="url(#shield_g)" stroke="rgba(255,255,255,0.2)" stroke-width="2.5"/>
+
+<!-- Shield inner border -->
+<path d="M256,74 L360,116 L360,286 Q360,382 256,422 Q152,382 152,286 L152,116 Z"
+  fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+
+<!-- Wall accents -->
+<rect x="164" y="180" width="12" height="72" rx="4" fill="url(#accent)" opacity="0.9"/>
+<rect x="164" y="264" width="12" height="48" rx="4" fill="#FF3CAC" opacity="0.6"/>
+<rect x="300" y="140" width="56" height="12" rx="4" fill="url(#accent)" opacity="0.9"/>
+<rect x="300" y="164" width="42" height="12" rx="4" fill="#784BFF" opacity="0.6"/>
+
+<!-- Glow behind L -->
+<circle cx="256" cy="250" r="70" fill="#784BFF" opacity="0.15"/>
+
+<!-- L letter -->
+<rect x="214" y="148" width="32" height="130" rx="6" fill="#FFFFFF"/>
+<rect x="214" y="246" width="90" height="32" rx="6" fill="#FFFFFF"/>
+
+<!-- LOMI text -->
+<text x="256" y="490"
+  text-anchor="middle"
+  font-family="'Arial Black', Arial, sans-serif"
+  font-weight="900"
+  font-size="58"
+  fill="#FFFFFF"
+  letter-spacing="6">LOMI</text>
+</svg>

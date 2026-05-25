@@ -1,0 +1,18 @@
+{
+  "name": "LOMI — Стратегическая игра стен",
+  "short_name": "LOMI",
+  "description": "Перехитри соперника. Заблокируй путь. Дойди первым.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3B0E8C",
+  "theme_color": "#3B0E8C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/lomi-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#3B0E8C"/>
+    <stop offset="100%" stop-color="#9B1FFF"/>
+  </linearGradient>
+  <linearGradient id="shield_g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#5B2BCC"/>
+    <stop offset="100%" stop-color="#2A0A6E"/>
+  </linearGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#FF3CAC"/>
+    <stop offset="100%" stop-color="#784BFF"/>
+  </linearGradient>
+</defs>
+
+<!-- Background -->
+<rect width="512" height="512" rx="100" fill="url(#bg)"/>
+
+<!-- Grid -->
+<g opacity="0.07" stroke="#FFFFFF" stroke-width="0.5">
+  <line x1="0" y1="64" x2="512" y2="64"/>
+  <line x1="0" y1="128" x2="512" y2="128"/>
+  <line x1="0" y1="192" x2="512" y2="192"/>
+  <line x1="0" y1="256" x2="512" y2="256"/>
+  <line x1="0" y1="320" x2="512" y2="320"/>
+  <line x1="0" y1="384" x2="512" y2="384"/>
+  <line x1="0" y1="448" x2="512" y2="448"/>
+  <line x1="64" y1="0" x2="64" y2="512"/>
+  <line x1="128" y1="0" x2="128" y2="512"/>
+  <line x1="192" y1="0" x2="192" y2="512"/>
+  <line x1="256" y1="0" x2="256" y2="512"/>
+  <line x1="320" y1="0" x2="320" y2="512"/>
+  <line x1="384" y1="0" x2="384" y2="512"/>
+  <line x1="448" y1="0" x2="448" y2="512"/>
+</g>
+
+<!-- Shield (centered, larger) -->
+<path d="M256,36 L400,90 L400,310 Q400,430 256,480 Q112,430 112,310 L112,90 Z"
+  fill="url(#shield_g)" stroke="rgba(255,255,255,0.22)" stroke-width="3"/>
+<path d="M256,60 L378,108 L378,306 Q378,414 256,458 Q134,414 134,306 L134,108 Z"
+  fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+
+<!-- Wall accents -->
+<rect x="148" y="190" width="14" height="80" rx="4" fill="url(#accent)" opacity="0.9"/>
+<rect x="148" y="284" width="14" height="55" rx="4" fill="#FF3CAC" opacity="0.55"/>
+<rect x="308" y="148" width="64" height="14" rx="4" fill="url(#accent)" opacity="0.9"/>
+<rect x="308" y="176" width="48" height="14" rx="4" fill="#784BFF" opacity="0.55"/>
+
+<!-- Glow -->
+<circle cx="256" cy="270" r="80" fill="#784BFF" opacity="0.15"/>
+
+<!-- L letter -->
+<rect x="208" y="148" width="36" height="148" rx="7" fill="#FFFFFF"/>
+<rect x="208" y="260" width="102" height="36" rx="7" fill="#FFFFFF"/>
+</svg>
