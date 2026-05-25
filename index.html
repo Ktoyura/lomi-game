@@ -549,21 +549,21 @@ const INTRO_AUDIO_B64 = '';</script>
     Добро пожаловать!
   </div>
   <div style="font-size:0.85rem;color:var(--muted);text-align:center;max-width:280px">
-    Ты получаешь приветственный бонус за первый вход в игру
+    <span data-lang="auth_bonus_desc">Ты получаешь приветственный бонус за первый вход в игру</span>
   </div>
   <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:300px">
     <div style="background:var(--surface2);border:1.5px solid rgba(255,211,61,0.3);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:14px">
       <div style="font-size:2rem">🪙</div>
       <div>
         <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:#FFD93D">+1 000</div>
-        <div style="font-size:0.72rem;color:var(--muted)">монет для магазина</div>
+        <div style="font-size:0.72rem;color:var(--muted)"><span data-lang="auth_coins_shop">монет для магазина</span></div>
       </div>
     </div>
     <div style="background:var(--surface2);border:1.5px solid rgba(120,75,255,0.3);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:14px">
       <div style="font-size:2rem">🏆</div>
       <div>
         <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:#a78bfa">+10</div>
-        <div style="font-size:0.72rem;color:var(--muted)">стартовых очков рейтинга</div>
+        <div style="font-size:0.72rem;color:var(--muted)"><span data-lang="auth_rating_start">стартовых очков рейтинга</span></div>
       </div>
     </div>
   </div>
@@ -775,7 +775,7 @@ const INTRO_AUDIO_B64 = '';</script>
     </div>
   </div>
   <div class="how-to">
-    <p>Два игрока. Одна цель — добраться первым.<br><strong>Строй стены. Блокируй соперника.</strong></p>
+    <p data-lang="tagline">Два игрока. Одна цель — добраться первым.<br><strong data-lang="tagline2">Строй стены. Блокируй соперника.</strong></p>
   </div>
 </div>
 
@@ -823,7 +823,7 @@ const INTRO_AUDIO_B64 = '';</script>
   <!-- Winrate bar -->
   <div style="width:100%;max-width:480px">
     <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);margin-bottom:4px">
-      <span>Винрейт</span>
+      <span data-lang="profile_winrate">Винрейт</span>
       <span id="profile-winrate">0%</span>
     </div>
     <div style="background:var(--surface2);border-radius:999px;height:6px;overflow:hidden">
@@ -833,9 +833,9 @@ const INTRO_AUDIO_B64 = '';</script>
 
   <!-- Match history -->
   <div style="width:100%;max-width:480px">
-    <div style="font-family:'Unbounded',sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:0.08em;margin-bottom:8px">ИСТОРИЯ МАТЧЕЙ</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:0.08em;margin-bottom:8px" data-lang="profile_history">ИСТОРИЯ МАТЧЕЙ</div>
     <div id="match-history" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
-    <div id="no-matches" style="font-size:0.82rem;color:var(--muted);text-align:center;padding:1rem 0;display:none">Ещё нет сыгранных матчей</div>
+    <div id="no-matches" style="font-size:0.82rem;color:var(--muted);text-align:center;padding:1rem 0;display:none" data-lang="profile_no_matches">Ещё нет сыгранных матчей</div>
   </div>
 
   <button class="btn btn-secondary" style="max-width:480px;width:100%" onclick="showScreen('menu')">Назад</button>
@@ -863,15 +863,15 @@ const INTRO_AUDIO_B64 = '';</script>
   <div class="diff-title">Сложность ktoyura</div>
   <div class="diff-cards">
     <div class="diff-card easy" onclick="startGame('easy')">
-      <div class="diff-label">Новичок</div>
+      <div class="diff-label" data-lang="diff_easy">Новичок</div>
       <div class="diff-desc">Бот ходит случайно, редко ставит стены. Хорошо для первой игры.</div>
     </div>
     <div class="diff-card medium" onclick="startGame('medium')">
-      <div class="diff-label">Средний</div>
+      <div class="diff-label" data-lang="diff_medium">Средний</div>
       <div class="diff-desc">Бот всегда идёт кратчайшим путём и иногда блокирует тебя стенами.</div>
     </div>
     <div class="diff-card hard" onclick="startGame('hard')">
-      <div class="diff-label">Сложный</div>
+      <div class="diff-label" data-lang="diff_hard">Сложный</div>
       <div class="diff-desc">Бот считает все пути и ставит стены в самых болезненных местах.</div>
     </div>
   </div>
@@ -882,7 +882,7 @@ const INTRO_AUDIO_B64 = '';</script>
 <div id="toast">
   <div class="toast-icon" id="toast-icon">🏅</div>
   <div class="toast-body">
-    <div class="toast-label">Достижение разблокировано!</div>
+    <div class="toast-label" data-lang="ach_unlocked">Достижение разблокировано!</div>
     <div class="toast-name" id="toast-name"></div>
     <div class="toast-desc" id="toast-desc"></div>
   </div>
@@ -945,7 +945,7 @@ const INTRO_AUDIO_B64 = '';</script>
 
   <!-- SEARCH panel -->
   <div class="online-panel" id="opanel-search">
-    <div style="font-size:0.82rem;color:var(--muted);text-align:center">Автоматический поиск соперника</div>
+    <div style="font-size:0.82rem;color:var(--muted);text-align:center" data-lang="online_auto">Автоматический поиск соперника</div>
     <div id="search-idle">
       <button class="btn btn-primary" onclick="startSearch()" style="background:linear-gradient(135deg,#784BFF,#FF3CAC)" data-lang="online_find">🔍 Найти соперника</button>
     </div>
@@ -961,7 +961,7 @@ const INTRO_AUDIO_B64 = '';</script>
   <!-- CREATE panel -->
   <div class="online-panel" id="opanel-create" style="display:none">
     <div style="font-size:0.82rem;color:var(--muted);text-align:center">Создай комнату и поделись кодом с другом</div>
-    <button class="btn btn-primary" onclick="createRoom()">Создать комнату</button>
+    <button class="btn btn-primary" onclick="createRoom()" data-lang="online_create_room">Создать комнату</button>
     <div class="room-code-display" id="room-code-display" style="display:none" onclick="copyCode()" title="Нажми чтобы скопировать">
       ——————
     </div>
@@ -974,7 +974,7 @@ const INTRO_AUDIO_B64 = '';</script>
     <div style="font-size:0.82rem;color:var(--muted);text-align:center">Введи код комнаты от друга</div>
     <input class="online-input" id="join-code-input" maxlength="6" placeholder="Код комнаты..."
       oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')joinRoom()">
-    <button class="btn btn-primary" onclick="joinRoom()">Войти в комнату</button>
+    <button class="btn btn-primary" onclick="joinRoom()" data-lang="online_join">Войти в комнату</button>
     <div class="online-status" id="join-status"></div>
   </div>
 
@@ -1108,11 +1108,11 @@ const INTRO_AUDIO_B64 = '';</script>
     <div style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:#FFD93D;letter-spacing:0.08em;margin-bottom:10px">🪙 МОНЕТЫ ЗА ИГРУ</div>
     <div id="points-rows" style="display:flex;flex-direction:column;gap:6px;font-size:0.8rem;color:var(--muted)"></div>
     <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:var(--text)">ИТОГО</span>
+      <span style="font-family:'Unbounded',sans-serif;font-size:0.65rem;font-weight:700;color:var(--text)" data-lang="win_total">ИТОГО</span>
       <span style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;color:#FFD93D" id="points-total">+0 🪙</span>
     </div>
     <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:0.72rem;color:var(--muted)">Всего монет</span>
+      <span style="font-size:0.72rem;color:var(--muted)" data-lang="win_all_coins">Всего монет</span>
       <span style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text)" id="points-cumulative">0 🪙</span>
     </div>
   </div>
@@ -1123,15 +1123,15 @@ const INTRO_AUDIO_B64 = '';</script>
     <div id="surrender-rows" style="display:flex;flex-direction:column;gap:6px;font-size:0.8rem;color:var(--muted)"></div>
     <div style="border-top:1px solid rgba(255,255,255,0.08);margin-top:10px;padding-top:10px;display:flex;flex-direction:column;gap:6px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:0.7rem;color:var(--muted)">Монеты</span>
+        <span style="font-size:0.7rem;color:var(--muted)" data-lang="win_coins">Монеты</span>
         <span style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;color:#ff6b6b" id="surrender-coins-loss">-0 🪙</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:0.7rem;color:var(--muted)">Рейтинг</span>
+        <span style="font-size:0.7rem;color:var(--muted)" data-lang="win_rating">Рейтинг</span>
         <span style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;color:#ff6b6b" id="surrender-rating-loss">-0 🏆</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;margin-top:2px">
-        <span style="font-size:0.7rem;color:var(--muted)">Осталось монет</span>
+        <span style="font-size:0.7rem;color:var(--muted)" data-lang="win_left">Осталось монет</span>
         <span style="font-family:'Unbounded',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text)" id="surrender-coins-left">0 🪙</span>
       </div>
     </div>
@@ -1162,11 +1162,11 @@ const INTRO_AUDIO_B64 = '';</script>
 <div id="surrender" class="screen">
   <div style="font-size:3rem">🏳️</div>
   <div style="font-family:'Unbounded',sans-serif;font-size:1.4rem;font-weight:900;text-align:center">Сдаться?</div>
-  <div style="font-size:0.85rem;color:var(--muted);text-align:center;max-width:280px">Текущая игра засчитается как поражение</div>
+  <div style="font-size:0.85rem;color:var(--muted);text-align:center;max-width:280px" data-lang="surrender_desc">Текущая игра засчитается как поражение</div>
   <div id="surrender-penalty" style="background:var(--surface2);border:1.5px solid rgba(255,107,107,0.3);border-radius:14px;padding:12px 18px;text-align:center;max-width:280px;width:100%;font-size:0.8rem;color:#ff6b6b;display:none"></div>
   <div class="btn-group" style="max-width:260px">
     <button class="btn btn-primary" style="background:linear-gradient(135deg,#ff4444,#cc0000)" onclick="doSurrender()" data-lang="surrender_yes">Да, сдаюсь</button>
-    <button class="btn btn-secondary" onclick="showScreen('game')">Продолжить игру</button>
+    <button class="btn btn-secondary" onclick="showScreen('game')" data-lang="surrender_continue">Продолжить игру</button>
   </div>
 </div>
 
@@ -3568,7 +3568,7 @@ function renderProfile() {
 
     let modeLabel = '';
     if (m.mode === 'bot') {
-      const diff = m.difficulty === 'easy' ? 'Новичок' : m.difficulty === 'medium' ? 'Средний' : 'Сложный';
+      const diff = m.difficulty === 'easy' ? t('diff_easy') : m.difficulty === 'medium' ? t('diff_medium') : t('diff_hard');
       modeLabel = `🤖 vs ktoyura (${diff})`;
     } else if (m.mode === 'online') {
       modeLabel = `🌐 Онлайн vs ${m.opponent || 'Соперник'}`;
@@ -4094,7 +4094,7 @@ function calcPoints(won, difficulty, timeUsed, wallsUsed) {
     streakLabel,
     total,
     rows: [
-      { label: `Победа (${difficulty === 'easy' ? 'Новичок' : difficulty === 'medium' ? 'Средний' : 'Сложный'})`, val: `+${base}` },
+      { label: `Победа (${difficulty === 'easy' ? t('diff_easy') : difficulty === 'medium' ? t('diff_medium') : t('diff_hard')})`, val: `+${base}` },
       { label: `Скорость (${fmtTime(timeLeft)} осталось)`, val: `+${speedBonus}` },
       { label: `Эффективность (${wallsUsed} стен)`, val: `+${effBonus}` },
       ...(streakLabel ? [{ label: `Множитель серии ${streakLabel}`, val: `×${streakMult}` }] : []),
@@ -5266,7 +5266,7 @@ function startTutorial() {
   tutWaitingFor = null;
 
   isGuest = true;
-  currentUser = 'Новичок';
+  currentUser = t('diff_easy');
   totalPoints = 0;
   ratingPoints = 0;
   loadAchievements();
@@ -6547,8 +6547,8 @@ function showOfflineToast() {
   const t = document.getElementById('toast');
   if (!t) return;
   document.getElementById('toast-icon').textContent = '📶';
-  document.getElementById('toast-name').textContent = currentLang === 'en' ? 'No Internet' : 'Нет интернета';
-  document.getElementById('toast-desc').textContent = currentLang === 'en' ? 'Online features unavailable' : 'Онлайн функции недоступны';
+  document.getElementById('toast-name').textContent = currentLang === 'en' ? 'No Internet' : currentLang==='en'?'No Internet':'Нет интернета';
+  document.getElementById('toast-desc').textContent = currentLang === 'en' ? 'Online features unavailable' : currentLang==='en'?'Online features unavailable':'Онлайн функции недоступны';
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
@@ -6566,7 +6566,7 @@ function showScreenSafe(id) {
 
 // Listen for connection changes
 window.addEventListener('online',  () => {
-  showToast(currentLang === 'en' ? '📶 Connection restored' : '📶 Подключение восстановлено', currentLang === 'en' ? 'Online features available!' : 'Онлайн функции доступны!');
+  showToast(currentLang === 'en' ? '📶 Connection restored' : currentLang==='en'?'📶 Connection restored':'📶 Подключение восстановлено', currentLang === 'en' ? 'Online features available!' : currentLang==='en'?'Online features available!':'Онлайн функции доступны!');
   updateOnlineCounter();
 });
 window.addEventListener('offline', () => {
@@ -7182,9 +7182,9 @@ function onPuzzleSolved() {
 
   // Show win overlay
   document.getElementById('puzzle-win-title').textContent =
-    alreadySolved ? '🔄 Повтор пройден!' : (stars===3?'⭐ Идеально!':stars===2?'✅ Отлично!':'👍 Решено!');
+    alreadySolved ? '🔄 Повтор пройден!' : (stars===3?currentLang==='en'?'⭐ Perfect!':'⭐ Идеально!':stars===2?currentLang==='en'?'✅ Excellent!':'✅ Отлично!':t('puzzle_win_title'));
   document.getElementById('puzzle-win-stats').textContent =
-    `Ходов: ${puzzleMoveCount} из ${optimal} · Время: ${elapsed}с`;
+    currentLang==='en' ? `Moves: ${puzzleMoveCount} of ${optimal} · Time: ${elapsed}s` : `Ходов: ${puzzleMoveCount} из ${optimal} · Время: ${elapsed}с`;
   document.getElementById('puzzle-win-reward').textContent = alreadySolved ? 'Уже пройден — очки не начисляются' : `+${reward} 🧩`;
   document.getElementById('puzzle-win-stars').textContent =
     '⭐'.repeat(stars)+'☆'.repeat(3-stars);
@@ -7312,7 +7312,7 @@ function renderPuzzleGrid(filter='all') {
       <div style="font-size:1.3rem">${solved?'✅':'🧩'}</div>
       <div style="font-family:'Unbounded',sans-serif;font-size:0.58rem;font-weight:700;margin:4px 0;line-height:1.3">${pz.title}</div>
       <div style="font-size:0.6rem">${'⭐'.repeat(pz.stars)}</div>
-      <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">${solved ? '✓ Пройден' : pz.solution.length + ' ' + (pz.solution.length===1?'ход':'хода') + ' · до +' + maxReward + '🧩'}</div>`;
+      <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">${solved ? (currentLang==='en'?'✓ Solved':'✓ Пройден') : pz.solution.length + ' ' + (currentLang==='en'?(pz.solution.length===1?'move':'moves'):(pz.solution.length===1?'ход':'хода')) + ' · +' + maxReward + '🧩'}</div>`;
     card.onclick = solved ? () => showToast('✅ Уже пройден', 'Этот пазл решён! Попробуй следующий.') : () => openPuzzle(pz.id);
     card.onmouseenter = ()=>{ if (!solved) card.style.transform='scale(1.04)'; };
     card.onmouseleave = ()=>card.style.transform='scale(1)';
@@ -7329,7 +7329,7 @@ function initPuzzleScreen() {
     const done = solvedPuzzles.has('daily');
     const ds = document.getElementById('daily-puzzle-status');
     const dr = document.getElementById('daily-puzzle-reward');
-    if (ds) ds.textContent = done?'✅ Решён сегодня':'Двойная награда!';
+    if (ds) ds.textContent = done?currentLang==='en'?'✅ Solved today':t('puzzle_solved'):t('double_reward');
     if (dr) dr.textContent = done?'':'×2 🧩';
   }
   renderPuzzleGrid();
@@ -7365,7 +7365,7 @@ const STRINGS = {
     // Online
     online_title: '🌐 Онлайн',
     online_find: '🔍 Найти соперника',
-    online_searching: 'Ищем соперника...',
+    online_searching: t('online_searching'),
     online_or: 'или',
     online_create_room: 'Создать комнату',
     online_join_room: 'Войти в комнату',
@@ -7373,8 +7373,8 @@ const STRINGS = {
     btn_cancel: 'Отмена',
     online_chat: 'Чат...',
     // Win/Lose
-    victory: '🏆 Победа!',
-    defeat: '😔 Поражение',
+    victory: t('victory'),
+    defeat: t('defeat'),
     win_coins: 'монет заработано',
     win_rating: 'рейтинг',
     btn_rematch: '⚔️ Реванш',
@@ -7391,14 +7391,14 @@ const STRINGS = {
     // Puzzles
     puzzles_title: '🧩 Пазлы',
     daily_puzzle: 'Пазл дня',
-    double_reward: 'Двойная награда!',
-    puzzle_solved: '✅ Решён сегодня',
+    double_reward: t('double_reward'),
+    puzzle_solved: currentLang==='en'?'✅ Solved today':t('puzzle_solved'),
     puzzle_moves: 'Ходов',
     puzzle_optimal: 'Цель',
-    puzzle_hint: '💡 Подсказка (5🧩)',
+    puzzle_hint: t('puzzle_hint'),
     puzzle_correct: '✅ Правильно!',
     puzzle_wrong: '❌ Не то! Попробуй ещё раз.',
-    puzzle_exit: '← Пазлы',
+    puzzle_exit: t('puzzle_exit'),
     // Shop
     shop_title: '🛒 Магазин',
     shop_balance: 'монет',
@@ -7435,13 +7435,111 @@ const STRINGS = {
     // Surrender
     surrender_title: 'Сдаться?',
     surrender_yes: 'Да, сдаюсь',
-    surrender_no: 'Продолжить',
+    surrender_no: t('puzzle_continue'),
     // Leaderboard
     lb_title: '🏆 Таблица лидеров',
     lb_rank: '#',
     lb_player: 'Игрок',
     lb_rating: 'Рейтинг',
     lb_wins: 'Победы',
+    // Auth
+    auth_welcome: 'Добро пожаловать!',
+    auth_bonus_desc: 'Ты получаешь приветственный бонус за первый вход в игру',
+    auth_coins_shop: 'монет для магазина',
+    auth_rating_start: 'стартовых очков рейтинга',
+    auth_claim_bonus: 'Забрать бонус!',
+    auth_username: 'Юзернейм...',
+    auth_password: 'Пароль',
+    auth_min: 'мин.',
+    auth_chars: 'символа',
+    auth_secret_q: 'Секретный вопрос',
+    auth_pet: 'Кличка первого питомца?',
+    auth_mom: 'Девичья фамилия мамы?',
+    auth_movie: 'Любимый фильм?',
+    auth_city: 'Город где родился?',
+    auth_game: 'Любимая игра в детстве?',
+    auth_answer: 'Ответ на вопрос...',
+    auth_create: 'Создать',
+    auth_back: 'Назад',
+    auth_forgot: 'Забыл пароль?',
+    auth_next: 'Далее',
+    auth_your_answer: 'Твой ответ...',
+    auth_new_pass: 'Новый пароль...',
+    auth_change_pass: 'Сменить пароль',
+    auth_guest_name: 'Придумай имя гостя',
+    auth_your_name: 'Твоё имя...',
+    daily_spinning: 'Крутится...',
+    daily_coins: 'монет',
+    profile_player: 'Игрок',
+    profile_logout: 'Выйти',
+    profile_reset: 'Сбросить счёт',
+    profile_winrate: 'Винрейт',
+    profile_history: 'ИСТОРИЯ МАТЧЕЙ',
+    profile_no_matches: t('profile_no_matches'),
+    profile_change_name: 'Изменить юзернейм',
+    profile_name_cost: 'Смена имени стоит',
+    profile_you_have: 'У тебя:',
+    profile_save: 'Сохранить',
+    ach_unlocked: 'Достижение разблокировано!',
+    profile_edit: 'Изменить',
+    diff_title: 'Сложность',
+    diff_easy: t('diff_easy'),
+    diff_easy_desc: t('diff_easy_desc'),
+    diff_medium: t('diff_medium'),
+    diff_medium_desc: t('diff_medium_desc'),
+    diff_hard: t('diff_hard'),
+    diff_hard_desc: t('diff_hard_desc'),
+    shop_equipped_piece: 'Фишка',
+    shop_equipped_wall: 'Стена',
+    shop_flags: 'Флаги',
+    shop_colors: 'Цвета',
+    shop_search: 'Поиск',
+    online_auto: 'Автоматический поиск соперника',
+    online_create_desc: 'Создай комнату и поделись кодом с другом',
+    online_copy_hint: 'Нажми чтобы скопировать',
+    online_enter_code: 'Введи код комнаты от друга',
+    online_room_code: 'Код комнаты...',
+    online_join: 'Войти в комнату',
+    online_loading_lb: t('online_loading_lb'),
+    rules_goal: 'Цель:',
+    rules_goal_desc: 'добраться до противоположного края поля первым.',
+    rules_move: 'Движение:',
+    rules_move_desc: 'выбери режим «ход» и нажми на подсвеченную клетку.',
+    rules_wall_label: 'Стена:',
+    rules_wall_desc2: 'наведи между клетками и нажми. У каждого',
+    rules_walls_count: 'стен',
+    rules_no_block: 'Нельзя полностью отрезать противника',
+    rules_path: 'путь должен оставаться.',
+    rules_jump: 'Если соперник прямо перед тобой — можно',
+    rules_jump2: 'перепрыгнуть',
+    rules_jump3: 'его.',
+    rules_walls_left: 'Стен:',
+    rules_turn: 'Ход',
+    rules_thinking: t('rules_thinking'),
+    game_rotate: 'Повернуть стену',
+    game_type_msg: 'Написать сообщение...',
+    win_first: 'добрался первым',
+    win_coins_game: 'МОНЕТЫ ЗА ИГРУ',
+    win_total: 'ИТОГО',
+    win_all_coins: 'Всего монет',
+    win_penalty: 'ШТРАФ ЗА СДАЧУ',
+    win_left: 'Осталось монет',
+    win_challenge: 'Вызвать друга на матч',
+    win_create_acc: 'Создать аккаунт и продолжить',
+    win_save_progress: 'Сохрани прогресс',
+    win_takes: 'это займёт',
+    win_seconds: 'секунд',
+    surrender_desc: 'Текущая игра засчитается как поражение',
+    surrender_continue: 'Продолжить игру',
+    puzzle_win_title: 'Решено!',
+    puzzle_reward_label: 'НАГРАДА',
+    puzzle_continue: t('puzzle_continue'),
+    puzzle_retry: 'Попробовать лучше',
+    puzzle_moves_label: 'Ходов:',
+    puzzle_target_label: 'Цель:',
+    puzzle_horiz: 'Гориз.',
+    tagline: 'Два игрока. Одна цель — добраться первым.',
+    tagline2: 'Строй стены. Блокируй соперника.',
   },
   en: {
     // Menu
@@ -7547,7 +7645,123 @@ const STRINGS = {
     lb_player: 'Player',
     lb_rating: 'Rating',
     lb_wins: 'Wins',
+    // Auth
+    auth_welcome: 'Welcome!',
+    auth_bonus_desc: 'You get a welcome bonus for your first login',
+    auth_coins_shop: 'coins for the shop',
+    auth_rating_start: 'starting rating points',
+    auth_claim_bonus: 'Claim Bonus!',
+    auth_username: 'Username...',
+    auth_password: 'Password',
+    auth_min: 'min.',
+    auth_chars: 'characters',
+    auth_secret_q: 'Secret question',
+    auth_pet: "First pet's name?",
+    auth_mom: "Mother's maiden name?",
+    auth_movie: 'Favourite movie?',
+    auth_city: 'City of birth?',
+    auth_game: 'Favourite childhood game?',
+    auth_answer: 'Answer...',
+    auth_create: 'Create',
+    auth_back: 'Back',
+    auth_forgot: 'Forgot password?',
+    auth_next: 'Next',
+    auth_your_answer: 'Your answer...',
+    auth_new_pass: 'New password...',
+    auth_change_pass: 'Change password',
+    auth_guest_name: 'Choose a guest name',
+    auth_your_name: 'Your name...',
+    // Daily slot
+    daily_spinning: 'Spinning...',
+    daily_coins: 'coins',
+    // Profile
+    profile_player: 'Player',
+    profile_logout: 'Log out',
+    profile_reset: 'Reset score',
+    profile_winrate: 'Winrate',
+    profile_history: 'MATCH HISTORY',
+    profile_no_matches: 'No matches yet',
+    profile_change_name: 'Change username',
+    profile_name_cost: 'Name change costs',
+    profile_you_have: 'You have:',
+    profile_save: 'Save',
+    ach_unlocked: 'Achievement unlocked!',
+    profile_edit: 'Edit',
+    // Difficulty
+    diff_title: 'Difficulty',
+    diff_easy: 'Beginner',
+    diff_easy_desc: 'Bot moves randomly, rarely places walls. Great for first game.',
+    diff_medium: 'Medium',
+    diff_medium_desc: 'Bot always takes shortest path and sometimes blocks you.',
+    diff_hard: 'Hard',
+    diff_hard_desc: 'Bot calculates all paths and places walls in the most painful spots.',
+    // Shop
+    shop_equipped_piece: 'Piece',
+    shop_equipped_wall: 'Wall',
+    shop_flags: 'Flags',
+    shop_colors: 'Colors',
+    shop_search: 'Search',
+    // Online
+    online_auto: 'Automatic opponent search',
+    online_create_desc: 'Create a room and share the code with a friend',
+    online_copy_hint: 'Click to copy',
+    online_enter_code: "Enter friend's room code",
+    online_room_code: 'Room code...',
+    online_join: 'Join room',
+    online_loading_lb: 'Loading leaderboard...',
+    // Rules
+    rules_goal: 'Goal:',
+    rules_goal_desc: 'reach the opposite side of the board first.',
+    rules_move: 'Move:',
+    rules_move_desc: 'select move mode and tap a highlighted cell.',
+    rules_wall: 'Wall:',
+    rules_wall_desc: "hover between cells and tap. Each player has",
+    rules_walls: 'walls',
+    rules_no_block: "You can't completely block the opponent",
+    rules_path: 'a path must remain.',
+    rules_jump: 'If opponent is right in front of you — you can',
+    rules_jump2: 'jump over',
+    rules_jump3: 'them.',
+    rules_walls_left: 'Walls:',
+    rules_turn: 'Turn',
+    rules_thinking: 'Bot thinking...',
+    // Game
+    game_rotate: 'Rotate wall',
+    game_chat: 'Chat...',
+    game_surrender: 'Surrender',
+    game_type_msg: 'Type a message...',
+    // Win screen
+    win_first: 'reached first',
+    win_coins_game: 'COINS FOR GAME',
+    win_total: 'TOTAL',
+    win_all_coins: 'Total coins',
+    win_penalty: 'SURRENDER PENALTY',
+    win_coins: 'Coins',
+    win_rating: 'Rating',
+    win_left: 'Coins left',
+    win_rematch2: 'Rematch',
+    win_menu2: 'Back to menu',
+    win_challenge: 'Challenge a friend',
+    win_create_acc: 'Create account & continue',
+    win_save_progress: 'Save your progress',
+    win_takes: 'it takes',
+    win_seconds: 'seconds',
+    // Surrender popup
+    surrender_desc: 'Current game will count as a loss',
+    surrender_continue: 'Continue game',
+    // Puzzle win
+    puzzle_win_title: 'Solved!',
+    puzzle_reward_label: 'REWARD',
+    puzzle_continue: 'Continue',
+    puzzle_retry: 'Try to do better',
+    puzzle_moves_label: 'Moves:',
+    puzzle_target_label: 'Target:',
+    puzzle_horiz: 'Horiz.',
+    // Menu tagline
+    tagline: 'Two players. One goal — reach first.',
+    tagline2: 'Build walls. Block your opponent.',
     // Rules content
+    rules_p1_title: 'Goal',
     rules_p1_title: 'Goal',
     rules_p1: 'Be the first to reach the opposite side of the board.',
     rules_p2_title: 'Movement',
@@ -7580,20 +7794,35 @@ function applyLang() {
   document.documentElement.lang = currentLang;
   document.querySelectorAll('[data-lang]').forEach(el => {
     const key = el.getAttribute('data-lang');
-    if (el.placeholder !== undefined && el.tagName === 'INPUT') {
-      el.placeholder = t(key);
-    } else {
-      el.textContent = t(key);
-    }
+    const val = t(key);
+    if (el.tagName === 'INPUT') el.placeholder = val;
+    else el.textContent = val;
   });
+
+  // Lang toggle button
   const btn = document.getElementById('lang-toggle');
   if (btn) btn.textContent = currentLang === 'ru' ? '🇬🇧 EN' : '🇷🇺 RU';
 
-  // Update dynamic elements
-  const menuSub = document.getElementById('menu-subtitle');
-  if (menuSub) menuSub.textContent = t('menu_sub');
-  const dailyTitle = document.getElementById('daily-day-label');
-  // Update shop tabs text
+  // Dynamic placeholders
+  const placeholders = {
+    'reg-username': t('auth_username'),
+    'reg-password': t('auth_password'),
+    'reg-answer': t('auth_answer'),
+    'login-username': t('auth_username'),
+    'login-password': t('auth_password'),
+    'recovery-answer': t('auth_your_answer'),
+    'recovery-newpass': t('auth_new_pass'),
+    'guest-name-input': t('auth_your_name'),
+    'room-code-input': t('online_room_code'),
+    'chat-input': t('game_type_msg'),
+    'profile-input': t('auth_username'),
+  };
+  Object.entries(placeholders).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.placeholder = val;
+  });
+
+  // Shop tabs
   const tabPiece = document.getElementById('tab-piece');
   if (tabPiece) tabPiece.textContent = t('shop_tab_piece');
   const tabWall = document.getElementById('tab-wall');
@@ -7602,6 +7831,22 @@ function applyLang() {
   if (tabBot) tabBot.textContent = t('shop_tab_bot');
   const tabBoard = document.getElementById('tab-board-main');
   if (tabBoard) tabBoard.textContent = t('shop_tab_board');
+  const tabFlags = document.getElementById('tab-flags');
+  if (tabFlags) tabFlags.textContent = t('shop_flags');
+  const tabColors = document.getElementById('tab-colors');
+  if (tabColors) tabColors.textContent = t('shop_colors');
+
+  // Game buttons
+  const btnDir = document.getElementById('btn-dir');
+  if (btnDir) btnDir.textContent = t('btn_horiz');
+
+  // Walls counter label
+  const wallsLabel = document.getElementById('walls-label');
+  if (wallsLabel) wallsLabel.textContent = t('walls_left');
+
+  // Bot thinking
+  const thinkEl = document.getElementById('thinking-text');
+  if (thinkEl) thinkEl.textContent = t('rules_thinking');
 }
 
 function toggleLang() {
@@ -7690,12 +7935,12 @@ function initLang() {
   <div style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;color:#fff" id="puzzle-win-title">Решено!</div>
   <div style="font-size:0.8rem;color:var(--muted);text-align:center" id="puzzle-win-stats"></div>
   <div style="background:rgba(255,211,61,0.15);border:2px solid rgba(255,211,61,0.4);border-radius:16px;padding:16px 24px;text-align:center">
-    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px">НАГРАДА</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px" data-lang="puzzle_reward_label">НАГРАДА</div>
     <div style="font-family:'Unbounded',sans-serif;font-size:1.5rem;font-weight:900;color:#FFD93D" id="puzzle-win-reward">+50 🧩</div>
     <div id="puzzle-win-stars" style="font-size:1.2rem;margin-top:4px"></div>
   </div>
-  <button class="btn btn-primary" onclick="closePuzzleWin()" style="max-width:280px;width:100%" data-lang="surrender_no">Продолжить</button>
-  <button class="btn btn-secondary" onclick="retryPuzzle()" style="max-width:280px;width:100%;font-size:0.75rem">↺ Попробовать лучше</button>
+  <button class="btn btn-primary" onclick="closePuzzleWin()" style="max-width:280px;width:100%" data-lang="surrender_no" data-lang="puzzle_continue">Продолжить</button>
+  <button class="btn btn-secondary" onclick="retryPuzzle()" style="max-width:280px;width:100%;font-size:0.75rem" data-lang="puzzle_retry">↺ Попробовать лучше</button>
 </div>
 </body>
 </html>
